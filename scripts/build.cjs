@@ -2,20 +2,21 @@ const fs = require("fs"),
   path = require("path");
 const root = path.resolve(__dirname, ".."),
   pkg = require("../package.json");
-require("child_process").execFileSync("npm", ["run", "renderer:build"], {
-  cwd: root,
-  stdio: "inherit",
-});
+for (const script of ["node:build", "renderer:build"])
+  require("child_process").execFileSync("npm", ["run", script], {
+    cwd: root,
+    stdio: "inherit",
+  });
 if (process.platform !== "win32" || process.arch !== "x64")
   throw Error("Build on Windows x64.");
-const runtime = path.join(root, "node_modules/electron/dist");
-if (!fs.existsSync(path.join(runtime, "electron.exe")))
+const electronRuntime = path.join(root, "node_modules/electron/dist");
+if (!fs.existsSync(path.join(electronRuntime, "electron.exe")))
   throw Error("Run npm ci first.");
 const out = path.join(root, "dist", "WuwaTappo-Offline-" + pkg.version);
 if (fs.existsSync(out))
   throw Error("Output already exists; move it before rebuilding: " + out);
 fs.mkdirSync(path.dirname(out), { recursive: true });
-fs.cpSync(runtime, out, { recursive: true });
+fs.cpSync(electronRuntime, out, { recursive: true });
 fs.renameSync(
   path.join(out, "electron.exe"),
   path.join(out, "WuwaTappo-Offline.exe"),
@@ -25,23 +26,17 @@ if (fs.existsSync(defaultApp)) fs.unlinkSync(defaultApp);
 const appDir = path.join(out, "resources/app");
 fs.mkdirSync(appDir, { recursive: true });
 const files = [
-  "main.cjs",
-  "preload.cjs",
-  "core.cjs",
-  "storage.cjs",
-  "pet.css",
-  "pet.js",
-  "emotions.js",
-  "studio.css",
-  "studio.js",
-  "names.js",
+  "package.json",
   "catalog.json",
   "asset-manifest.json",
-  "package.json",
-  "qa.cjs",
+  "pet.css",
+  "studio.css",
 ];
 for (const file of files)
   fs.copyFileSync(path.join(root, file), path.join(appDir, file));
+fs.cpSync(path.join(root, "runtime"), path.join(appDir, "runtime"), {
+  recursive: true,
+});
 fs.cpSync(
   path.join(root, "renderer-build"),
   path.join(appDir, "renderer-build"),

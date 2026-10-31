@@ -12,7 +12,8 @@ module.exports = async ({
   dataDir,
   input,
 }) => {
-  const out = process.env.WUWA_QA_OUTPUT || path.join(__dirname, "..", "qa");
+  const out =
+    process.env.WUWA_QA_OUTPUT || path.join(__dirname, "..", "..", "qa");
   fs.mkdirSync(out, { recursive: true });
   const frames = new Map();
   for (const w of [pet, studio])

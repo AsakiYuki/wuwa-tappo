@@ -1,6 +1,22 @@
-const RARITIES = ["common", "uncommon", "rare", "epic"];
-const LABELS = { common: "普通", uncommon: "珍稀", rare: "稀有", epic: "史诗" };
-const DEFAULTS = {
+import type {
+  CatalogItem,
+  CollectionState,
+  HistoryEntry,
+  ItemType,
+  Rarity,
+  RawCollection,
+  Settings,
+  SynthesisOptions,
+} from "./types.cjs";
+
+const RARITIES: Rarity[] = ["common", "uncommon", "rare", "epic"];
+const LABELS: Record<Rarity, string> = {
+  common: "普通",
+  uncommon: "珍稀",
+  rare: "稀有",
+  epic: "史诗",
+};
+const DEFAULTS: Settings = {
   scale: 1,
   opacity: 1,
   alwaysOnTop: true,
@@ -15,15 +31,16 @@ const DEFAULTS = {
   counterLeft: false,
   petPosition: null,
 };
-function initial(items) {
+function initial(items: CatalogItem[]): CollectionState {
   const starters = items.filter((x) => x.starter);
   return {
     version: 2,
     owned: Object.fromEntries(starters.map((x) => [x.id, 1])),
     favorites: [],
     presets: [],
-    character: starters.find((x) => x.type === "character" && x.roleId === 1502)
-      ?.id,
+    character:
+      starters.find((x) => x.type === "character" && x.roleId === 1502)?.id ??
+      "",
     accessory: starters.find((x) => x.type === "accessory")?.id || "",
     emotes: starters
       .filter((x) => x.type === "emote")
@@ -36,7 +53,10 @@ function initial(items) {
     settings: { ...DEFAULTS },
   };
 }
-function normalize(raw, items) {
+function normalize(
+  raw: RawCollection | null | undefined,
+  items: CatalogItem[],
+): CollectionState {
   const s = initial(items),
     valid = new Set(items.map((x) => x.id));
   if (!raw || ![1, 2].includes(raw.version)) return s;
@@ -75,7 +95,7 @@ function normalize(raw, items) {
   s.settings = settings({ ...s.settings, ...raw.settings });
   return s;
 }
-function settings(s) {
+function settings(s: Partial<Settings>): Settings {
   const out = { ...DEFAULTS };
   for (const k of [
     "alwaysOnTop",
@@ -103,16 +123,20 @@ function settings(s) {
     };
   return out;
 }
-function rarity(rng, min = 0) {
+function rarity(rng: () => number, min = 0): Rarity {
   const n = rng();
   let i = n < 0.65 ? 0 : n < 0.9 ? 1 : n < 0.99 ? 2 : 3;
   return RARITIES[Math.max(i, min)];
 }
-function choose(pool, rng) {
+function choose<T>(pool: T[], rng: () => number): T {
   if (!pool.length) throw Error("素材池为空");
   return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))];
 }
-function award(s, item, source) {
+function award(
+  s: CollectionState,
+  item: CatalogItem,
+  source: HistoryEntry["source"],
+): HistoryEntry {
   const fresh = !s.owned[item.id];
   s.owned[item.id] = (s.owned[item.id] || 0) + 1;
   const r = { id: item.id, fresh, source, at: Date.now() };
@@ -120,7 +144,12 @@ function award(s, item, source) {
   s.history = s.history.slice(0, 100);
   return r;
 }
-function draw(s, items, n, rng = Math.random) {
+function draw(
+  s: CollectionState,
+  items: CatalogItem[],
+  n: number,
+  rng: () => number = Math.random,
+): HistoryEntry[] {
   if (n !== 1 && n !== 10) throw Error("请选择单抽或十连抽");
   const results = [];
   let high = false;
@@ -137,12 +166,23 @@ function draw(s, items, n, rng = Math.random) {
   }
   return results;
 }
-function available(s, items, level) {
+function available(
+  s: CollectionState,
+  items: CatalogItem[],
+  level: Rarity,
+): number {
   return items
     .filter((x) => x.rarity === level)
     .reduce((n, x) => n + Math.max(0, (s.owned[x.id] || 0) - 1), 0);
 }
-function synthesize(s, items, n, level, rng = Math.random, options = {}) {
+function synthesize(
+  s: CollectionState,
+  items: CatalogItem[],
+  n: number,
+  level: Rarity,
+  rng: () => number = Math.random,
+  options: SynthesisOptions = {},
+): HistoryEntry[] {
   const type = options.type || "character",
     mode = options.mode || "upgrade",
     cost = mode === "same" ? 5 : 10;
@@ -184,7 +224,7 @@ function synthesize(s, items, n, level, rng = Math.random, options = {}) {
   Object.assign(s, draft);
   return results;
 }
-function equip(s, items, id) {
+function equip(s: CollectionState, items: CatalogItem[], id: string): void {
   const item = items.find((x) => x.id === id);
   if (!item || !s.owned[id]) throw Error("请先获得这个收集物");
   if (item.type === "character") s.character = id;
@@ -198,7 +238,11 @@ function equip(s, items, id) {
     }
   }
 }
-function registerTap(s, items, rng = Math.random) {
+function registerTap(
+  s: CollectionState,
+  items: CatalogItem[],
+  rng: () => number = Math.random,
+): string | null {
   s.count = (s.count + 1) % 1000;
   if (s.count !== 0) return null;
   const selected = items.filter(
@@ -206,7 +250,12 @@ function registerTap(s, items, rng = Math.random) {
   );
   return selected.length ? choose(selected, rng).id : null;
 }
-function replaceEmote(s, items, id, slot) {
+function replaceEmote(
+  s: CollectionState,
+  items: CatalogItem[],
+  id: string,
+  slot: number,
+): void {
   if (!Number.isInteger(slot) || slot < 0 || slot > 4)
     throw Error("表情位置无效");
   if (!s.owned[id] || !items.some((x) => x.id === id && x.type === "emote"))

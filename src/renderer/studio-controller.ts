@@ -1,3 +1,6 @@
+// @ts-nocheck
+import { getItemName } from "./names";
+
 const $ = (id) => document.getElementById(id),
   labels = {
     common: "Common",
@@ -113,7 +116,7 @@ function toast(message) {
   toastTimer = setTimeout(() => $("toast").classList.remove("visible"), 3000);
 }
 async function command(name, arg) {
-  const r = await petAPI.command(name, arg);
+  const r = await window.petAPI.command(name, arg);
   if (!r.ok) toast(r.error);
   if (r.warning) toast(r.warning);
   return r;
@@ -907,16 +910,14 @@ function buildSettings() {
   dataActions.append(unlock, reset);
   dataRow.append(dataLabel, dataActions);
   rows.append(dataRow);
-  document
-    .querySelectorAll("[data-setting]")
-    .forEach((e) =>
-      e.addEventListener("change", () =>
-        command("settings", {
-          [e.dataset.setting]:
-            e.type === "checkbox" ? e.checked : Number(e.value),
-        }),
-      ),
-    );
+  document.querySelectorAll("[data-setting]").forEach((e) =>
+    e.addEventListener("change", () =>
+      command("settings", {
+        [e.dataset.setting]:
+          e.type === "checkbox" ? e.checked : Number(e.value),
+      }),
+    ),
+  );
 }
 buildSettings();
 function settings() {
@@ -940,15 +941,15 @@ function settings() {
 $("openFolder").onclick = () => command("folder");
 $("recenter").onclick = () => command("recenter");
 $("quit").onclick = () => command("quit");
-petAPI.onState((s) => {
+window.petAPI.onState((s) => {
   state = s;
   render();
 });
-petAPI.onStatus((s) => {
+window.petAPI.onStatus((s) => {
   $("hookStatus").textContent = s.hook;
   if (s.warning) toast(s.warning);
 });
-petAPI.onPage((p) => navigate(p));
+window.petAPI.onPage((p) => navigate(p));
 
 function chooseEmoteSlot(slot) {
   navigate("collection");
@@ -1012,7 +1013,7 @@ for (const edge of ["n", "s", "e", "w", "ne", "nw", "se", "sw"]) {
     const dx = e.screenX - drag.x,
       dy = e.screenY - drag.y;
     drag = { x: e.screenX, y: e.screenY };
-    petAPI.resizeWindow(edge, dx, dy);
+    window.petAPI.resizeWindow(edge, dx, dy);
   };
   h.onpointerup = h.onpointercancel = () => {
     drag = null;
@@ -1030,7 +1031,7 @@ function resize() {
 }
 addEventListener("resize", resize);
 resize();
-petAPI.init().then((d) => {
+window.petAPI.init().then((d) => {
   state = d.state;
   items = d.items;
   filterMeta = d.filters;

@@ -2,8 +2,9 @@ const { test } = require("node:test"),
   assert = require("node:assert/strict"),
   fs = require("fs"),
   path = require("path");
+const PROJECT_ROOT = path.resolve(__dirname, "..");
 const core = require("./core.cjs"),
-  { items } = require("./catalog.json");
+  { items } = require(path.join(PROJECT_ROOT, "catalog.json"));
 test("初始仅开放男女经典、阿布、八个原版基础表情", () => {
   const s = core.initial(items);
   assert.equal(Object.keys(s.owned).length, 11);
@@ -25,7 +26,7 @@ test("899 个收集物与 3098 张离线图像完整可读", () => {
   }
   assert.equal(names.size, 3098);
   for (const file of names) {
-    const b = fs.readFileSync(path.join(__dirname, file));
+    const b = fs.readFileSync(path.join(PROJECT_ROOT, file));
     assert.equal(b.readUInt32BE(0), 0x89504e47);
     assert(b.readUInt32BE(16) > 0 && b.readUInt32BE(20) > 0);
   }
@@ -59,12 +60,15 @@ test("十次合成消耗100副本且保留最后一份，材料不足无副作�
   const s = core.initial(items),
     id = s.character;
   s.owned[id] = 101;
-  const before = Object.values(s.owned).reduce((a, b) => a + b, 0);
+  const before = Object.values(s.owned as Record<string, number>).reduce(
+    (a, b) => a + b,
+    0,
+  );
   const r = core.synthesize(s, items, 10, "common", () => 0.2);
   assert.equal(r.length, 10);
   assert.equal(s.owned[id], 1);
   assert.equal(
-    Object.values(s.owned).reduce((a, b) => a + b, 0),
+    Object.values(s.owned as Record<string, number>).reduce((a, b) => a + b, 0),
     before - 90,
   );
   assert(
@@ -104,7 +108,7 @@ test("平阶合成同品类同稀有度、消耗5份且保留最后一份", () =
   assert.equal(it.rarity, "common");
 });
 test("原版筛选索引：7个系列、55个角色、服饰系列10件", () => {
-  const c = require("./catalog.json");
+  const c = require(path.join(PROJECT_ROOT, "catalog.json"));
   assert.equal(Object.keys(c.filters.series).length, 7);
   assert.equal(Object.keys(c.filters.roles).length, 55);
   assert.equal(
@@ -176,7 +180,7 @@ test("旧大计数迁移到三位显示，并保留置顶开关状态", () => {
   assert.equal(core.settings({ alwaysOnTop: false }).alwaysOnTop, false);
 });
 test("504张互动表情均引用原始emote素材，图鉴缩略图使用独立索引", () => {
-  const manifest = require("./asset-manifest.json");
+  const manifest = require(path.join(PROJECT_ROOT, "asset-manifest.json"));
   for (const it of items.filter((x) => x.type === "emote")) {
     assert.match(manifest[path.basename(it.image)], /\/emote\//);
     assert.notEqual(it.image, it.thumbnail);
@@ -202,7 +206,7 @@ test("满5个表情可指定位置替换，已装备表情交换位置，未拥�
 });
 test("升级自动继承当前便携版并备份，之后换解压目录仍使用同一存档", async () => {
   const storage = require("./storage.cjs"),
-    root = fs.mkdtempSync(path.join(__dirname, "qa-data-unit-"));
+    root = fs.mkdtempSync(path.join(PROJECT_ROOT, "qa-data-unit-"));
   try {
     const legacy = path.join(root, "old"),
       dataDir = path.join(root, "profile");
@@ -238,14 +242,14 @@ test("升级自动继承当前便携版并备份，之后换解压目录仍使�
       521,
     );
   } finally {
-    if (!root.startsWith(path.resolve(__dirname) + path.sep + "qa-data-unit-"))
+    if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-"))
       throw Error("Unsafe cleanup");
     fs.rmSync(root, { recursive: true });
   }
 });
 test("全新解压目录自动查找Downloads旁旧版，保留抽取、收藏与搭配", () => {
   const storage = require("./storage.cjs"),
-    root = fs.mkdtempSync(path.join(__dirname, "qa-data-unit-"));
+    root = fs.mkdtempSync(path.join(PROJECT_ROOT, "qa-data-unit-"));
   try {
     const downloads = path.join(root, "Downloads"),
       legacy = path.join(
@@ -276,14 +280,14 @@ test("全新解压目录自动查找Downloads旁旧版，保留抽取、收藏�
     });
     assert.deepEqual(migrated.state, s);
   } finally {
-    if (!root.startsWith(path.resolve(__dirname) + path.sep + "qa-data-unit-"))
+    if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-"))
       throw Error("Unsafe cleanup");
     fs.rmSync(root, { recursive: true });
   }
 });
 test("异步存档按顺序落盘，连续保存不会覆盖较新的状态", async () => {
   const storage = require("./storage.cjs"),
-    root = fs.mkdtempSync(path.join(__dirname, "qa-data-unit-"));
+    root = fs.mkdtempSync(path.join(PROJECT_ROOT, "qa-data-unit-"));
   try {
     const file = path.join(root, "collection.json"),
       write = storage.createWriter(file),
@@ -297,7 +301,7 @@ test("异步存档按顺序落盘，连续保存不会覆盖较新的状态", as
     assert.equal(storage.readSave(file).raw.count, 19);
     assert.equal(storage.readSave(file + ".bak").raw.count, 18);
   } finally {
-    if (!root.startsWith(path.resolve(__dirname) + path.sep + "qa-data-unit-"))
+    if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-"))
       throw Error("Unsafe cleanup");
     fs.rmSync(root, { recursive: true });
   }

@@ -10,6 +10,7 @@ const {
   session,
   shell,
 } = require("electron");
+import type { CatalogItem, CollectionState } from "./types.cjs";
 if (process.platform === "linux") {
   try {
     app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
@@ -18,10 +19,11 @@ if (process.platform === "linux") {
 const fs = require("fs"),
   path = require("path");
 const core = require("./core.cjs"),
-  storage = require("./storage.cjs"),
-  { items } = require("./catalog.json");
+  storage = require("./storage.cjs");
+const APP_ROOT = path.resolve(__dirname, "..");
+const items: CatalogItem[] = require(path.join(APP_ROOT, "catalog.json")).items;
 const QA = process.argv.includes("--qa"),
-  PORTABLE = app.isPackaged ? path.dirname(process.execPath) : __dirname;
+  PORTABLE = app.isPackaged ? path.dirname(process.execPath) : APP_ROOT;
 const SELFTEST =
   QA &&
   process.argv.includes("--selftest") &&
@@ -29,7 +31,7 @@ const SELFTEST =
   !process.argv.includes("--interactive-test");
 const dataDir = QA
   ? path.join(
-      process.env.WUWA_QA_OUTPUT || path.join(__dirname, ".."),
+      process.env.WUWA_QA_OUTPUT || path.join(APP_ROOT, ".."),
       "qa-data-" + process.pid,
     )
   : path.join(app.getPath("appData"), "WuwaTappoOffline");
@@ -47,7 +49,7 @@ const savePath = path.join(dataDir, "collection.json"),
           items,
         })
       : { state: core.initial(items), warning: "" };
-let state = profile.state,
+let state: CollectionState = profile.state,
   saveWarning = profile.warning;
 if (!QA) {
   for (const it of items) if (!state.owned[it.id]) state.owned[it.id] = 1;
@@ -300,7 +302,7 @@ function showStudio() {
     },
   });
   attachWindowInput(studio);
-  studio.loadFile(path.join(__dirname, "renderer-build", "studio.html"));
+  studio.loadFile(path.join(APP_ROOT, "renderer-build", "studio.html"));
   studio.webContents.once("did-finish-load", () =>
     setTimeout(() => {
       studio.show();
@@ -321,7 +323,7 @@ function secure(w) {
   w.webContents.on("will-navigate", (e) => e.preventDefault());
 }
 function menu() {
-  const items = [
+  const items: any[] = [
     { label: "Collection & Outfits", click: showStudio },
     {
       label: "Show Pet / Reset to Screen Corner",
@@ -372,7 +374,12 @@ function menu() {
   );
   return Menu.buildFromTemplate(items);
 }
-function input(key, down, side, newPhysicalPress = false) {
+function input(
+  key: string,
+  down: boolean,
+  side: "left" | "right" = "right",
+  newPhysicalPress = false,
+) {
   if (!state.settings.inputEnabled) return;
   if (down && pressed.has(key) && !newPhysicalPress) return;
   if (down) {
@@ -708,14 +715,12 @@ function startHook() {
 ipcMain.handle("init", () => ({
   state,
   items,
-  filters: require("./catalog.json").filters,
+  filters: require(path.join(APP_ROOT, "catalog.json")).filters,
   status: { hook: hookStatus, warning: saveWarning },
-  monitors: screen
-    .getAllDisplays()
-    .map((d, i) => ({
-      id: i,
-      label: `Screen ${i + 1} · ${d.size.width}×${d.size.height}`,
-    })),
+  monitors: screen.getAllDisplays().map((d, i) => ({
+    id: i,
+    label: `Screen ${i + 1} · ${d.size.width}×${d.size.height}`,
+  })),
 }));
 ipcMain.handle("command", async (_, name, arg) => {
   try {
@@ -941,7 +946,7 @@ if (!primaryInstance) {
     });
     attachWindowInput(pet);
     secure(pet);
-    pet.loadFile(path.join(__dirname, "renderer-build", "pet.html"));
+    pet.loadFile(path.join(APP_ROOT, "renderer-build", "pet.html"));
     pet.webContents.once("did-finish-load", () =>
       setTimeout(() => {
         applySkipTaskbar();
@@ -963,7 +968,7 @@ if (!primaryInstance) {
     const icon = nativeImage
       .createFromPath(
         path.join(
-          __dirname,
+          APP_ROOT,
           items.find((x) => x.starter && x.type === "character").thumbnail,
         ),
       )

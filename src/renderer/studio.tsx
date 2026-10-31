@@ -9,16 +9,6 @@ import studioMarkup from "./studio-template.html?raw";
 import "../../original-ui/index-BjTCKBy6.css";
 import "../../studio.css";
 
-function loadScript(source: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement("script");
-    script.src = source;
-    script.onload = () => resolve();
-    script.onerror = () => reject(new Error(`Could not load ${source}`));
-    document.body.append(script);
-  });
-}
-
 function parseStyle(value: string): CSSProperties {
   const style: Record<string, string> = {};
   for (const declaration of value.split(";")) {
@@ -93,8 +83,7 @@ const studioNodes = Array.from(studioBody.childNodes, toReactNode);
 
 function StudioApp() {
   useEffect(() => {
-    // Preserve the existing studio controller while its UI moves into React.
-    void loadScript("../names.js").then(() => loadScript("../studio.js"));
+    void import("./studio-controller");
   }, []);
 
   return <div>{studioNodes}</div>;

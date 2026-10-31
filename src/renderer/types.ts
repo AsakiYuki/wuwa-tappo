@@ -71,13 +71,7 @@ export function assetPath(file: string): string {
 declare global {
   interface Window {
     petAPI: PetAPI;
-    getItemName?: (item?: CatalogItem) => string;
     __petTest?: () => Record<string, unknown>;
     __studioTest?: () => Record<string, unknown>;
-    emotionMotion?: {
-      bind(button: HTMLButtonElement, image: HTMLImageElement): void;
-      reduce: boolean;
-    };
-    floatEmotion?: (layer: HTMLElement, item: CatalogItem) => void;
   }
 }

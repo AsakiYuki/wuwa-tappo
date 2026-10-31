@@ -1,3 +1,6 @@
+// @ts-nocheck
+import type { CatalogItem } from "./types";
+
 /* Original EmotionMenu spring constants and bubble trajectory, using local assets. */
 const emotionMotion = (() => {
   const states = new Map(),
@@ -187,7 +190,7 @@ const bubbleOffsets = [
   [-6, 8],
 ];
 let bubbleIndex = 0;
-function floatEmotion(layer, item) {
+function floatEmotion(layer: HTMLElement, item: CatalogItem) {
   const [x, y] = bubbleOffsets[bubbleIndex++ % bubbleOffsets.length],
     bubble = document.createElement("div"),
     img = document.createElement("img");
@@ -211,5 +214,4 @@ function floatEmotion(layer, item) {
   });
   setTimeout(() => bubble.remove(), 1200);
 }
-window.emotionMotion = emotionMotion;
-window.floatEmotion = floatEmotion;
+export { emotionMotion, floatEmotion };

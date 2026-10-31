@@ -11,6 +11,8 @@ import "../../original-ui/index-BjTCKBy6.css";
 import "../../pet.css";
 import type { CatalogItem, InputMessage, PetState } from "./types";
 import { assetPath } from "./types";
+import { emotionMotion, floatEmotion } from "./emotions";
+import { getItemName } from "./names";
 
 const keyboardRows = [
   ["Tab|Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Backspace|⌫"],
@@ -104,7 +106,7 @@ function PetApp() {
     window.petAPI.onEmote((id) => {
       const item = itemMapRef.current.get(id);
       const layer = document.getElementById("bubble");
-      if (item && layer) window.floatEmotion?.(layer, item);
+      if (item && layer) floatEmotion(layer, item);
     });
     window.petAPI.onStatus((status) => {
       const element = document.getElementById("inputStatus");
@@ -193,7 +195,7 @@ function PetApp() {
 
   const head = character?.layers?.[`head${face}`] ?? character?.image ?? "";
   const body = character?.layers?.[`body${action}`] ?? character?.image ?? "";
-  const name = window.getItemName?.(character) ?? character?.name ?? "";
+  const name = getItemName(character) || character?.name || "";
 
   return (
     <main
@@ -237,7 +239,7 @@ function PetApp() {
         </div>
         <div
           id="emoteBar"
-          className={`emotion-menu${menuOpen ? " emotion-menu--open" : ""}${window.emotionMotion?.reduce ? " emotion-menu--reduce-motion" : ""}`}
+          className={`emotion-menu${menuOpen ? " emotion-menu--open" : ""}${emotionMotion.reduce ? " emotion-menu--reduce-motion" : ""}`}
         >
           {state.emotes.map((id, index) => {
             const emote = itemMap.get(id);
@@ -250,11 +252,10 @@ function PetApp() {
               >
                 <button
                   className="emotion-dot"
-                  title={`${window.getItemName?.(emote) ?? emote.name} · Ctrl+Alt+${index + 1}`}
+                  title={`${getItemName(emote) || emote.name} · Ctrl+Alt+${index + 1}`}
                   ref={(button) => {
                     const image = button?.querySelector("img");
-                    if (button && image)
-                      window.emotionMotion?.bind(button, image);
+                    if (button && image) emotionMotion.bind(button, image);
                   }}
                   onClick={(event) => {
                     event.stopPropagation();

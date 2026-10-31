@@ -2,11 +2,19 @@ const fs = require("fs"),
   path = require("path"),
   crypto = require("crypto"),
   core = require("./core.cjs");
-function readSave(file) {
+import type {
+  CatalogItem,
+  CollectionState,
+  ProfileResult,
+  RawCollection,
+  SavedState,
+} from "./types.cjs";
+
+function readSave(file: string): SavedState | null {
   try {
     const raw = JSON.parse(
       fs.readFileSync(file, "utf8").replace(/^\uFEFF/, ""),
-    );
+    ) as RawCollection;
     if (
       !raw ||
       ![1, 2].includes(raw.version) ||
@@ -19,7 +27,10 @@ function readSave(file) {
     return null;
   }
 }
-function findLegacy(portableDir, searchRoots = []) {
+function findLegacy(
+  portableDir: string,
+  searchRoots: string[] = [],
+): SavedState | null {
   const direct = [
     path.join(portableDir, "data/collection.json"),
     path.join(portableDir, "data/collection.json.bak"),
@@ -27,8 +38,8 @@ function findLegacy(portableDir, searchRoots = []) {
     .map(readSave)
     .find(Boolean);
   if (direct) return direct;
-  const found = new Map(),
-    visit = (dir, depth) => {
+  const found = new Map<string, SavedState>(),
+    visit = (dir: string, depth: number): void => {
       if (depth < 0) return;
       for (const name of ["collection.json", "collection.json.bak"]) {
         const candidate = readSave(path.join(dir, "data", name));
@@ -54,7 +65,17 @@ function findLegacy(portableDir, searchRoots = []) {
     visit(dir, 2);
   return [...found.values()].sort((a, b) => b.mtime - a.mtime)[0] || null;
 }
-function initProfile({ dataDir, portableDir, searchRoots = [], items }) {
+function initProfile({
+  dataDir,
+  portableDir,
+  searchRoots = [],
+  items,
+}: {
+  dataDir: string;
+  portableDir: string;
+  searchRoots?: string[];
+  items: CatalogItem[];
+}): ProfileResult {
   fs.mkdirSync(dataDir, { recursive: true });
   const file = path.join(dataDir, "collection.json"),
     existing = readSave(file),
@@ -99,9 +120,9 @@ function initProfile({ dataDir, portableDir, searchRoots = [], items }) {
     migratedFrom: source.file,
   };
 }
-function createWriter(file) {
+function createWriter(file: string) {
   let pending = Promise.resolve();
-  return (state) => {
+  return (state: CollectionState): Promise<void> => {
     const content = JSON.stringify(state, null, 2);
     const write = pending.then(async () => {
       await fs.promises.writeFile(file + ".tmp", content);

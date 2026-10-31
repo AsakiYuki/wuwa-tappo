@@ -3,12 +3,13 @@
   "version": "1.0.3",
   "private": true,
   "description": "Personal offline desktop companion",
-  "main": "main.cjs",
+  "main": "runtime/main.cjs",
   "scripts": {
-    "start": "npm run renderer:build && electron --ozone-platform=x11 .",
+    "start": "npm run node:build && npm run renderer:build && electron --ozone-platform=x11 .",
+    "node:build": "tsc -p tsconfig.node.json",
     "renderer:build": "vite build && tsc --noEmit",
-    "test": "node --test test.cjs",
-    "test:ui": "npm run renderer:build && node scripts/test-ui.cjs",
+    "test": "npm run node:build && node --test runtime/test.cjs",
+    "test:ui": "npm run node:build && npm run renderer:build && node scripts/test-ui.cjs",
     "build": "node scripts/build.cjs",
     "postinstall": "node node_modules/electron/install.js"
   },
