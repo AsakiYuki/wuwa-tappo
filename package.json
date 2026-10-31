@@ -1,70 +1,70 @@
 {
-  "name": "wuwa-tappo",
-  "version": "1.0.0",
-  "private": true,
-  "type": "commonjs",
-  "author": {
-    "name": "Asaki Yuki",
-    "email": "noreply@asakiyuki.com"
-  },
-  "desktopName": "com.asakiyuki.wuwa-tappo",
-  "description": "Wuwa Tappo for Linux",
-  "main": "runtime/main.js",
-  "scripts": {
-    "start": "npm run node:build && npm run renderer:build && electron --ozone-platform=x11 .",
-    "node:build": "node scripts/clean-runtime.cjs && tsc -p tsconfig.node.json",
-    "renderer:build": "vite build && node scripts/write-renderer-pages.cjs && tsc --noEmit",
-    "test": "npm run node:build && node --test runtime/test.js",
-    "test:ui": "npm run node:build && npm run renderer:build && node scripts/test-ui.cjs",
-    "build": "node scripts/build.cjs",
-    "postinstall": "node node_modules/electron/install.js"
-  },
-  "devDependencies": {
-    "@types/react": "^19.3.0",
-    "@types/react-dom": "^19.3.0",
-    "@vitejs/plugin-react": "^6.1.2",
-    "electron": "45.0.0",
-    "electron-builder": "26.18.0",
-    "prettier": "^3.9.10",
-    "sass": "^1.107.1",
-    "typescript": "^7.0.2",
-    "vite": "^8.3.5"
-  },
-  "dependencies": {
-    "react": "^19.3.1",
-    "react-dom": "^19.3.1",
-    "uiohook-napi": "1.5.5"
-  },
-  "build": {
-    "appId": "com.asakiyuki.wuwa-tappo",
-    "productName": "Wuwa Tappo",
-    "directories": {
-      "output": "dist"
-    },
-    "files": [
-      "runtime/**/*",
-      "renderer-build/**/*",
-      "assets/**/*",
-      "asset-manifest.json",
-      "package.json"
-    ],
-    "asarUnpack": [
-      "**/*.node"
-    ],
-    "npmRebuild": false,
-    "linux": {
-      "target": [
-        "deb",
-        "rpm",
-        "AppImage",
-        "tar.gz"
-      ],
-      "category": "Utility",
-      "maintainer": "Asaki Yuki <noreply@asakiyuki.com>",
-      "executableName": "wuwa-tappo",
-      "syncDesktopName": true,
-      "icon": "assets/appicon.png",
-      "artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
-    }
-  }
+	"name": "wuwa-tappo",
+	"version": "1.0.1",
+	"private": true,
+	"type": "commonjs",
+	"author": {
+		"name": "Asaki Yuki",
+		"email": "noreply@asakiyuki.com"
+	},
+	"desktopName": "com.asakiyuki.wuwa-tappo",
+	"description": "Wuwa Tappo for Linux",
+	"main": "runtime/main.js",
+	"scripts": {
+		"start": "npm run node:build && npm run renderer:build && electron --ozone-platform=x11 .",
+		"node:build": "node scripts/clean-runtime.cjs && tsc -p tsconfig.node.json",
+		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && tsc --noEmit",
+		"test": "npm run node:build && node --test runtime/test.js",
+		"test:ui": "npm run node:build && npm run renderer:build && node scripts/test-ui.cjs",
+		"build": "node scripts/build.cjs",
+		"postinstall": "node node_modules/electron/install.js"
+	},
+	"devDependencies": {
+		"@types/react": "^19.3.0",
+		"@types/react-dom": "^19.3.0",
+		"@vitejs/plugin-react": "^6.1.2",
+		"electron": "45.0.0",
+		"electron-builder": "26.18.0",
+		"prettier": "^3.9.10",
+		"sass": "^1.107.1",
+		"typescript": "^7.0.2",
+		"vite": "^8.3.5"
+	},
+	"dependencies": {
+		"react": "^19.3.1",
+		"react-dom": "^19.3.1",
+		"uiohook-napi": "1.5.5"
+	},
+	"build": {
+		"appId": "com.asakiyuki.wuwa-tappo",
+		"productName": "Wuwa Tappo",
+		"directories": {
+			"output": "dist"
+		},
+		"files": [
+			"runtime/**/*",
+			"renderer-build/**/*",
+			"assets/**/*",
+			"asset-manifest.json",
+			"package.json"
+		],
+		"asarUnpack": [
+			"**/*.node"
+		],
+		"npmRebuild": false,
+		"linux": {
+			"target": [
+				"deb",
+				"rpm",
+				"AppImage",
+				"tar.gz"
+			],
+			"category": "Utility",
+			"maintainer": "Asaki Yuki <noreply@asakiyuki.com>",
+			"executableName": "wuwa-tappo",
+			"syncDesktopName": true,
+			"icon": "assets/appicon.png",
+			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
+		}
+	}
 }
