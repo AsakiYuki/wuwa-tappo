@@ -1,14 +1,14 @@
 {
-  "name": "wuwa-offline-companion",
-  "version": "1.0.3",
+  "name": "wuwa-tappo",
+  "version": "1.0.0",
   "private": true,
   "type": "commonjs",
   "author": {
     "name": "Asaki Yuki",
-    "email": "noreply@github.com"
+    "email": "noreply@asakiyuki.com"
   },
-  "desktopName": "com.asakiyuki.wuwatappo.offline",
-  "description": "Personal offline desktop companion",
+  "desktopName": "com.asakiyuki.wuwa-tappo",
+  "description": "Wuwa Tappo for Linux",
   "main": "runtime/main.js",
   "scripts": {
     "start": "npm run node:build && npm run renderer:build && electron --ozone-platform=x11 .",
@@ -36,8 +36,8 @@
     "uiohook-napi": "1.5.5"
   },
   "build": {
-    "appId": "com.asakiyuki.wuwatappo.offline",
-    "productName": "Wuwa Tappo Offline",
+    "appId": "com.asakiyuki.wuwa-tappo",
+    "productName": "Wuwa Tappo",
     "directories": {
       "output": "dist"
     },
@@ -60,11 +60,11 @@
         "tar.gz"
       ],
       "category": "Utility",
-      "maintainer": "Asaki Yuki <noreply@github.com>",
-      "executableName": "wuwa-tappo-offline",
+      "maintainer": "Asaki Yuki <noreply@asakiyuki.com>",
+      "executableName": "wuwa-tappo",
       "syncDesktopName": true,
       "icon": "assets/appicon.png",
-      "artifactName": "WuwaTappo-Offline-${version}-${arch}.${ext}"
+      "artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
     }
   }
 }

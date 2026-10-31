@@ -31,11 +31,28 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: WuwaTappo-Offline-Linux-x64
-          path: |
-            dist/*.deb
-            dist/*.rpm
-            dist/*.AppImage
-            dist/*.tar.gz
+          name: wuwa-tappo-linux-x64-deb
+          path: dist/*.deb
+          retention-days: 7
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-linux-x64-rpm
+          path: dist/*.rpm
+          retention-days: 7
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-linux-x64-appimage
+          path: dist/*.AppImage
+          retention-days: 7
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-linux-x64-tar-gz
+          path: dist/*.tar.gz
           retention-days: 7
           if-no-files-found: error

@@ -11,7 +11,7 @@ const securityPolicy = [
 ].join("; ");
 
 for (const page of ["pet", "studio"]) {
-  const title = page === "pet" ? "Desktop Pet" : "Offline Companion";
+  const title = page === "pet" ? "Desktop Pet" : "Studio & Collection";
   const document = `<!doctype html>
 <html lang="en">
   <head>

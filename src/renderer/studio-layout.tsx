@@ -225,7 +225,7 @@ export function StudioLayout() {
                 </div>
               </div>
               <div className="setting-copyright">
-                Wuwa Tappo · Offline Companion
+                Wuwa Tappo
                 <span id="hookStatus"></span>
               </div>
             </div>

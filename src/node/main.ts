@@ -47,7 +47,7 @@ const dataDir = QA
     )
   : path.join(app.getPath("appData"), "WuwaTappoOffline");
 fs.mkdirSync(dataDir, { recursive: true });
-app.setName("Wuwa Tappo Offline");
+app.setName("Wuwa Tappo");
 app.setPath("userData", path.join(dataDir, "runtime"));
 const primaryInstance = app.requestSingleInstanceLock();
 const savePath = path.join(dataDir, "collection.json"),
