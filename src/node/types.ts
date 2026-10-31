@@ -37,6 +37,7 @@ export interface Settings {
   showChest: boolean;
   showKeyboard: boolean;
   counterLeft: boolean;
+  counterLimit: number;
   petPosition: PetPosition | null;
 }
 

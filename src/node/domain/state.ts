@@ -66,8 +66,8 @@ function normalize(
   s.history = Array.isArray(raw.history)
     ? raw.history.filter((x) => valid.has(x.id)).slice(0, 100)
     : [];
-  s.count %= 1000;
   s.settings = settings({ ...s.settings, ...raw.settings });
+  s.count = Math.min(s.count % 1000, s.settings.counterLimit);
   return s;
 }
 function settings(s: Partial<Settings>): Settings {
@@ -86,6 +86,9 @@ function settings(s: Partial<Settings>): Settings {
     if (typeof s[k] === "boolean") out[k] = s[k];
   out.scale = Math.max(0.65, Math.min(1.5, Number(s.scale) || 1));
   out.opacity = Math.max(0.3, Math.min(1, Number(s.opacity) || 1));
+  out.counterLimit = Number.isInteger(s.counterLimit)
+    ? Math.max(1, Math.min(9999, s.counterLimit))
+    : DEFAULTS.counterLimit;
   out.monitor = Number.isInteger(s.monitor) ? Math.max(0, s.monitor) : 0;
   if (
     s.petPosition &&

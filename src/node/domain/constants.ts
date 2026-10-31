@@ -14,6 +14,7 @@ const DEFAULTS: Settings = {
   showChest: true,
   showKeyboard: true,
   counterLeft: false,
+  counterLimit: 999,
   petPosition: null,
 };
 export { RARITIES, DEFAULTS };

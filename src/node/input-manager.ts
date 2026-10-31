@@ -24,6 +24,8 @@ export function createInputManager(options: InputManagerOptions) {
   let hookActive = false;
   let evdevDevices: any[] = [];
   let evdevTimer: NodeJS.Timeout | null = null;
+  let evdevScanTimer: NodeJS.Timeout | null = null;
+  let nextGamepadNumber = 0;
   let hookStatus = "Connecting keyboard...";
 
   function input(
@@ -31,16 +33,27 @@ export function createInputManager(options: InputManagerOptions) {
     down: boolean,
     side: "left" | "right" = "right",
     newPhysicalPress = false,
+    countTap = true,
   ) {
     if (!state.settings.inputEnabled) return;
     if (down && pressed.has(key) && !newPhysicalPress) return;
     if (down) {
       pressed.add(key);
-      const emote = core.registerTap(state, items);
-      if (state.count === 0) {
-        save();
-        if (emote) getPet()?.webContents.send("emote", emote);
-      } else laterSave();
+      const triggerGroup = gamepadTriggerGroup(key);
+      const triggerAlreadyPressed =
+        triggerGroup !== null &&
+        [...pressed].some(
+          (activeKey) =>
+            activeKey !== key &&
+            gamepadTriggerGroup(activeKey) === triggerGroup,
+        );
+      if (countTap && !triggerAlreadyPressed) {
+        const emote = core.registerTap(state, items);
+        if (state.count === 0) {
+          save();
+          if (emote) getPet()?.webContents.send("emote", emote);
+        } else laterSave();
+      }
     } else pressed.delete(key);
     const event = {
       key,
@@ -143,6 +156,105 @@ export function createInputManager(options: InputManagerOptions) {
     274: "MouseMiddle",
   };
 
+  const LINUX_GAMEPAD_BUTTONS: Record<number, string> = {
+    288: "Trigger",
+    289: "Trigger2",
+    290: "Thumb",
+    291: "Thumb2",
+    292: "Top",
+    293: "Top2",
+    294: "Pinkie",
+    295: "Base",
+    296: "Base2",
+    297: "Base3",
+    298: "Base4",
+    299: "Base5",
+    300: "Base6",
+    304: "South",
+    305: "East",
+    306: "C",
+    307: "North",
+    308: "West",
+    310: "L1",
+    311: "R1",
+    312: "L2",
+    313: "R2",
+    314: "Select",
+    315: "Start",
+    316: "Mode",
+    317: "L3",
+    318: "R3",
+    544: "DPadUp",
+    545: "DPadDown",
+    546: "DPadLeft",
+    547: "DPadRight",
+  };
+
+  const LINUX_GAMEPAD_AXES: Record<number, string> = {
+    0: "LeftStickX",
+    1: "LeftStickY",
+    2: "LeftTriggerAxis",
+    3: "RightStickX",
+    4: "RightStickY",
+    5: "RightTriggerAxis",
+    16: "DPadX",
+    17: "DPadY",
+  };
+
+  function gamepadButtonName(device, code: number) {
+    return `${device.name}:${LINUX_GAMEPAD_BUTTONS[code] || `Button${code}`}`;
+  }
+
+  function gamepadSide(key: string): "left" | "right" {
+    return /:(DPad|LeftStick|LeftTriggerAxis|L1$|L2$|L3$)/.test(key)
+      ? "left"
+      : "right";
+  }
+
+  function releaseGamepadInputs(device) {
+    for (const key of [...pressed]) {
+      if (key.startsWith(`${device.name}:`))
+        input(key, false, gamepadSide(key));
+    }
+  }
+
+  function gamepadTriggerGroup(key: string): string | null {
+    const match = key.match(
+      /^(Gamepad\d+):(L2|LeftTriggerAxisPositive|R2|RightTriggerAxisPositive)$/,
+    );
+    if (!match) return null;
+    return `${match[1]}:${match[2] === "L2" || match[2].startsWith("Left") ? "LT" : "RT"}`;
+  }
+
+  function readGamepadAxis(device, code: number, value: number) {
+    const axis = LINUX_GAMEPAD_AXES[code];
+    if (!axis) return;
+    if (axis.includes("Stick")) return;
+
+    const name = `${device.name}:${axis}`;
+    const threshold = axis.startsWith("DPad")
+      ? 0
+      : axis.endsWith("TriggerAxis")
+        ? 64
+        : 8192;
+    const direction =
+      value > threshold ? "Positive" : value < -threshold ? "Negative" : "";
+    const previous = device.axes.get(code) || "";
+
+    if (previous === direction) return;
+    if (previous)
+      input(`${name}${previous}`, false, gamepadSide(`${name}${previous}`));
+    if (direction)
+      input(
+        `${name}${direction}`,
+        true,
+        gamepadSide(`${name}${direction}`),
+        true,
+        true,
+      );
+    device.axes.set(code, direction);
+  }
+
   function readEvdev(device, chunk) {
     const buf = Buffer.concat([device.leftover, chunk]),
       eventSize = 24;
@@ -156,7 +268,21 @@ export function createInputManager(options: InputManagerOptions) {
         pressed.clear();
         continue;
       }
+      if (device.isGamepad && type === 3) {
+        readGamepadAxis(device, code, value);
+        continue;
+      }
       if (type !== 1) continue;
+      if (device.isGamepad) {
+        if (value === 0 || value === 1)
+          input(
+            gamepadButtonName(device, code),
+            value === 1,
+            gamepadSide(gamepadButtonName(device, code)),
+            value === 1,
+          );
+        continue;
+      }
       const mouse =
         LINUX_MOUSEMAP[code] ||
         (code >= 272 && code <= 287
@@ -192,42 +318,72 @@ export function createInputManager(options: InputManagerOptions) {
     }
     device.leftover = buf.subarray(offset);
   }
-  function startEvdev() {
-    if (process.platform !== "linux") return false;
-    if (evdevTimer) clearInterval(evdevTimer);
-    evdevTimer = null;
-    pressed.clear();
-    for (const device of evdevDevices) {
+  function scanEvdevDevices() {
+    if (process.platform !== "linux") return;
+
+    let deviceEntries: string[];
+    try {
+      deviceEntries = fs
+        .readFileSync("/proc/bus/input/devices", "utf8")
+        .split("\n\n");
+    } catch {
+      return;
+    }
+
+    const candidates = new Map<
+      string,
+      { handlers: string; isGamepad: boolean }
+    >();
+    for (const block of deviceEntries) {
+      const handlers = block.match(/Handlers=(.*)/)?.[1] || "";
+      const deviceName = block.match(/Name="([^"]+)"/)?.[1] || "";
+      const isGamepad =
+        /\bjs\d+\b/.test(handlers) ||
+        /gamepad|joystick|controller|xbox|x-box|dualsense|dualshock|joy-?con/i.test(
+          deviceName,
+        );
+      if (!isGamepad && !/\b(kbd|mouse)\b/.test(handlers)) continue;
+      const eventNumber = block.match(/\bevent(\d+)\b/)?.[1];
+      if (eventNumber)
+        candidates.set(`/dev/input/event${eventNumber}`, {
+          handlers,
+          isGamepad,
+        });
+    }
+
+    const previousCount = evdevDevices.length;
+    for (const device of [...evdevDevices]) {
+      if (candidates.has(device.path)) continue;
+      evdevDevices = evdevDevices.filter((entry) => entry !== device);
+      if (device.isGamepad) releaseGamepadInputs(device);
       try {
         fs.closeSync(device.fd);
       } catch {}
+      if (device.isKeyboard) pressed.clear();
     }
-    evdevDevices = [];
-    try {
-      const devices = fs
-        .readFileSync("/proc/bus/input/devices", "utf8")
-        .split("\n\n");
-      for (const d of devices) {
-        if (!/Handlers=.*(kbd|mouse)/.test(d)) continue;
-        const m = d.match(/event(\d+)/);
-        if (!m) continue;
-        const devPath = "/dev/input/event" + m[1];
-        try {
-          fs.accessSync(devPath, fs.constants.R_OK);
-          const fd = fs.openSync(
-            devPath,
-            fs.constants.O_RDONLY | fs.constants.O_NONBLOCK,
-          );
-          evdevDevices.push({
-            fd,
-            isKeyboard: /Handlers=.*\bkbd\b/.test(d),
-            buffer: Buffer.alloc(4096),
-            leftover: Buffer.alloc(0),
-          });
-        } catch {}
-      }
-    } catch {}
-    if (evdevDevices.length) {
+
+    for (const [devPath, candidate] of candidates) {
+      if (evdevDevices.some((device) => device.path === devPath)) continue;
+      try {
+        fs.accessSync(devPath, fs.constants.R_OK);
+        const fd = fs.openSync(
+          devPath,
+          fs.constants.O_RDONLY | fs.constants.O_NONBLOCK,
+        );
+        evdevDevices.push({
+          fd,
+          path: devPath,
+          isKeyboard: /\bkbd\b/.test(candidate.handlers),
+          isGamepad: candidate.isGamepad,
+          name: candidate.isGamepad ? `Gamepad${++nextGamepadNumber}` : "",
+          axes: new Map<number, string>(),
+          buffer: Buffer.alloc(4096),
+          leftover: Buffer.alloc(0),
+        });
+      } catch {}
+    }
+
+    if (evdevDevices.length && !evdevTimer) {
       evdevTimer = setInterval(() => {
         for (const device of [...evdevDevices]) {
           try {
@@ -242,22 +398,54 @@ export function createInputManager(options: InputManagerOptions) {
               if (!size) break;
               readEvdev(device, device.buffer.subarray(0, size));
             }
-          } catch (e) {
-            if (e.code === "EAGAIN" || e.code === "EWOULDBLOCK") continue;
-            evdevDevices = evdevDevices.filter((d) => d !== device);
+          } catch (error) {
+            const code = (error as NodeJS.ErrnoException).code;
+            if (code === "EAGAIN" || code === "EWOULDBLOCK") continue;
+            evdevDevices = evdevDevices.filter((entry) => entry !== device);
+            if (device.isGamepad) releaseGamepadInputs(device);
             try {
               fs.closeSync(device.fd);
             } catch {}
             if (device.isKeyboard) pressed.clear();
           }
         }
-        if (!evdevDevices.length) {
+        if (!evdevDevices.length && evdevTimer) {
           clearInterval(evdevTimer);
           evdevTimer = null;
         }
       }, 8);
     }
-    return evdevDevices.some((device) => device.isKeyboard);
+
+    if (
+      evdevDevices.length !== previousCount &&
+      !hookStatus.startsWith("Connecting")
+    ) {
+      hookStatus = evdevDevices.length
+        ? "Global input connected (evdev)"
+        : hookActive
+          ? "Global input connected (uiohook)"
+          : "Wayland: Input permission required (run ./fix-permissions.sh)";
+      onStatus();
+    }
+  }
+
+  function startEvdev() {
+    if (process.platform !== "linux") return false;
+    if (evdevTimer) clearInterval(evdevTimer);
+    if (evdevScanTimer) clearInterval(evdevScanTimer);
+    evdevTimer = null;
+    evdevScanTimer = null;
+    pressed.clear();
+    for (const device of evdevDevices) {
+      try {
+        fs.closeSync(device.fd);
+      } catch {}
+    }
+    evdevDevices = [];
+
+    scanEvdevDevices();
+    evdevScanTimer = setInterval(scanEvdevDevices, 1000);
+    return evdevDevices.length > 0;
   }
 
   function attachWindowInput(w) {
@@ -382,7 +570,9 @@ export function createInputManager(options: InputManagerOptions) {
 
   function stop() {
     if (evdevTimer) clearInterval(evdevTimer);
+    if (evdevScanTimer) clearInterval(evdevScanTimer);
     evdevTimer = null;
+    evdevScanTimer = null;
     for (const device of evdevDevices) {
       try {
         fs.closeSync(device.fd);

@@ -108,6 +108,22 @@ export function mountSettingsPanel({
     container.append(row);
   }
 
+  const counterLimitRow = element("div", "setting-item has-sub");
+  const counterLimitLabel = element("div");
+  counterLimitLabel.append(
+    element("div", "setting-title", "Counter Limit"),
+    element("div", "setting-sub", "Reset the counter after this value."),
+  );
+  const counterLimitInput = element("input", "setting-number");
+  counterLimitInput.type = "number";
+  counterLimitInput.min = "1";
+  counterLimitInput.max = "9999";
+  counterLimitInput.step = "1";
+  counterLimitInput.dataset.setting = "counterLimit";
+  counterLimitInput.setAttribute("aria-label", "Counter Limit");
+  counterLimitRow.append(counterLimitLabel, counterLimitInput);
+  container.append(counterLimitRow);
+
   const displayRow = element("div", "setting-item has-sub");
   const displayText = element("div");
   displayText.append(
@@ -176,10 +192,11 @@ export function mountSettingsPanel({
         }
         if (typeof value !== "number") return;
         input.value = String(value);
-        input.style.setProperty(
-          "--range-progress",
-          `${((value - Number(input.min)) / (Number(input.max) - Number(input.min))) * 100}%`,
-        );
+        if (input.type === "range")
+          input.style.setProperty(
+            "--range-progress",
+            `${((value - Number(input.min)) / (Number(input.max) - Number(input.min))) * 100}%`,
+          );
       });
     container.querySelector<HTMLElement>("#scaleValue")!.textContent =
       `${Math.round(settings.scale * 100)}%`;

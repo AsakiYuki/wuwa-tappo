@@ -382,6 +382,17 @@ h3 {
     border: 0;
   }
 
+  .setting-number {
+    width: 82px;
+    height: 32px;
+    padding: 0 8px;
+    border: 1px solid $color-border;
+    border-radius: 10px;
+    background: $color-paper;
+    color: $color-text;
+    text-align: center;
+  }
+
   .setting-sub {
     margin-top: 4px;
   }
