@@ -1,6 +1,7 @@
 node_modules/
 data/
 dist/
+renderer-build/
 qa-output/
 qa-data-*/
 *.log

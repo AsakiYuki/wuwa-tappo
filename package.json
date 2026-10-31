@@ -1,20 +1,29 @@
 {
-	"name": "wuwa-offline-companion",
-	"version": "1.0.3",
-	"private": true,
-	"description": "Personal offline desktop companion",
-	"main": "main.cjs",
-	"scripts": {
-		"start": "electron --ozone-platform=x11 .",
-		"test": "node --test test.cjs",
-		"test:ui": "node scripts/test-ui.cjs",
-		"build": "node scripts/build.cjs",
-		"postinstall": "node node_modules/electron/install.js"
-	},
-	"devDependencies": {
-		"electron": "45.0.0"
-	},
-	"dependencies": {
-		"uiohook-napi": "1.5.5"
-	}
+  "name": "wuwa-offline-companion",
+  "version": "1.0.3",
+  "private": true,
+  "description": "Personal offline desktop companion",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "npm run renderer:build && electron --ozone-platform=x11 .",
+    "renderer:build": "vite build && tsc --noEmit",
+    "test": "node --test test.cjs",
+    "test:ui": "npm run renderer:build && node scripts/test-ui.cjs",
+    "build": "node scripts/build.cjs",
+    "postinstall": "node node_modules/electron/install.js"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "electron": "45.0.0",
+    "prettier": "^3.9.10",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "uiohook-napi": "1.5.5"
+  }
 }
