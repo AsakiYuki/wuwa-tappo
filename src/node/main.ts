@@ -23,6 +23,19 @@ import { createWindowManager } from "./window-manager.js";
 
 if (process.platform === "linux") {
   try {
+    if (
+      !process.argv.some(
+        (argument) =>
+          argument === "--ozone-platform" ||
+          argument.startsWith("--ozone-platform="),
+      ) &&
+      !process.env.ELECTRON_OZONE_PLATFORM_HINT
+    ) {
+      app.relaunch({
+        args: [...process.argv.slice(1), "--ozone-platform=x11"],
+      });
+      app.exit(0);
+    }
     app.commandLine.appendSwitch("enable-features", "WaylandWindowDecorations");
   } catch {
     // Electron may already have initialized its command line.

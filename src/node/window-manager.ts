@@ -153,11 +153,52 @@ export function createWindowManager(options: WindowManagerOptions) {
       const handle = pet.getNativeWindowHandle();
       const windowId = `0x${handle.readUInt32LE(0).toString(16)}`;
       if (windowId === "0x0") return;
+      const applyWithXprop = () => {
+        execFile(
+          "xprop",
+          ["-id", windowId, "_NET_WM_STATE"],
+          { timeout: 1500 },
+          (error, output) => {
+            if (error) return;
+            const state = output.match(/_NET_WM_STATE\(ATOM\)\s*=\s*(.*)/);
+            const atoms =
+              state?.[1] && state[1] !== "not found."
+                ? state[1]
+                    .split(",")
+                    .map((atom) => atom.trim())
+                    .filter(Boolean)
+                : [];
+            for (const atom of [
+              "_NET_WM_STATE_SKIP_TASKBAR",
+              "_NET_WM_STATE_SKIP_PAGER",
+            ]) {
+              if (!atoms.includes(atom)) atoms.push(atom);
+            }
+            execFile(
+              "xprop",
+              [
+                "-id",
+                windowId,
+                "-f",
+                "_NET_WM_STATE",
+                "32a",
+                "-set",
+                "_NET_WM_STATE",
+                atoms.join(", "),
+              ],
+              { timeout: 1500 },
+              () => {},
+            );
+          },
+        );
+      };
       execFile(
         "wmctrl",
         ["-ir", windowId, "-b", "add,skip_taskbar,skip_pager"],
         { timeout: 1500 },
-        () => {},
+        (error) => {
+          if (error) applyWithXprop();
+        },
       );
     } catch {
       // wmctrl is optional on Linux.
