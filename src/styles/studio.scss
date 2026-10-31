@@ -393,6 +393,19 @@ h3 {
     text-align: center;
   }
 
+  .setting-unlimited {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 10px;
+    white-space: nowrap;
+    font-size: 13px;
+  }
+
+  .setting-number:disabled {
+    opacity: 0.55;
+  }
+
   .setting-sub {
     margin-top: 4px;
   }

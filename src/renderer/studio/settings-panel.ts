@@ -112,16 +112,29 @@ export function mountSettingsPanel({
   const counterLimitLabel = element("div");
   counterLimitLabel.append(
     element("div", "setting-title", "Counter Limit"),
-    element("div", "setting-sub", "Reset the counter after this value."),
+    element(
+      "div",
+      "setting-sub",
+      "Reset the counter after this value, or keep counting.",
+    ),
   );
+  const counterLimitControls = element("div", "setting-content");
   const counterLimitInput = element("input", "setting-number");
   counterLimitInput.type = "number";
   counterLimitInput.min = "1";
-  counterLimitInput.max = "9999";
+  counterLimitInput.max = String(Number.MAX_SAFE_INTEGER);
   counterLimitInput.step = "1";
+  counterLimitInput.id = "counterLimitInput";
   counterLimitInput.dataset.setting = "counterLimit";
   counterLimitInput.setAttribute("aria-label", "Counter Limit");
-  counterLimitRow.append(counterLimitLabel, counterLimitInput);
+  const unlimitedLabel = element("label", "setting-unlimited");
+  const unlimitedInput = element("input");
+  unlimitedInput.type = "checkbox";
+  unlimitedInput.dataset.setting = "counterUnlimited";
+  unlimitedInput.setAttribute("aria-label", "Unlimited Counter");
+  unlimitedLabel.append(unlimitedInput, element("span", "", "Unlimited"));
+  counterLimitControls.append(counterLimitInput, unlimitedLabel);
+  counterLimitRow.append(counterLimitLabel, counterLimitControls);
   container.append(counterLimitRow);
 
   const displayRow = element("div", "setting-item has-sub");
@@ -175,6 +188,13 @@ export function mountSettingsPanel({
   container.addEventListener("change", (event) => {
     const input = event.target;
     if (!(input instanceof HTMLInputElement) || !input.dataset.setting) return;
+    if (input.dataset.setting === "counterUnlimited") {
+      const limit = Number(counterLimitInput.value) || 999;
+      void api.command("settings", {
+        counterLimit: input.checked ? null : limit,
+      });
+      return;
+    }
     const value =
       input.type === "checkbox" ? input.checked : Number(input.value);
     void api.command("settings", { [input.dataset.setting]: value });
@@ -182,7 +202,9 @@ export function mountSettingsPanel({
 
   return (settings, monitorCount) => {
     container
-      .querySelectorAll<HTMLInputElement>("[data-setting]")
+      .querySelectorAll<HTMLInputElement>(
+        '[data-setting]:not([data-setting="counterUnlimited"])',
+      )
       .forEach((input) => {
         const key = input.dataset.setting as SettingKey;
         const value = settings[key];
@@ -198,6 +220,10 @@ export function mountSettingsPanel({
             `${((value - Number(input.min)) / (Number(input.max) - Number(input.min))) * 100}%`,
           );
       });
+    if (settings.counterLimit !== null)
+      counterLimitInput.value = String(settings.counterLimit);
+    counterLimitInput.disabled = settings.counterLimit === null;
+    unlimitedInput.checked = settings.counterLimit === null;
     container.querySelector<HTMLElement>("#scaleValue")!.textContent =
       `${Math.round(settings.scale * 100)}%`;
     container.querySelector<HTMLElement>("#opacityValue")!.textContent =

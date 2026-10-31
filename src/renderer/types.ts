@@ -29,7 +29,7 @@ export interface PetSettings {
   showChest: boolean;
   showKeyboard: boolean;
   counterLeft: boolean;
-  counterLimit: number;
+  counterLimit: number | null;
 }
 
 export interface PetState {

@@ -232,7 +232,8 @@ function updateSettings(
   }
 
   state.settings = next;
-  if (state.count > next.counterLimit) state.count = next.counterLimit;
+  if (next.counterLimit !== null && state.count > next.counterLimit)
+    state.count = next.counterLimit;
   context.setState(state);
   context.applySettings();
   if (next.scale !== previous.scale || next.monitor !== previous.monitor)

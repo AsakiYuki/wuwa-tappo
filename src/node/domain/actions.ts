@@ -124,7 +124,10 @@ function registerTap(
   items: CatalogItem[],
   rng: () => number = Math.random,
 ): string | null {
-  s.count = s.count >= s.settings.counterLimit ? 0 : s.count + 1;
+  s.count =
+    s.settings.counterLimit !== null && s.count >= s.settings.counterLimit
+      ? 0
+      : s.count + 1;
   if (s.count !== 0) return null;
   const selected = items.filter(
     (x) => x.type === "emote" && s.owned[x.id] > 0 && s.emotes.includes(x.id),
