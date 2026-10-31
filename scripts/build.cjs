@@ -1,57 +1,41 @@
-const fs = require("fs"),
-  path = require("path");
-const root = path.resolve(__dirname, ".."),
-  pkg = require("../package.json");
-for (const script of ["node:build", "renderer:build"])
-  require("child_process").execFileSync("npm", ["run", script], {
-    cwd: root,
+const { execFileSync } = require("node:child_process");
+const path = require("node:path");
+
+const projectRoot = path.resolve(__dirname, "..");
+const buildScripts = ["node:build", "renderer:build"];
+
+if (process.platform !== "linux" || process.arch !== "x64") {
+  throw new Error("Build Linux packages on Linux x64.");
+}
+
+for (const script of buildScripts) {
+  execFileSync("npm", ["run", script], {
+    cwd: projectRoot,
     stdio: "inherit",
   });
-if (process.platform !== "win32" || process.arch !== "x64")
-  throw Error("Build on Windows x64.");
-const electronRuntime = path.join(root, "node_modules/electron/dist");
-if (!fs.existsSync(path.join(electronRuntime, "electron.exe")))
-  throw Error("Run npm ci first.");
-const out = path.join(root, "dist", "WuwaTappo-Offline-" + pkg.version);
-if (fs.existsSync(out))
-  throw Error("Output already exists; move it before rebuilding: " + out);
-fs.mkdirSync(path.dirname(out), { recursive: true });
-fs.cpSync(electronRuntime, out, { recursive: true });
-fs.renameSync(
-  path.join(out, "electron.exe"),
-  path.join(out, "WuwaTappo-Offline.exe"),
+}
+
+const electronBuilder = path.join(
+  projectRoot,
+  "node_modules",
+  ".bin",
+  "electron-builder",
 );
-const defaultApp = path.join(out, "resources/default_app.asar");
-if (fs.existsSync(defaultApp)) fs.unlinkSync(defaultApp);
-const appDir = path.join(out, "resources/app");
-fs.mkdirSync(appDir, { recursive: true });
-const files = ["package.json", "asset-manifest.json"];
-for (const file of files)
-  fs.copyFileSync(path.join(root, file), path.join(appDir, file));
-fs.cpSync(path.join(root, "runtime"), path.join(appDir, "runtime"), {
-  recursive: true,
-});
-fs.cpSync(
-  path.join(root, "renderer-build"),
-  path.join(appDir, "renderer-build"),
-  { recursive: true },
+
+execFileSync(
+  electronBuilder,
+  [
+    "--linux",
+    "deb",
+    "rpm",
+    "AppImage",
+    "tar.gz",
+    "--x64",
+    "--publish",
+    "never",
+  ],
+  {
+    cwd: projectRoot,
+    stdio: "inherit",
+  },
 );
-for (const dir of ["assets"])
-  fs.cpSync(path.join(root, dir), path.join(appDir, dir), { recursive: true });
-for (const dependency of ["uiohook-napi", "node-gyp-build"])
-  fs.cpSync(
-    path.join(root, "node_modules", dependency),
-    path.join(appDir, "node_modules", dependency),
-    { recursive: true },
-  );
-for (const file of ["README.md", "THIRD_PARTY_NOTICES.md"])
-  if (fs.existsSync(path.join(root, file)))
-    fs.copyFileSync(path.join(root, file), path.join(out, file));
-fs.copyFileSync(path.join(root, "LICENSE"), path.join(out, "LICENSE.project"));
-if (fs.existsSync(path.join(root, "docs")))
-  fs.cpSync(path.join(root, "docs"), path.join(out, "docs"), {
-    recursive: true,
-  });
-if (fs.existsSync(path.join(out, "data")))
-  throw Error("A distributable must not contain user data.");
-console.log(out);

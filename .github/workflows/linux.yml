@@ -1,29 +1,41 @@
-name: Windows portable
+name: Linux packages
+
 on:
   push:
     branches: [main]
   pull_request:
   workflow_dispatch:
+
 permissions:
   contents: read
+
 jobs:
-  windows:
-    runs-on: windows-latest
+  linux:
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
+
       - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: 24
           cache: npm
+
+      - name: Install packaging runtime dependency
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libcrypt1
+
       - run: npm ci
       - run: npm test
       - run: npm run build
-      - name: Package ZIP
-        shell: pwsh
-        run: Compress-Archive -Path dist/WuwaTappo-Offline-* -DestinationPath dist/WuwaTappo-Offline-Windows-x64.zip -CompressionLevel Optimal
+
       - uses: actions/upload-artifact@v4
         with:
-          name: WuwaTappo-Offline-Windows-x64
-          path: dist/*.zip
+          name: WuwaTappo-Offline-Linux-x64
+          path: |
+            dist/*.deb
+            dist/*.rpm
+            dist/*.AppImage
+            dist/*.tar.gz
           retention-days: 7
           if-no-files-found: error
