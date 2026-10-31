@@ -193,9 +193,14 @@ test("All 504 interactive emotes use original emote assets; atlas thumbnails use
   const manifest = JSON.parse(
     fs.readFileSync(path.join(PROJECT_ROOT, "asset-manifest.json"), "utf8"),
   );
-  for (const it of items.filter((x) => x.type === "emote")) {
-    assert.match(manifest[path.basename(it.image)], /\/emote\//);
-    assert.notEqual(it.image, it.thumbnail);
+  const emotes = items.filter((item) => item.type === "emote");
+  assert.equal(emotes.length, 504);
+
+  for (const item of emotes) {
+    assert.match(item.image, /^assets\/emotes\//);
+    const manifestKey = item.image.slice("assets/".length);
+    assert.match(manifest[manifestKey] ?? "", /\/emote\//);
+    assert.notEqual(item.image, item.thumbnail);
   }
 });
 
