@@ -3,7 +3,11 @@ export type ItemType = "character" | "accessory" | "emote";
 export interface CatalogItem {
   id: string;
   type: ItemType;
+  assetId: number;
+  roleId?: number;
+  code?: string;
   name: string;
+  rarity: "common" | "uncommon" | "rare" | "epic";
   image: string;
   thumbnail: string;
   layers?: Record<string, string>;
@@ -19,6 +23,7 @@ export interface PetSettings {
   inputEnabled: boolean;
   autoStart: boolean;
   monitor: number;
+  petPosition: { x: number; y: number } | null;
   lockDrag: boolean;
   hoverFade: boolean;
   showChest: boolean;
@@ -27,12 +32,33 @@ export interface PetSettings {
 }
 
 export interface PetState {
+  version: 2;
   character: string;
   accessory: string;
   emotes: string[];
   count: number;
+  draws: number;
+  pity: number;
+  favorites: string[];
+  presets: Preset[];
+  history: HistoryRecord[];
   settings: PetSettings;
   owned: Record<string, number>;
+}
+
+export interface Preset {
+  id: string;
+  name: string;
+  character: string;
+  accessory: string;
+  emotes: string[];
+}
+
+export interface HistoryRecord {
+  id: string;
+  fresh: boolean;
+  source: "draw" | "synthesis";
+  at: number;
 }
 
 export interface InputMessage {
@@ -51,7 +77,16 @@ export interface CommandResult<T = unknown> {
 }
 
 export interface PetAPI {
-  init(): Promise<{ state: PetState; items: CatalogItem[] }>;
+  init(): Promise<{
+    state: PetState;
+    items: CatalogItem[];
+    filters: {
+      series: Record<string, string>;
+      roles: Record<string, string>;
+    };
+    monitors: Array<{ id: number; label: string }>;
+    status: { hook: string; warning?: string };
+  }>;
   command(name: string, args?: unknown): Promise<CommandResult>;
   onState(callback: (state: PetState) => void): void;
   onInput(callback: (event: InputMessage) => void): void;
@@ -73,5 +108,6 @@ declare global {
     petAPI: PetAPI;
     __petTest?: () => Record<string, unknown>;
     __studioTest?: () => Record<string, unknown>;
+    monitorCount: number;
   }
 }

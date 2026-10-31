@@ -1,19 +1,45 @@
-// @ts-nocheck
 import type { CatalogItem } from "./types";
+
+interface MotionState {
+  button: HTMLButtonElement;
+  img: HTMLImageElement;
+  x: number;
+  y: number;
+  r: number;
+  vx: number;
+  vy: number;
+  vr: number;
+  targetX: number;
+  targetY: number;
+  targetR: number;
+  held: boolean;
+  active: boolean;
+  pressedAt: number;
+  releaseTimer?: number;
+  returnTimer?: number;
+}
 
 /* Original EmotionMenu spring constants and bubble trajectory, using local assets. */
 const emotionMotion = (() => {
-  const states = new Map(),
+  const states = new Map<HTMLButtonElement, MotionState>(),
     reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
-  const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-  function spring(x, v, target, k, d, dt) {
+  const clamp = (v: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, v));
+  function spring(
+    x: number,
+    v: number,
+    target: number,
+    k: number,
+    d: number,
+    dt: number,
+  ): [number, number] {
     v += ((target - x) * k - v * d) * dt;
     return [x + v * dt, v];
   }
-  function release(s) {
+  function release(s: MotionState) {
     if (!s.held) return;
     s.held = false;
-    s.releaseTimer = setTimeout(
+    s.releaseTimer = window.setTimeout(
       () => {
         s.targetX = 1.48;
         s.targetY = 1.2;
@@ -22,7 +48,7 @@ const emotionMotion = (() => {
         s.vy += 3.3;
         s.vr += 0.32;
         wake(s);
-        s.returnTimer = setTimeout(() => {
+        s.returnTimer = window.setTimeout(() => {
           s.targetX = 1;
           s.targetY = 1;
           s.targetR = 0;
@@ -35,21 +61,21 @@ const emotionMotion = (() => {
   let frame = 0,
     previous = performance.now(),
     ticks = 0;
-  function wake(s) {
+  function wake(s: MotionState) {
     s.active = true;
     if (!frame) {
       previous = performance.now();
       frame = requestAnimationFrame(tick);
     }
   }
-  function bind(button, img) {
+  function bind(button: HTMLButtonElement, img: HTMLImageElement) {
     for (const [b, old] of states)
       if (!b.isConnected) {
         clearTimeout(old.releaseTimer);
         clearTimeout(old.returnTimer);
         states.delete(b);
       }
-    const s = {
+    const s: MotionState = {
       button,
       img,
       x: 1,
@@ -62,6 +88,7 @@ const emotionMotion = (() => {
       targetY: 1,
       targetR: 0,
       held: false,
+      active: false,
       pressedAt: 0,
     };
     states.set(button, s);
@@ -77,7 +104,7 @@ const emotionMotion = (() => {
       s.vy -= 0.8;
       wake(s);
     }
-    button.onpointerdown = (e) => {
+    button.onpointerdown = (e: PointerEvent) => {
       e.stopPropagation();
       button.setPointerCapture(e.pointerId);
       press();
@@ -86,13 +113,13 @@ const emotionMotion = (() => {
       button.onpointercancel =
       button.onpointerleave =
         () => release(s);
-    button.onkeydown = (e) => {
+    button.onkeydown = (e: KeyboardEvent) => {
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         press();
       }
     };
-    button.onkeyup = (e) => {
+    button.onkeyup = (e: KeyboardEvent) => {
       if (e.key === " " || e.key === "Enter") {
         e.preventDefault();
         release(s);
@@ -100,7 +127,7 @@ const emotionMotion = (() => {
       }
     };
   }
-  function tick(now) {
+  function tick(now: number) {
     frame = 0;
     ticks++;
     const dt = Math.min((now - previous) / 1000, 0.028);
@@ -129,7 +156,7 @@ const emotionMotion = (() => {
         50 + q * 34,
         50 - b * 3 + q * 40,
         50 + b * 4 - q * 36,
-      ].map((v) => clamp(v, 38, 64) + "%");
+      ].map((v) => `${clamp(v, 38, 64)}%`);
       button.style.transform =
         "scale(" +
         x.toFixed(4) +
@@ -212,6 +239,6 @@ function floatEmotion(layer: HTMLElement, item: CatalogItem) {
   bubble.addEventListener("animationend", () => bubble.remove(), {
     once: true,
   });
-  setTimeout(() => bubble.remove(), 1200);
+  window.setTimeout(() => bubble.remove(), 1200);
 }
 export { emotionMotion, floatEmotion };

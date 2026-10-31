@@ -1,14 +1,14 @@
-const fs = require("fs"),
-  path = require("path"),
-  crypto = require("crypto"),
-  core = require("./core.cjs");
+import fs from "node:fs";
+import path from "node:path";
+import crypto from "node:crypto";
+import { initial, normalize } from "./core.js";
 import type {
   CatalogItem,
   CollectionState,
   ProfileResult,
   RawCollection,
   SavedState,
-} from "./types.cjs";
+} from "./types.js";
 
 function readSave(file: string): SavedState | null {
   try {
@@ -80,22 +80,22 @@ function initProfile({
   const file = path.join(dataDir, "collection.json"),
     existing = readSave(file),
     backup = readSave(file + ".bak");
-  if (existing)
-    return { state: core.normalize(existing.raw, items), warning: "" };
+  if (existing) return { state: normalize(existing.raw, items), warning: "" };
   if (backup)
     return {
-      state: core.normalize(backup.raw, items),
-      warning: "已从存档备份恢复",
+      state: normalize(backup.raw, items),
+      warning: "Restored collection from backup",
     };
   if (fs.existsSync(file)) {
     fs.copyFileSync(file, file + ".damaged-" + Date.now());
     return {
-      state: core.initial(items),
-      warning: "存档无法读取，原文件已保留，请从设置打开存档目录恢复",
+      state: initial(items),
+      warning:
+        "The save could not be read. The original file was kept; open the save folder in Settings to recover it.",
     };
   }
   const source = findLegacy(portableDir, searchRoots);
-  if (!source) return { state: core.initial(items), warning: "" };
+  if (!source) return { state: initial(items), warning: "" };
   const backups = path.join(dataDir, "migration-backups");
   fs.mkdirSync(backups, { recursive: true });
   const copy = path.join(backups, "collection-" + Date.now() + ".json");
@@ -115,8 +115,8 @@ function initProfile({
     ),
   );
   return {
-    state: core.normalize(source.raw, items),
-    warning: "已自动继承旧版收藏与设置",
+    state: normalize(source.raw, items),
+    warning: "Migrated collection and settings from the previous version",
     migratedFrom: source.file,
   };
 }
@@ -137,4 +137,4 @@ function createWriter(file: string) {
     return write;
   };
 }
-module.exports = { readSave, findLegacy, initProfile, createWriter };
+export { readSave, findLegacy, initProfile, createWriter };

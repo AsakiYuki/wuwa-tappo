@@ -7,8 +7,8 @@ import {
   type CSSProperties,
 } from "react";
 import { createRoot } from "react-dom/client";
-import "../../original-ui/index-BjTCKBy6.css";
-import "../../pet.css";
+import "../../assets/ui/index-BjTCKBy6.css";
+import "../styles/pet.scss";
 import type { CatalogItem, InputMessage, PetState } from "./types";
 import { assetPath } from "./types";
 import { emotionMotion, floatEmotion } from "./emotions";

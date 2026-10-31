@@ -25,13 +25,7 @@ const defaultApp = path.join(out, "resources/default_app.asar");
 if (fs.existsSync(defaultApp)) fs.unlinkSync(defaultApp);
 const appDir = path.join(out, "resources/app");
 fs.mkdirSync(appDir, { recursive: true });
-const files = [
-  "package.json",
-  "catalog.json",
-  "asset-manifest.json",
-  "pet.css",
-  "studio.css",
-];
+const files = ["package.json", "asset-manifest.json"];
 for (const file of files)
   fs.copyFileSync(path.join(root, file), path.join(appDir, file));
 fs.cpSync(path.join(root, "runtime"), path.join(appDir, "runtime"), {
@@ -42,7 +36,7 @@ fs.cpSync(
   path.join(appDir, "renderer-build"),
   { recursive: true },
 );
-for (const dir of ["assets", "original-ui"])
+for (const dir of ["assets"])
   fs.cpSync(path.join(root, dir), path.join(appDir, dir), { recursive: true });
 for (const dependency of ["uiohook-napi", "node-gyp-build"])
   fs.cpSync(

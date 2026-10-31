@@ -1,25 +1,36 @@
-const fs = require("fs"),
-  path = require("path"),
-  assert = require("assert/strict"),
-  core = require("./core.cjs");
-module.exports = async ({
+import fs from "node:fs";
+import path from "node:path";
+import assert from "node:assert/strict";
+import type { App, BrowserWindow } from "electron";
+import type { CatalogItem, CollectionState } from "./types.js";
+
+interface QaOptions {
+  app: App;
+  pet: BrowserWindow;
+  studio: BrowserWindow;
+  items: CatalogItem[];
+  getState: () => CollectionState;
+  dataDir: string;
+  input: (
+    key: string,
+    down: boolean,
+    side?: "left" | "right",
+    newPhysicalPress?: boolean,
+  ) => void;
+}
+
+export async function runQa({
   app,
   pet,
   studio,
   items,
   getState,
-  save,
   dataDir,
   input,
-}) => {
+}: QaOptions) {
   const out =
     process.env.WUWA_QA_OUTPUT || path.join(__dirname, "..", "..", "qa");
   fs.mkdirSync(out, { recursive: true });
-  const frames = new Map();
-  for (const w of [pet, studio])
-    w.webContents.on("paint", (_e, _dirty, frame) => {
-      if (!frame.isEmpty()) frames.set(w.id, frame.toPNG());
-    });
   const errors = [];
   for (const w of [pet, studio])
     w.webContents.on("console-message", (_e, level, message) => {
@@ -71,7 +82,9 @@ module.exports = async ({
       ),
       1,
     );
-    results.push("初始11件、角色分层图片加载、42键布局");
+    results.push(
+      "Initial 11 items, layered character images, and 42-key layout",
+    );
     await capture("collection", studio);
     await capture("pet", pet);
 
@@ -130,7 +143,7 @@ module.exports = async ({
     try {
       await capture("ten-draw", studio);
     } catch {}
-    results.push("十连界面、10个结果、新物品保存");
+    results.push("Ten-draw screen, ten results, and new items saved");
     await js(
       studio,
       "document.getElementById('closeResults').click();document.querySelector('[data-draw=\"1\"]').click()",
@@ -141,7 +154,7 @@ module.exports = async ({
       await js(studio, 'document.querySelectorAll(".result-card").length'),
       1,
     );
-    results.push("单抽界面");
+    results.push("Single-draw screen");
     await js(studio, "document.getElementById('closeResults').click()");
     const male = items.find((x) => x.starter && x.roleId === 1501);
     await js(
@@ -150,7 +163,7 @@ module.exports = async ({
     );
     await wait(400);
     assert.equal((await js(pet, "window.__petTest()")).character, male.id);
-    results.push("换装同步至桌宠");
+    results.push("Outfit changes sync to the desktop pet");
     const before = getState().count;
     input("A", true, "left");
     await wait(50);
@@ -173,7 +186,7 @@ module.exports = async ({
       ),
       false,
     );
-    results.push("输入事件、拍桌、复位、计数");
+    results.push("Input events, tap animation, reset, and counter");
 
     getState().count = 998;
     input("Q", true, "left");
@@ -193,7 +206,8 @@ module.exports = async ({
     assert(getState().emotes.includes(popped[0]));
     input("W", false);
     assert.equal(
-      JSON.parse(fs.readFileSync(path.join(dataDir, "collection.json"))).count,
+      JSON.parse(fs.readFileSync(path.join(dataDir, "collection.json"), "utf8"))
+        .count,
       0,
     );
     assert.equal(
@@ -240,7 +254,7 @@ module.exports = async ({
       ),
     );
     results.push(
-      "998→999→0、按住不重复、仅装备表情随机浮现、原版80px/1s动画、30px互动素材",
+      "Counter wraps 998 → 999 → 0; held keys do not repeat; only equipped emotes float; original 80px/1s animation and 30px interactive assets",
     );
     await js(studio, "window.petAPI.command('settings',{alwaysOnTop:false})");
     assert.equal(getState().settings.alwaysOnTop, false);
@@ -248,7 +262,7 @@ module.exports = async ({
     await js(studio, "window.petAPI.command('settings',{alwaysOnTop:true})");
     assert.equal(getState().settings.alwaysOnTop, true);
     assert(pet.isAlwaysOnTop());
-    results.push("置顶开关可关闭并重新开启");
+    results.push("Always-on-top can be toggled off and on");
 
     await js(
       studio,
@@ -256,10 +270,10 @@ module.exports = async ({
     );
     await wait(200);
     assert((await js(pet, "window.__petTest()")).bubble);
-    results.push("表情气泡");
-    await js(studio, "window.petAPI.command('preset-save','测试搭配')");
+    results.push("Emote bubble");
+    await js(studio, "window.petAPI.command('preset-save','Test Outfit')");
     assert.equal(getState().presets.length, 1);
-    results.push("搭配保存");
+    results.push("Preset saved");
     getState().owned[male.id] = 101;
     const synth = await js(
       studio,
@@ -268,19 +282,19 @@ module.exports = async ({
     assert(synth.ok);
     assert.equal(synth.result.length, 10);
     assert(getState().owned[male.id] >= 1);
-    results.push("十次合成接口、保留最后一份");
+    results.push("Ten-synthesis API keeps one copy");
     const offline = await js(
       studio,
       "fetch('https://example.com').then(()=>false).catch(()=>true)",
     );
     assert(offline);
-    results.push("运行期间网络请求被禁用");
+    results.push("Network requests are blocked while running");
     const persisted = JSON.parse(
       fs.readFileSync(path.join(dataDir, "collection.json"), "utf8"),
     );
     assert.equal(persisted.draws, 11);
     assert.equal(persisted.presets.length, 1);
-    results.push("磁盘存档验证");
+    results.push("Disk save verified");
     await js(studio, "document.querySelector('[data-page=atlas]').click()");
     await wait(300);
     assert.equal((await js(studio, "window.__studioTest()")).groupCount, 4);
@@ -302,7 +316,7 @@ module.exports = async ({
       deltaX: 0,
       deltaY: -400,
       canScroll: true,
-    };
+    } as const;
     studio.show();
     studio.focus();
     studio.webContents.focus();
@@ -326,7 +340,9 @@ module.exports = async ({
       await js(studio, "document.getElementById('inventory').scrollTop>0"),
       "Real wheel input must scroll the atlas",
     );
-    results.push("图鉴全部分类高度受限、实际滚轮输入可下滑");
+    results.push(
+      "Atlas categories are height-constrained and scroll with real wheel input",
+    );
 
     assert(
       (await js(studio, "window.__studioTest()")).visibleCards <= 50,
@@ -358,7 +374,7 @@ module.exports = async ({
     await js(studio, "document.getElementById('inventory').scrollTop=0");
     await wait(100);
     results.push(
-      "899条图鉴仅挂载视口附近不超过50张卡片，滚动到底能显示最后分组",
+      "The 899-item atlas mounts at most 50 nearby cards and reaches the final group",
     );
 
     await js(studio, "document.querySelector('[data-type=character]').click()");
@@ -386,7 +402,7 @@ module.exports = async ({
     await js(studio, "document.querySelector('[data-type=character]').click()");
     assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 260);
     results.push(
-      "260角色/504表情筛选后立即完整载入，虚拟滚动只挂载视口附近卡片",
+      "Filtering 260 characters or 504 emotes loads the full result; virtualization mounts nearby cards only",
     );
 
     const originalBounds = studio.getBounds();
@@ -407,7 +423,7 @@ module.exports = async ({
         popup.bottom <= popup.height + 1,
     );
     assert(popup.scroll > popup.client);
-    assert(popup.text.includes("安可"));
+    assert(popup.text.includes("Encore"));
     await capture("role-dropdown-small", studio);
     await js(studio, "document.querySelector('[data-window=larger]').click()");
     await wait(200);
@@ -519,14 +535,14 @@ module.exports = async ({
     );
     assert.equal((await js(studio, "window.__studioTest()")).replaceSlot, null);
     results.push(
-      "点击上方第3个表情槽→原主视图角色/稀有度筛选→点击卡片替换→桌宠同步生效",
+      "Click emote slot 3, filter by character or rarity, select a replacement, and confirm it syncs to the pet",
     );
 
     const idleBefore = await js(pet, "emotionMotion.ticks");
     await wait(600);
     assert.equal(await js(pet, "emotionMotion.ticks"), idleBefore);
     results.push(
-      "小窗口下拉菜单不裁切、放大缩小及最大化还原、满5表情选择替换、空闲不持续刷新动画",
+      "Dropdowns fit small windows; resize and maximize restore work; replace an emote with five equipped; idle animation does not keep refreshing",
     );
     await js(
       studio,
@@ -549,7 +565,9 @@ module.exports = async ({
       "document.querySelector('[data-filter=role] [data-value=\"1107\"]').click()",
     );
     assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 1);
-    results.push("品质分组、7个系列/55个角色索引、系列与角色组合筛选");
+    results.push(
+      "Rarity groups, seven series, 55 character indexes, and combined series/character filters",
+    );
     await js(studio, "document.querySelector('[data-page=synthesis]').click()");
     await wait(200);
     assert.equal(
@@ -565,7 +583,9 @@ module.exports = async ({
       await js(studio, 'document.querySelectorAll(".synthesis-item").length'),
       5,
     );
-    results.push("升阶10槽、平阶5槽、单次与十连按钮");
+    results.push(
+      "Upgrade uses ten slots; same-tier uses five; single and ten-count buttons",
+    );
     await js(studio, "document.querySelector('[data-page=settings]').click()");
     await wait(200);
     try {
@@ -626,4 +646,4 @@ module.exports = async ({
     await wait(100);
     app.quit();
   }
-};
+}
