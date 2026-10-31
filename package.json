@@ -63,6 +63,17 @@
 			"maintainer": "Asaki Yuki <noreply@asakiyuki.com>",
 			"executableName": "wuwa-tappo",
 			"syncDesktopName": true,
+			"desktop": {
+				"entry": {
+					"Icon": "wuwa-tappo"
+				}
+			},
+			"extraFiles": [
+				{
+					"from": "assets/appicon.png",
+					"to": "appicon.png"
+				}
+			],
 			"icon": "assets/appicon.png",
 			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
 		}
