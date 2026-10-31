@@ -1,0 +1,103 @@
+(function(global) {
+  const ROLE_MAP = {
+    '阿布': 'Abby', '散华': 'Sanhua', '白芷': 'Baizhi', '凌阳': 'Lingyang', '折枝': 'Zhezhi',
+    '釉瑚': 'Youhu', '珂莱塔': 'Carlotta', '绯雪': 'Phoebe', '洛瑟菈': 'Roccia',
+    '穗穗': 'Sui Sui', '炽霞': 'Chixia', '安可': 'Encore', '莫特斐': 'Mortefi',
+    '长离': 'Changli', '布兰特': 'Brant', '露帕': 'Lupa', '嘉贝莉娜': 'Gaberina',
+    '莫宁': 'Morning', '爱弥斯': 'Amis', '达妮娅': 'Danya', '景燃': 'Jingran',
+    '卡卡罗': 'Calcharo', '吟霖': 'Yinlin', '渊武': 'Yuanwu', '今汐': 'Jinhsi',
+    '相里要': 'Xiangli Yao', '奥古斯塔': 'Augusta', '卜灵': 'Buling', '心': 'Xin',
+    '秧秧': 'Yangyang', '秋水': 'Aalto', '忌炎': 'Jiyan', '鉴心': 'Jianxin',
+    '夏空': 'Xiakong', '卡提希娅': 'Katisia', '尤诺': 'Yuno', '仇远': 'Qiuyuan',
+    '西格莉卡': 'Sigrika', '清宵': 'Qingsxiao', '漂泊者（男）': 'Rover (M)', '漂泊者（女）': 'Rover (F)',
+    '维里奈': 'Verina', '灯灯': 'Lumi', '守岸人': 'Shorekeeper', '菲比': 'Phebe',
+    '赞妮': 'Zani', '千咲': 'Chisaki', '琳奈': 'Linnae', '陆・赫斯': 'Lu Hess',
+    '桃祈': 'Taoqi', '丹瑾': 'Danjin', '椿': 'Camellya', '洛可可': 'Rococo',
+    '坎特蕾拉': 'Cantarella', '弗洛洛': 'Phrolova', '秧秧・玄翎': 'Yangyang (Plume)'
+  };
+
+  const MOOD_MAP = {
+    '威胁': 'Threat', '惊喜': 'Surprise', '生气': 'Angry', '用力': 'Straining',
+    '痛苦': 'Pain', '待机': 'Idle', '开心': 'Happy', '呆住': 'Stunned',
+    '得逞': 'Smug', '经典': 'Classic', '团团团团转': 'Spinning', 'ARE': 'ARE',
+    '像素': 'Pixel', 'CHUBBY': 'Chubby', 'Miratsu': 'Miratsu'
+  };
+
+  const SPECIAL_NAMES = {
+    '桂枝宁芙': 'Laurel Nymph', '呢绒梦': 'Velvet Dream', '薄荷糖': 'Peppermint',
+    '夏日旖旎': 'Summer Romance', '蜜桃冰': 'Peach Sorbet', '城市午茶': 'Urban Afternoon Tea',
+    '叱妖诰': 'Demon-Expelling Decree', '星火永明（男）': 'Eternal Spark (M)',
+    '星火永明（女）': 'Eternal Spark (F)', '桃天灼灼': 'Radiant Peach',
+    '冠顶械隼': 'Mech Falcon', '共鸣回响·冠顶苍隼': 'Echo: Cyan Falcon', '格洛犸图': 'Glacio Prism',
+    '蚀脊龙': 'Bonebane Dragon', '坚岩斗士': 'Stonewall Brute', '冥渊守卫': 'Abyssal Guard',
+    '箭簇熊': 'Arrowbear', '紫羽鹭': 'Violet-Feathered Heron', '奏谕乐师': 'Tambourinist',
+    '车刃镰': 'Havoc Dreadmane', '戏猿': 'Hoochief', '青羽鹭': 'Cyan-Feathered Heron',
+    '刺玫菇': 'Roseshroom', '暗鬃狼': 'Dark Mane Wolf', '振铎乐师': 'Bellringer',
+    '磐石守卫': 'Rock Guard', '踏光兽': 'Lightcrusher', '绿熔蜥': 'Fusion Dreadmane',
+    '巡哨机傀': 'Sentry Puppet', '雪鬃狼': 'Frost Mane Wolf', '游鳞机枢': 'Scale Mech',
+    '巡游骑士': 'Cruising Knight', '琉璃刀伶': 'Glass Blade Actor', '幻昼骑士': 'Daydream Knight',
+    '暗夜骑士': 'Night Knight', '毒冠贵族': 'Poison Crown Noble', '持刃贵族': 'Blade Noble',
+    '凝水贵族': 'Water Noble', '浮灵偶': 'Floating Doll', '荣光节使': 'Glory Envoy',
+    '巨布偶': 'Giant Doll', '飓力熊': 'Gale Bear', '重塑雕像的拳砾': 'Statue Fist Rock',
+    '传道者的遗形': 'Preacher Relic', '角鳄': 'Horned Croc', '莳植机麋': 'Planter Mech Deer',
+    '矿岩机麋': 'Ore Rock Mech Deer', '双极·星升辉铳': 'Bipolar: Star Gun',
+    '双极·渊陨重锋': 'Bipolar: Abyss Blade', '探隧重机': 'Tunnel Mech', '重工铁蹄': 'Heavy Iron Hoof',
+    '霜鳞蜃甲': 'Frost Scale Mirage', '隐迹铁影': 'Hidden Iron Shadow', '锯袭铁影': 'Saw Iron Shadow',
+    '风鳞蜃甲': 'Wind Scale Mirage', '影烁者': 'Shadow Flicker', '莳植熊蜂': 'Planter Bumblebee',
+    '颤栗战士': 'Shivering Warrior', '苦信者的作俑': 'Zealot Puppet', '慈悲节使': 'Mercy Envoy',
+    '赦罪节使': 'Pardon Envoy', '卫冕节使': 'Champion Envoy', '气动棱镜': 'Aero Prism',
+    '愚金幼岩': 'Chasm Youth Rock', '釉变幼岩': 'Glazed Youth Rock', '霜鬃狼': 'Frost Mane Wolf',
+    '雷鬃狼': 'Thunder Mane Wolf', '风鬃狼': 'Wind Mane Wolf', '欺诈奇藏': 'Deceitful Hoard',
+    '魔术先生': 'Mr. Magic', '寂寞小姐': 'Miss Lonely', '工头布偶': 'Foreman Doll',
+    '云海妖精': 'Cloud Fairy', '幽翎火': 'Ghost Flame', '浮灵偶・海德': 'Floating Doll: Hyde',
+    '浮灵偶・蕾弗': 'Floating Doll: Lef', '浮灵偶・莱特': 'Floating Doll: Wright',
+    '叮咚咚': 'Ding Dong Dong', '破霜猎手': 'Frost Hunter', '寒霜陆龟': 'Frost Tortoise',
+    '冷凝棱镜': 'Glacio Prism', '热熔棱镜': 'Fusion Prism', '咕咕河豚': 'Gugu Pufferfish',
+    '通行灯偶': 'Traffic Light Doll', '小翼龙·冷凝': 'Chirpuff (Glacio)',
+    '小翼龙·导电': 'Chirpuff (Electro)', '小翼龙·气动': 'Chirpuff (Aero)',
+    '小翼龙·热熔': 'Chirpuff (Fusion)', '小翼龙·衍射': 'Chirpuff (Spectro)',
+    '小翼龙·湮灭': 'Chirpuff (Havoc)', '绿熔蜥（稚形）': 'Fusion Dreadmane (Young)',
+    '鸣泣战士': 'Weeping Warrior', '融火虫': 'Fire Bug', '火鬃狼': 'Fire Mane Wolf',
+    '咔嚓嚓': 'Ka Cha Cha', '阿嗞嗞': 'A Zi Zi', '衍射棱镜': 'Spectro Prism',
+    '游弋蝶': 'Cruising Butterfly', '审判战士': 'Judge Warrior', '呜咔咔': 'Wu Ka Ka',
+    '湮灭棱镜': 'Havoc Prism', '刺玫菇（稚形）': 'Roseshroom (Young)', '呼咻咻': 'Hu Xiu Xiu',
+    '啾啾河豚': 'Jiu Jiu Pufferfish', '巡徊猎手': 'Prowling Hunter', '幼猿': 'Young Ape',
+    '惊蛰猎手': 'Awakening Hunter', '晶螯蝎': 'Crystal Scorpion', '遁地鼠': 'Burrowing Rat',
+    '先锋幼岩': 'Vanguard Rock', '裂变幼岩': 'Fission Rock', '碎獠猪': 'Tusk Boar',
+    '侏侏鸵': 'Dwarf Ostrich', '阿布': 'Abby', '冰盈舞者': 'Ice Dancer',
+    '噼啪啪': 'Pi Pa Pa', '矿岩熊蜂': 'Ore Bumblebee', '岩蛛S4型': 'Rock Spider S4',
+    '无冠者': 'Crownless', '伪作的神王': 'False God King', '辛吉勒姆': 'Singilum',
+    '无铭探索者': 'Nameless Explorer', '海维夏': 'Heaviside', '炉芯机骸': 'Core Mech Remains',
+    '共鸣回响·鸣式·利维亚坦': 'Echo: Leviathan', '共鸣回响·芙露德莉斯': 'Echo: Fleur de Lys',
+    '共鸣回响·芬莱克': 'Echo: Fenlake', '海之女': 'Daughter of the Sea', '无妄者': 'Dreamless',
+    '荣耀狮像': 'Lion of Glory', '角': 'Jue', '赫卡忒': 'Hecate', '罗蕾莱': 'Lorelei',
+    '叹息古龙': 'Sighing Dragon', '异构武装': 'Heterogeneous Armor', '飞廉之猩': 'Feilian Beringal',
+    '燎照之骑': 'Inferno Rider', '无常凶鹭': 'Impermanence Heron', '云闪之鳞': 'Tempest Mephis',
+    '朔雷之鳞': 'Thundering Mephis', '辉萤军势': 'Lampylumen Myriad', '哀声鸷': 'Mourning Aix',
+    '聚械机偶': 'Mech Abomination', '无归的谬误': 'Fallacy of No Return', '鸣钟之龟': 'Bell-Borne Geochelone'
+  };
+
+  function getItemName(it) {
+    if (!it) return '';
+    const raw = it.name || '';
+    if (SPECIAL_NAMES[raw]) return SPECIAL_NAMES[raw];
+    if (raw.includes(' · ')) {
+      const parts = raw.split(' · ');
+      const r = parts[0];
+      const m = parts.slice(1).join(' · ');
+      const engRole = ROLE_MAP[r] || r;
+      const engMood = MOOD_MAP[m] || m;
+      return engRole + ' · ' + engMood;
+    }
+    return raw;
+  }
+
+  global.getItemName = getItemName;
+  global.ROLE_MAP = ROLE_MAP;
+  global.MOOD_MAP = MOOD_MAP;
+  global.SPECIAL_NAMES = SPECIAL_NAMES;
+  if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { getItemName, ROLE_MAP, MOOD_MAP, SPECIAL_NAMES };
+  }
+})(typeof window !== 'undefined' ? window : global);
+
