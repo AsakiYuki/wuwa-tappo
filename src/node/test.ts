@@ -183,11 +183,31 @@ test("Legacy large counters migrate to three digits and preserve always-on-top",
   s.count = 12345;
   s.draws = 9000;
   s.settings.alwaysOnTop = false;
-  const next = core.normalize(s, items);
+  const legacySave = JSON.parse(JSON.stringify(s));
+  delete legacySave.settings.counterLimit;
+  const next = core.normalize(legacySave, items);
   assert.equal(next.count, 345);
   assert.equal(next.draws, 9000);
   assert.equal(next.settings.alwaysOnTop, false);
   assert.equal(core.settings({ alwaysOnTop: false }).alwaysOnTop, false);
+});
+test("Counter wraps at its configured limit or keeps counting when unlimited", () => {
+  const s = core.initial(items);
+  s.settings.counterLimit = 2;
+  s.count = 1;
+  core.registerTap(s, items);
+  assert.equal(s.count, 2);
+  core.registerTap(s, items);
+  assert.equal(s.count, 0);
+
+  s.settings.counterLimit = null;
+  s.count = 900;
+  core.registerTap(s, items);
+  assert.equal(s.count, 901);
+
+  const restored = core.normalize(JSON.parse(JSON.stringify(s)), items);
+  assert.equal(restored.settings.counterLimit, null);
+  assert.equal(restored.count, 901);
 });
 test("All 504 interactive emotes use original emote assets; atlas thumbnails use separate indexes", () => {
   const manifest = JSON.parse(
