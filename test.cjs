@@ -19,10 +19,10 @@ test('999后归零，仅从已装备且已拥有的表情随机选取，空选�
  s.count=999;const last=items.filter(x=>s.emotes.includes(x.id)).at(-1).id;assert.equal(core.registerTap(s,items,()=>.999999),last);
  s.count=999;s.emotes=['unknown',s.character];assert.equal(core.registerTap(s,items),null);assert.equal(s.count,0);
 });
-test('旧大计数迁移到三位显示，关闭置顶的旧配置恢复为始终置顶',()=>{
+test('旧大计数迁移到三位显示，并保留置顶开关状态',()=>{
  const s=core.initial(items);s.count=12345;s.draws=9000;s.settings.alwaysOnTop=false;
- const next=core.normalize(s,items);assert.equal(next.count,345);assert.equal(next.draws,9000);assert.equal(next.settings.alwaysOnTop,true);
- assert.equal(core.settings({alwaysOnTop:false}).alwaysOnTop,true);
+ const next=core.normalize(s,items);assert.equal(next.count,345);assert.equal(next.draws,9000);assert.equal(next.settings.alwaysOnTop,false);
+ assert.equal(core.settings({alwaysOnTop:false}).alwaysOnTop,false);
 });
 test('504张互动表情均引用原始emote素材，图鉴缩略图使用独立索引',()=>{
  const manifest=require('./asset-manifest.json');

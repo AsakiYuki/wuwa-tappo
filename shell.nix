@@ -23,9 +23,11 @@ pkgs.mkShell {
     libxkbfile
     libxkbcommon
     xkeyboard_config
+    wmctrl
   ];
   shellHook = ''
     unset ELECTRON_RUN_AS_NODE
+    export ELECTRON_OZONE_PLATFORM_HINT="x11"
     export ELECTRON_OVERRIDE_DIST_PATH="${pkgs.electron}/bin"
     export LD_LIBRARY_PATH="${pkgs.lib.makeLibraryPath [
       pkgs.nspr

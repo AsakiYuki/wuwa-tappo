@@ -37,9 +37,9 @@ module.exports=async({app,pet,studio,items,getState,save,dataDir,input})=>{
  const sourcePaths=await js(pet,"[...document.querySelectorAll('.emotion-img')].map(x=>x.getAttribute('src'))");
  assert(sourcePaths.every(src=>getState().emotes.some(id=>items.find(x=>x.id===id).image===src)));
  results.push('998→999→0、按住不重复、仅装备表情随机浮现、原版80px/1s动画、30px互动素材');
- await js(studio,"window.petAPI.command('settings',{alwaysOnTop:false})");assert.equal(getState().settings.alwaysOnTop,true);assert(pet.isAlwaysOnTop());
- const visible=pet.isVisible.bind(pet);pet.isVisible=()=>true;pet.setAlwaysOnTop(false);await wait(3150);assert(pet.isAlwaysOnTop());pet.isVisible=visible;
- results.push('置顶设置不可关闭、被取消后自动恢复最高置顶层');
+ await js(studio,"window.petAPI.command('settings',{alwaysOnTop:false})");assert.equal(getState().settings.alwaysOnTop,false);assert.equal(pet.isAlwaysOnTop(),false);
+ await js(studio,"window.petAPI.command('settings',{alwaysOnTop:true})");assert.equal(getState().settings.alwaysOnTop,true);assert(pet.isAlwaysOnTop());
+ results.push('置顶开关可关闭并重新开启');
 
  await js(studio,`window.petAPI.command('emote',${JSON.stringify(getState().emotes[0])})`);await wait(200);assert((await js(pet,'window.__petTest()')).bubble);results.push('表情气泡');
  await js(studio,"window.petAPI.command('preset-save','测试搭配')");assert.equal(getState().presets.length,1);results.push('搭配保存');
@@ -68,24 +68,17 @@ module.exports=async({app,pet,studio,items,getState,save,dataDir,input})=>{
 
  await js(studio,"document.querySelector('[data-type=character]').click()");assert.equal((await js(studio,'window.__studioTest()')).filterCount,3);
 
- assert.equal((await js(studio,'window.__studioTest()')).loadedCards,60);
- for(const n of [120,180,240,260]){
-  const pos=await js(studio,"document.getElementById('inventory').scrollTop=200;window.__firstCard=document.querySelector('#inventory .item-card');document.getElementById('inventory').scrollTop");
-  await js(studio,"document.getElementById('loadMore').click()");
-  assert.equal((await js(studio,'window.__studioTest()')).loadedCards,n);
-  assert.equal(await js(studio,"document.getElementById('inventory').scrollTop"),pos);
-  assert(await js(studio,"window.__firstCard===document.querySelector('#inventory .item-card')"));
- }
- assert(await js(studio,"document.getElementById('loadMore').hidden"));
+ assert.equal((await js(studio,'window.__studioTest()')).loadedCards,260);
+ assert(await js(studio,"!document.getElementById('loadMore')"));
+ assert((await js(studio,'window.__studioTest()')).visibleCards<=50,'Virtualized rendering should keep only nearby cards mounted');
  await js(studio,"window.petAPI.command('favorite',document.querySelector('#inventory .item-card').dataset.id)");
  assert.equal((await js(studio,'window.__studioTest()')).loadedCards,260);
  await js(studio,"document.querySelector('[data-type=emote]').click()");
- for(let i=0;i<8;i++)await js(studio,"document.getElementById('loadMore').click()");
  assert.equal((await js(studio,'window.__studioTest()')).loadedCards,504);
  assert(await js(studio,"new Set([...document.querySelectorAll('#inventory .item-card')].map(x=>x.dataset.id)).size<=50"));
  await js(studio,"document.querySelector('[data-type=character]').click()");
- assert.equal((await js(studio,'window.__studioTest()')).loadedCards,60);
- results.push('显示更多连续加载260角色/504表情、保留滚动及旧卡片、筛选后正确重置');
+ assert.equal((await js(studio,'window.__studioTest()')).loadedCards,260);
+ results.push('260角色/504表情筛选后立即完整载入，虚拟滚动只挂载视口附近卡片');
 
 
  const originalBounds=studio.getBounds();studio.setBounds({...originalBounds,width:820,height:600});await wait(200);
@@ -131,6 +124,7 @@ module.exports=async({app,pet,studio,items,getState,save,dataDir,input})=>{
  await js(studio,"document.querySelector('[data-page=synthesis]').click()");await wait(200);assert.equal(await js(studio,'document.querySelectorAll(".synthesis-item").length'),10);await capture('synthesis',studio);
  await js(studio,"document.querySelector('[data-synth-mode=same]').click()");assert.equal(await js(studio,'document.querySelectorAll(".synthesis-item").length'),5);results.push('升阶10槽、平阶5槽、单次与十连按钮');
  await js(studio,"document.querySelector('[data-page=settings]').click()");await wait(200);try{await capture('settings',studio);}catch{}
+ assert(await js(studio,"!!document.getElementById('unlockAll')&&!!document.getElementById('resetData')"));await js(studio,"document.getElementById('unlockAll').click()");await wait(100);assert.equal(Object.keys(getState().owned).filter(k=>getState().owned[k]>0).length,items.length);await js(studio,"window.confirm=()=>true;document.getElementById('resetData').click()");await wait(300);assert.equal(Object.keys(getState().owned).filter(k=>getState().owned[k]>0).length,items.filter(x=>x.starter).length);assert.equal(getState().draws,0);assert.equal(getState().count,0);results.push('Settings Unlock All mở đủ 899 món, Reset khôi phục collection mặc định');
  assert.equal(errors.filter(e=>!e.includes('Content Security Policy')).length,0);fs.writeFileSync(out+'/result.json',JSON.stringify({ok:true,results,errors,hook:global.__QA.hook()},null,2));console.log('QA_SUCCESS '+JSON.stringify(results));
  }catch(e){try{console.log('FAILED_STATE',await js(studio,'window.__studioTest()'));await capture('failure',studio);}catch{}fs.writeFileSync(out+'/result.json',JSON.stringify({ok:false,results,error:e.stack,errors},null,2));console.error('QA_FAILED',e);}
  finally{await wait(100);app.quit();}
