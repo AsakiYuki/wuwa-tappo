@@ -30,7 +30,7 @@ export interface PetSettings {
 	showKeyboard: boolean
 	counterLeft: boolean
 	counterLimit: number | null
-	holdAnimation: boolean;
+	holdAnimation: boolean
 	handAnimation: "adaptive" | "alternate" | "random" | "right" | "left"
 }
 

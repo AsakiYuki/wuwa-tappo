@@ -128,7 +128,7 @@ export function StudioLayout() {
               <div className="draw-banner">
                 <img
                   className="chest-art"
-                  src="../assets/ui/chest-base-gold-BKP4rDVz.png"
+                  src="../assets/ui/chest/base-gold.png"
                 />
                 <h2>Open Chests</h2>
                 <p>Characters, Accessories, Emotes · Unlimited Draws</p>

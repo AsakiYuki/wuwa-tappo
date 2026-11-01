@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react"
 import { createRoot } from "react-dom/client"
-import "../../assets/ui/index-BjTCKBy6.css"
+import "../../assets/ui/application/styles.css"
 import "../styles/pet.scss"
 import type { CatalogItem, InputMessage, PetState } from "./types"
 import { assetPath } from "./types"
@@ -68,11 +68,14 @@ function PetApp() {
 		return side === "left" ? 2 : 3
 	}, [])
 
-	const playAction = useCallback((inputSide: "left" | "right") => {
-		setAction(resolveAction(inputSide))
-		window.clearTimeout(bodyTimer.current)
-		bodyTimer.current = window.setTimeout(() => setAction(1), 150)
-	}, [resolveAction])
+	const playAction = useCallback(
+		(inputSide: "left" | "right") => {
+			setAction(resolveAction(inputSide))
+			window.clearTimeout(bodyTimer.current)
+			bodyTimer.current = window.setTimeout(() => setAction(1), 150)
+		},
+		[resolveAction],
+	)
 
 	useEffect(() => {
 		if (state?.settings.holdAnimation && state.settings.inputEnabled) return

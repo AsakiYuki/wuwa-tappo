@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { createRoot } from "react-dom/client";
 import { StudioLayout } from "./studio-layout";
-import "../../assets/ui/index-BjTCKBy6.css";
+import "../../assets/ui/application/styles.css";
 import "../styles/studio.scss";
 
 function StudioApp() {

@@ -40,7 +40,7 @@ export interface Settings {
 	showKeyboard: boolean
 	counterLeft: boolean
 	counterLimit: number | null
-	holdAnimation: boolean;
+	holdAnimation: boolean
 	handAnimation: HandAnimationMode
 	petPosition: PetPosition | null
 }
