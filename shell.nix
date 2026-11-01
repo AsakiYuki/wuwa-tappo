@@ -22,7 +22,8 @@ pkgs.mkShell {
     libXt
     libxkbfile
     libxkbcommon
-    libxcrypt
+    libxcrypt-legacy
+    rpm
     xkeyboard_config
     wmctrl
   ];
@@ -50,7 +51,7 @@ pkgs.mkShell {
       pkgs.libXt
       pkgs.libxkbfile
       pkgs.libxkbcommon
-      pkgs.libxcrypt
+      pkgs.libxcrypt-legacy
     ]}:$LD_LIBRARY_PATH"
     export XKB_CONFIG_ROOT="${pkgs.xkeyboard_config}/etc/X11/xkb"
   '';
