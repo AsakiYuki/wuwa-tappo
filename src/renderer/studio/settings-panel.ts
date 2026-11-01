@@ -159,7 +159,7 @@ export function mountSettingsPanel({
 	const keyLabelsLabel = element("div")
 	keyLabelsLabel.append(
 		element("div", "setting-title", "Keyboard Labels"),
-		element("div", "setting-sub", "Set custom text for keys like Meta, Ctrl, Alt, Shift. Use JSON: {\"Meta\":\"Meta\"}."),
+		element("div", "setting-sub", 'Set custom text for keys like Meta, Ctrl, Alt, Shift. Use JSON: {"Meta":"Meta"}.'),
 	)
 	const keyLabelsInput = element("textarea", "setting-textarea")
 	keyLabelsInput.dataset.setting = "keyLabels"
@@ -238,7 +238,7 @@ export function mountSettingsPanel({
 				}
 				throw new Error("Not an object")
 			} catch {
-				toast("Use valid JSON like {\"Meta\":\"Meta\"}")
+				toast('Use valid JSON like {"Meta":"Meta"}')
 			}
 			return
 		}
@@ -282,7 +282,8 @@ export function mountSettingsPanel({
 		keyLabelsInput.value = JSON.stringify(settings.keyLabels, null, 2)
 		container.querySelector<HTMLElement>("#scaleValue")!.textContent = `${Math.round(settings.scale * 100)}%`
 		container.querySelector<HTMLElement>("#opacityValue")!.textContent = `${Math.round(settings.opacity * 100)}%`
-		container.querySelector<HTMLElement>("#bubbleLifetimeValue")!.textContent = `${settings.bubbleLifetime.toFixed(2).replace(/0$/, "")} s`
+		container.querySelector<HTMLElement>("#bubbleLifetimeValue")!.textContent =
+			`${settings.bubbleLifetime.toFixed(2).replace(/0$/, "")} s`
 		container.querySelector<HTMLElement>("#monitorLabel")!.textContent =
 			`Display Screen: ${settings.monitor + 1} / ${monitorCount}`
 		cycleButton.onclick = () =>

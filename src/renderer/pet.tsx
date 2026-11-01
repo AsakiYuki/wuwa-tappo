@@ -99,7 +99,11 @@ function PetApp() {
 		const separator = trimmed.lastIndexOf(":")
 		if (separator >= 0) {
 			const button = trimmed.slice(separator + 1)
-			return keyLabels.current[button] ?? controllerLabels[button] ?? (/^Button(\d+)$/.exec(button)?.[1] ? `B${/^Button(\d+)$/.exec(button)![1]}` : button)
+			return (
+				keyLabels.current[button] ??
+				controllerLabels[button] ??
+				(/^Button(\d+)$/.exec(button)?.[1] ? `B${/^Button(\d+)$/.exec(button)![1]}` : button)
+			)
 		}
 		return trimmed
 	}, [])

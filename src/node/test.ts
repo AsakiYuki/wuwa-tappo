@@ -114,9 +114,15 @@ test("Counter still tracks taps when auto-emote is disabled", () => {
 	const s = core.initial(items)
 	s.settings.autoEmote = false
 	s.count = 998
-	assert.equal(core.registerTap(s, items, () => 0), null)
+	assert.equal(
+		core.registerTap(s, items, () => 0),
+		null,
+	)
 	assert.equal(s.count, 999)
-	assert.equal(core.registerTap(s, items, () => 0), null)
+	assert.equal(
+		core.registerTap(s, items, () => 0),
+		null,
+	)
 	assert.equal(s.count, 0)
 })
 test("Reloading a save preserves collection, counter, presets, and draw progress", () => {
