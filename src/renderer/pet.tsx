@@ -14,24 +14,48 @@ const keyboardRows = [
 	["Ctrl|Ctrl", "Meta|Meta", "Alt|Alt", "Space|SPACE", "AltRight|Alt", "ShiftRight|Shift", "CtrlRight|Ctrl"],
 ]
 
-const controllerLabels: Record<string, string> = {
-	South: "A",
-	East: "B",
-	West: "X",
-	North: "Y",
-	L1: "LB",
-	R1: "RB",
-	L2: "LT",
-	R2: "RT",
-	LeftTriggerAxisPositive: "LT",
-	LeftTriggerAxisNegative: "LT",
-	RightTriggerAxisPositive: "RT",
-	RightTriggerAxisNegative: "RT",
-	L3: "LS",
-	R3: "RS",
-	Select: "BACK",
-	Start: "START",
-	Mode: "GUIDE",
+const controllerLabels: Record<"xbox" | "ps", Record<string, string>> = {
+	xbox: {
+		South: "A",
+		East: "B",
+		West: "X",
+		North: "Y",
+		L1: "LB",
+		R1: "RB",
+		L2: "LT",
+		R2: "RT",
+		LeftTriggerAxisPositive: "LT",
+		LeftTriggerAxisNegative: "LT",
+		RightTriggerAxisPositive: "RT",
+		RightTriggerAxisNegative: "RT",
+		L3: "LS",
+		R3: "RS",
+		Select: "BACK",
+		Start: "START",
+		Mode: "GUIDE",
+	},
+	ps: {
+		South: "×",
+		East: "○",
+		West: "□",
+		North: "△",
+		L1: "L1",
+		R1: "R1",
+		L2: "L2",
+		R2: "R2",
+		LeftTriggerAxisPositive: "L2",
+		LeftTriggerAxisNegative: "L2",
+		RightTriggerAxisPositive: "R2",
+		RightTriggerAxisNegative: "R2",
+		L3: "L3",
+		R3: "R3",
+		Select: "SHARE",
+		Start: "OPTIONS",
+		Mode: "PS",
+	},
+}
+
+const controllerDirections: Record<string, string> = {
 	DPadUp: "Up",
 	DPadDown: "Down",
 	DPadLeft: "Left",
@@ -69,12 +93,14 @@ function PetApp() {
 	const holdAnimation = useRef(false)
 	const showPressedKeys = useRef(true)
 	const bubbleLifetime = useRef(1)
+	const controllerStyle = useRef<"xbox" | "ps">("xbox")
 	const keyLabels = useRef<Record<string, string>>({})
 	const alternateHand = useRef<"left" | "right">("left")
 	handAnimation.current = state?.settings.handAnimation ?? "adaptive"
 	holdAnimation.current = state?.settings.holdAnimation ?? false
 	showPressedKeys.current = state?.settings.showPressedKeys ?? true
 	bubbleLifetime.current = state?.settings.bubbleLifetime ?? 1
+	controllerStyle.current = state?.settings.controllerStyle ?? "xbox"
 	const itemMap = useMemo(() => new Map(items.map(item => [item.id, item])), [items])
 	const itemMapRef = useRef(itemMap)
 	itemMapRef.current = itemMap
@@ -101,7 +127,8 @@ function PetApp() {
 			const button = trimmed.slice(separator + 1)
 			return (
 				keyLabels.current[button] ??
-				controllerLabels[button] ??
+				controllerLabels[controllerStyle.current][button] ??
+				controllerDirections[button] ??
 				(/^Button(\d+)$/.exec(button)?.[1] ? `B${/^Button(\d+)$/.exec(button)![1]}` : button)
 			)
 		}

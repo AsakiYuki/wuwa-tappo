@@ -18,6 +18,7 @@ const DEFAULTS: Settings = {
 	counterLeft: false,
 	counterLimit: 999,
 	bubbleLifetime: 1,
+	controllerStyle: "xbox",
 	keyLabels: {
 		Meta: "Meta",
 		Ctrl: "Ctrl",

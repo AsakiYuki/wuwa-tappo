@@ -110,6 +110,13 @@ test("Bubble lifetime defaults to one second and stays within its supported rang
 	assert.equal(core.settings({ bubbleLifetime: Number.NaN }).bubbleLifetime, 1)
 })
 
+test("Controller bubble style defaults to Xbox and validates Xbox or PlayStation", () => {
+	const s = core.initial(items)
+	assert.equal(s.settings.controllerStyle, "xbox")
+	assert.equal(core.settings({ controllerStyle: "ps" }).controllerStyle, "ps")
+	assert.equal(core.settings({ controllerStyle: "unknown" as never }).controllerStyle, "xbox")
+})
+
 test("Counter still tracks taps when auto-emote is disabled", () => {
 	const s = core.initial(items)
 	s.settings.autoEmote = false

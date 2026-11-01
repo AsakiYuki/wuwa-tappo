@@ -33,6 +33,7 @@ export interface PetSettings {
 	counterLeft: boolean
 	counterLimit: number | null
 	bubbleLifetime: number
+	controllerStyle: "xbox" | "ps"
 	keyLabels: Record<string, string>
 	holdAnimation: boolean
 	handAnimation: "adaptive" | "alternate" | "random" | "right" | "left"

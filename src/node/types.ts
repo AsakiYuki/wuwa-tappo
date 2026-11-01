@@ -25,6 +25,7 @@ export interface PetPosition {
 }
 
 export type HandAnimationMode = "adaptive" | "alternate" | "random" | "right" | "left"
+export type ControllerStyle = "xbox" | "ps"
 
 export interface Settings {
 	scale: number
@@ -43,6 +44,7 @@ export interface Settings {
 	counterLeft: boolean
 	counterLimit: number | null
 	bubbleLifetime: number
+	controllerStyle: ControllerStyle
 	keyLabels: Record<string, string>
 	holdAnimation: boolean
 	handAnimation: HandAnimationMode

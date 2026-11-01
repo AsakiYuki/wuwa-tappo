@@ -168,6 +168,23 @@ export function mountSettingsPanel({
 	keyLabelsRow.append(keyLabelsLabel, keyLabelsInput)
 	container.append(keyLabelsRow)
 
+	const controllerStyleRow = element("div", "setting-item has-sub")
+	const controllerStyleLabel = element("div")
+	controllerStyleLabel.append(
+		element("div", "setting-title", "Controller Bubble Style"),
+		element("div", "setting-sub", "Choose Xbox or PlayStation button labels."),
+	)
+	const controllerStyleSelect = element("select", "setting-select")
+	controllerStyleSelect.dataset.setting = "controllerStyle"
+	controllerStyleSelect.setAttribute("aria-label", "Controller Bubble Style")
+	for (const [value, label] of [["xbox", "Xbox"], ["ps", "PlayStation"]] as const) {
+		const option = element("option", "", label)
+		option.value = value
+		controllerStyleSelect.append(option)
+	}
+	controllerStyleRow.append(controllerStyleLabel, controllerStyleSelect)
+	container.append(controllerStyleRow)
+
 	const handAnimationRow = element("div", "setting-item has-sub")
 	const handAnimationLabel = element("div")
 	handAnimationLabel.append(
