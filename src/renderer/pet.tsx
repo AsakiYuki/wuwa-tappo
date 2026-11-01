@@ -18,8 +18,8 @@ const controllerLabels: Record<"xbox" | "ps", Record<string, string>> = {
 	xbox: {
 		South: "A",
 		East: "B",
-		West: "X",
-		North: "Y",
+		West: "Y",
+		North: "X",
 		L1: "LB",
 		R1: "RB",
 		L2: "LT",
