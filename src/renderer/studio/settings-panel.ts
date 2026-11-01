@@ -11,62 +11,72 @@ interface SettingsPanelOptions {
 }
 
 type SettingKey = keyof PetSettings
+type SettingsTab = "general" | "pet" | "input" | "bubbles" | "data"
 const builtInKeyLabels = new Set(["Meta", "Ctrl", "Alt", "Shift", "Tab", "CapsLock", "Backspace", "Enter", "Space"])
 
 const ranges = [
-	{ key: "opacity", title: "Pet Opacity", min: 0.3, max: 1, step: 0.05 },
-	{ key: "scale", title: "Pet Scale", min: 0.65, max: 1.5, step: 0.05 },
-	{ key: "bubbleLifetime", title: "Bubble Lifetime", min: 0.5, max: 3, step: 0.25 },
+	{ key: "opacity", title: "Pet Opacity", min: 0.3, max: 1, step: 0.05, tab: "pet" },
+	{ key: "scale", title: "Pet Scale", min: 0.65, max: 1.5, step: 0.05, tab: "pet" },
+	{ key: "bubbleLifetime", title: "Bubble Lifetime", min: 0.5, max: 3, step: 0.25, tab: "bubbles" },
 ] as const
 
 const switches: Array<{
 	key: SettingKey
 	title: string
+	tab: SettingsTab
 	description?: string
 }> = [
-	{ key: "autoStart", title: "Launch at Startup" },
+	{ key: "autoStart", title: "Launch at Startup", tab: "general" },
 	{
 		key: "lockDrag",
 		title: "Lock Pet Position",
+		tab: "pet",
 		description: "Prevents moving the pet by dragging.",
 	},
 	{
 		key: "hoverFade",
 		title: "Hover on Fade",
+		tab: "pet",
 		description: "Pet becomes semi-transparent when mouse hovers over it.",
 	},
 	{
 		key: "showChest",
 		title: "Always Show Chest",
+		tab: "pet",
 		description: "Always show chest shortcut next to pet.",
 	},
-	{ key: "showKeyboard", title: "Show Keyboard" },
+	{ key: "showKeyboard", title: "Show Keyboard", tab: "pet" },
 	{
 		key: "autoEmote",
 		title: "Auto Emote on Key Taps",
+		tab: "bubbles",
 		description: "Show a random equipped emote after the counter wraps.",
 	},
 	{
 		key: "showPressedKeys",
 		title: "Show Pressed Keys",
+		tab: "bubbles",
 		description: "Highlight keyboard keys while they are being held.",
 	},
 	{
 		key: "showMouseBubbles",
 		title: "Show Mouse Bubbles",
+		tab: "bubbles",
 		description: "Show a bubble when a mouse button is pressed.",
 	},
-	{ key: "counterLeft", title: "Move Counter to Left" },
-	{ key: "alwaysOnTop", title: "Always On Top" },
-	{ key: "inputEnabled", title: "Keyboard & Mouse Reaction" },
+	{ key: "counterLeft", title: "Move Counter to Left", tab: "pet" },
+	{ key: "alwaysOnTop", title: "Always On Top", tab: "general" },
+	{ key: "inputEnabled", title: "Keyboard & Mouse Reaction", tab: "input" },
 	{
 		key: "holdAnimation",
 		title: "Hold Animation",
+		tab: "input",
 		description: "Keep the hand animation active until the key or button is released.",
 	},
 	{
 		key: "passthrough",
 		title: "Mouse Passthrough",
+		tab: "input",
 		description: "Press Ctrl+Alt+P to toggle.",
 	},
 ]
@@ -91,7 +101,42 @@ export function mountSettingsPanel({
 	confirmReset,
 	version,
 }: SettingsPanelOptions): (settings: PetSettings, monitorCount: number) => void {
-	const addSwitch = (key: SettingKey, title: string, description?: string) => {
+	const tabDefinitions: Array<{ id: SettingsTab; label: string }> = [
+		{ id: "general", label: "General" },
+		{ id: "pet", label: "Pet" },
+		{ id: "input", label: "Input" },
+		{ id: "bubbles", label: "Bubbles" },
+		{ id: "data", label: "Data" },
+	]
+	const tabBar = element("div", "settings-tabs")
+	const tabContent = element("div", "settings-tab-content")
+	const tabPanels = new Map<SettingsTab, HTMLDivElement>()
+	const tabButtons = new Map<SettingsTab, HTMLButtonElement>()
+	for (const [index, tab] of tabDefinitions.entries()) {
+		const button = element("button", index === 0 ? "active" : "", tab.label)
+		button.type = "button"
+		button.setAttribute("role", "tab")
+		button.setAttribute("aria-selected", String(index === 0))
+		const panel = element("div", "settings-tab-panel")
+		panel.setAttribute("role", "tabpanel")
+		panel.hidden = index !== 0
+		button.onclick = () => {
+			for (const definition of tabDefinitions) {
+				const selected = definition.id === tab.id
+				tabButtons.get(definition.id)!.classList.toggle("active", selected)
+				tabButtons.get(definition.id)!.setAttribute("aria-selected", String(selected))
+				tabPanels.get(definition.id)!.hidden = !selected
+			}
+		}
+		tabButtons.set(tab.id, button)
+		tabPanels.set(tab.id, panel)
+		tabBar.append(button)
+		tabContent.append(panel)
+	}
+	container.replaceChildren(tabBar, tabContent)
+	const panelFor = (tab: SettingsTab) => tabPanels.get(tab)!
+
+	const addSwitch = (key: SettingKey, title: string, tab: SettingsTab, description?: string) => {
 		const row = element("div", `setting-item${description ? " has-sub" : ""}`)
 		const labelText = element("div")
 		labelText.append(element("div", "setting-title", title))
@@ -104,12 +149,12 @@ export function mountSettingsPanel({
 		input.setAttribute("aria-label", title)
 		label.append(input, element("span", "setting-slider"))
 		row.append(labelText, label)
-		container.append(row)
+		panelFor(tab).append(row)
 	}
 
-	switches.slice(0, 6).forEach(({ key, title, description }) => addSwitch(key, title, description))
+	switches.forEach(({ key, title, tab, description }) => addSwitch(key, title, tab, description))
 
-	for (const { key, title, min, max, step } of ranges) {
+	for (const { key, title, min, max, step, tab } of ranges) {
 		const row = element("div", "setting-item")
 		const content = element("div", "setting-content")
 		const input = element("input", "setting-range")
@@ -123,7 +168,7 @@ export function mountSettingsPanel({
 		value.id = `${key}Value`
 		content.append(input, value)
 		row.append(element("div", "setting-title", title), content)
-		container.append(row)
+		panelFor(tab).append(row)
 	}
 
 	const counterLimitRow = element("div", "setting-item has-sub")
@@ -149,7 +194,7 @@ export function mountSettingsPanel({
 	unlimitedLabel.append(unlimitedInput, element("span", "", "Unlimited"))
 	counterLimitControls.append(counterLimitInput, unlimitedLabel)
 	counterLimitRow.append(counterLimitLabel, counterLimitControls)
-	container.append(counterLimitRow)
+	panelFor("pet").append(counterLimitRow)
 
 	const displayRow = element("div", "setting-item has-sub")
 	const displayText = element("div")
@@ -161,9 +206,7 @@ export function mountSettingsPanel({
 	const cycleButton = element("button", "setting-btn", "Cycle Screen")
 	cycleButton.onclick = () => void api.command("settings", { monitor: 0 })
 	displayRow.append(displayText, cycleButton)
-	container.append(displayRow)
-
-	switches.slice(6).forEach(({ key, title, description }) => addSwitch(key, title, description))
+	panelFor("general").append(displayRow)
 
 	const keyLabelsRow = element("div", "setting-item has-sub")
 	const keyLabelsLabel = element("div")
@@ -173,7 +216,7 @@ export function mountSettingsPanel({
 	)
 	const editKeyLabelsButton = element("button", "setting-btn", "Edit Labels")
 	keyLabelsRow.append(keyLabelsLabel, editKeyLabelsButton)
-	container.append(keyLabelsRow)
+	panelFor("input").append(keyLabelsRow)
 
 	const keyLabelsEditor = element("div", "keyboard-labels-editor")
 	const keyLabelsMode = element("div", "keyboard-label-mode")
@@ -186,7 +229,7 @@ export function mountSettingsPanel({
 	const uiModePanel = element("div", "keyboard-label-ui")
 	const uiModeDescription = element("div", "setting-sub", "Edit each key and its displayed label.")
 	const keyLabelRows = element("div", "keyboard-label-rows")
-	const addKeyLabelButton = element("button", "setting-btn", "Add Key")
+	const addKeyLabelButton = element("button", "common-btn keyboard-label-add", "Add Key")
 	addKeyLabelButton.type = "button"
 	uiModePanel.append(uiModeDescription, keyLabelRows, addKeyLabelButton)
 	const jsonModePanel = element("div", "keyboard-label-json")
@@ -240,7 +283,7 @@ export function mountSettingsPanel({
 		valueInput.placeholder = "Displayed label"
 		valueInput.setAttribute("aria-label", "Displayed label")
 		valueInput.dataset.labelField = "value"
-		const removeButton = element("button", "setting-btn", "Remove")
+		const removeButton = element("button", "common-btn keyboard-label-remove", "Remove")
 		removeButton.type = "button"
 		removeButton.setAttribute("aria-label", `Remove ${key || "key label"}`)
 		removeButton.hidden = isBuiltIn
@@ -280,7 +323,7 @@ export function mountSettingsPanel({
 		controllerStyleSelect.append(option)
 	}
 	controllerStyleRow.append(controllerStyleLabel, controllerStyleSelect)
-	container.append(controllerStyleRow)
+	panelFor("bubbles").append(controllerStyleRow)
 
 	const handAnimationRow = element("div", "setting-item has-sub")
 	const handAnimationLabel = element("div")
@@ -303,13 +346,13 @@ export function mountSettingsPanel({
 		handAnimationSelect.append(option)
 	}
 	handAnimationRow.append(handAnimationLabel, handAnimationSelect)
-	container.append(handAnimationRow)
+	panelFor("input").append(handAnimationRow)
 
 	const versionRow = element("div", "setting-item")
 	const versionButton = element("button", "setting-btn", "Version Info")
 	versionButton.onclick = () => toast(`Wuwa Tappo ${version}`)
 	versionRow.append(element("div", "setting-title", `Current Version ${version}`), versionButton)
-	container.append(versionRow)
+	panelFor("data").append(versionRow)
 
 	const dataRow = element("div", "setting-item has-sub")
 	const dataDescription = element("div")
@@ -329,7 +372,7 @@ export function mountSettingsPanel({
 	}
 	dataActions.append(unlockButton, resetButton)
 	dataRow.append(dataDescription, dataActions)
-	container.append(dataRow)
+	panelFor("data").append(dataRow)
 
 	container.addEventListener("change", event => {
 		const input = event.target

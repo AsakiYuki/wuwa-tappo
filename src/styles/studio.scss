@@ -361,6 +361,45 @@ h3 {
 }
 
 // Settings panel
+#settingsRows {
+	min-width: 0;
+}
+.settings-tabs {
+	position: sticky;
+	top: 0;
+	z-index: 3;
+	display: flex;
+	gap: 3px;
+	padding: 4px;
+	border: 1px solid $color-border;
+	border-radius: 7px;
+	background: $color-paper-light;
+
+	button {
+		flex: 1 1 0;
+		min-width: 0;
+		height: 32px;
+		padding: 0 8px;
+		border: 0;
+		border-radius: 4px;
+		background: transparent;
+		color: $color-text;
+		font: inherit;
+		white-space: nowrap;
+	}
+
+	button.active {
+		background: $color-paper;
+		box-shadow: 0 1px 3px #55351e22;
+		font-weight: 600;
+	}
+}
+.settings-tab-content {
+	padding-top: 6px;
+}
+.settings-tab-panel[hidden] {
+	display: none !important;
+}
 .setting-item {
 	min-height: 48px;
 }
@@ -504,11 +543,23 @@ h3 {
 	min-height: 0;
 	overflow-y: auto;
 }
+.keyboard-label-add {
+	align-self: flex-start;
+	min-width: 92px;
+	height: 32px;
+	padding: 0 12px;
+}
 .keyboard-label-row {
 	display: grid;
 	grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr) auto;
 	gap: 8px;
 	align-items: center;
+}
+.keyboard-label-remove {
+	min-width: 72px;
+	height: 34px;
+	padding: 0 10px;
+	font-size: 12px;
 }
 .keyboard-label-input {
 	width: 100%;
