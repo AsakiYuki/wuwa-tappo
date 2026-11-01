@@ -142,7 +142,7 @@ const {
 
 function menu() {
 	const items: any[] = [
-		{ label: "Collection & Outfits", click: showStudio },
+		{ label: "Collection and Outfits", click: showStudio },
 		{
 			label: "Show Pet / Reset to Screen Corner",
 			click: () => {
@@ -152,7 +152,7 @@ function menu() {
 			},
 		},
 		{
-			label: "Mouse Passthrough (Ctrl+Alt+P to toggle)",
+			label: "Mouse Passthrough",
 			type: "checkbox",
 			checked: state.settings.passthrough,
 			click: () => {
@@ -163,7 +163,7 @@ function menu() {
 			},
 		},
 		{
-			label: "Enable Keyboard & Mouse Input",
+			label: "Enable Keyboard and Mouse Input",
 			type: "checkbox",
 			checked: state.settings.inputEnabled,
 			click: () => {

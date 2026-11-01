@@ -78,9 +78,8 @@ function settings(s: Partial<Settings>): Settings {
 	out.bubbleLifetime = Number.isFinite(s.bubbleLifetime)
 		? Math.max(0.5, Math.min(3, s.bubbleLifetime))
 		: DEFAULTS.bubbleLifetime
-	out.controllerStyle = s.controllerStyle === "ps" || s.controllerStyle === "xbox"
-		? s.controllerStyle
-		: DEFAULTS.controllerStyle
+	out.controllerStyle =
+		s.controllerStyle === "ps" || s.controllerStyle === "xbox" ? s.controllerStyle : DEFAULTS.controllerStyle
 	out.handAnimation = ["adaptive", "alternate", "random", "right", "left"].includes(s.handAnimation)
 		? s.handAnimation
 		: DEFAULTS.handAnimation

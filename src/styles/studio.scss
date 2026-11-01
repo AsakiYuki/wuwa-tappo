@@ -437,6 +437,110 @@ h3 {
 	font-size: 12px;
 	margin-top: 20px;
 }
+.settings-subpage-header {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	min-height: 48px;
+	margin-bottom: 18px;
+
+	h2 {
+		margin: 0;
+		font-size: 18px;
+		font-weight: 600;
+	}
+}
+.keyboard-labels-editor {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 10px;
+	min-height: 0;
+}
+#keyboardLabelsRows {
+	display: flex;
+	flex: 1 1 auto;
+	min-height: 0;
+}
+.keyboard-label-mode {
+	display: inline-flex;
+	align-self: flex-start;
+	gap: 3px;
+	padding: 3px;
+	border: 1px solid $color-border;
+	border-radius: 7px;
+	background: $color-paper-light;
+
+	button {
+		min-width: 64px;
+		height: 30px;
+		padding: 0 10px;
+		border: 0;
+		border-radius: 4px;
+		background: transparent;
+		color: $color-text;
+		font: inherit;
+	}
+
+	button.active {
+		background: $color-paper;
+		box-shadow: 0 1px 3px #55351e22;
+		font-weight: 600;
+	}
+}
+.keyboard-label-ui,
+.keyboard-label-json {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 8px;
+	min-height: 0;
+}
+.keyboard-label-rows {
+	display: flex;
+	flex: 1 1 auto;
+	flex-direction: column;
+	gap: 7px;
+	min-height: 0;
+	overflow-y: auto;
+}
+.keyboard-label-row {
+	display: grid;
+	grid-template-columns: minmax(120px, 0.8fr) minmax(0, 1.2fr) auto;
+	gap: 8px;
+	align-items: center;
+}
+.keyboard-label-input {
+	width: 100%;
+	min-width: 0;
+	height: 36px;
+	padding: 0 10px;
+	border: 1px solid $color-border;
+	border-radius: 7px;
+	background: $color-paper;
+	color: $color-text;
+	font: inherit;
+
+	&:read-only {
+		background: $color-paper-light;
+	}
+}
+.keyboard-label-json .setting-textarea {
+	min-height: 220px;
+	flex: 1 1 auto;
+}
+.setting-textarea {
+	width: 100%;
+	min-height: 220px;
+	flex: 1 1 auto;
+	padding: 12px;
+	border: 1px solid $color-border;
+	border-radius: 8px;
+	background: $color-paper;
+	color: $color-text;
+	font: 13px/1.5 monospace;
+	resize: vertical;
+}
 #hookStatus {
 	display: block;
 	font-size: 12px;
@@ -594,6 +698,7 @@ dialog {
 	flex-shrink: 0;
 }
 #page-settings > .panel-content,
+#page-keyboard-labels > .panel-content,
 #page-presets > .panel-content,
 #page-draw > .panel-content {
 	overflow-y: auto;

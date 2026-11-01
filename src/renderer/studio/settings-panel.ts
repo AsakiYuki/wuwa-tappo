@@ -2,6 +2,8 @@ import type { PetAPI, PetSettings } from "../types"
 
 interface SettingsPanelOptions {
 	container: HTMLElement
+	keyboardLabelsContainer: HTMLElement
+	openKeyboardLabels(): void
 	api: PetAPI
 	toast(message: string): void
 	confirmReset(): boolean
@@ -9,6 +11,7 @@ interface SettingsPanelOptions {
 }
 
 type SettingKey = keyof PetSettings
+const builtInKeyLabels = new Set(["Meta", "Ctrl", "Alt", "Shift", "Tab", "CapsLock", "Backspace", "Enter", "Space"])
 
 const ranges = [
 	{ key: "opacity", title: "Pet Opacity", min: 0.3, max: 1, step: 0.05 },
@@ -81,6 +84,8 @@ function element<K extends keyof HTMLElementTagNameMap>(
 
 export function mountSettingsPanel({
 	container,
+	keyboardLabelsContainer,
+	openKeyboardLabels,
 	api,
 	toast,
 	confirmReset,
@@ -164,14 +169,98 @@ export function mountSettingsPanel({
 	const keyLabelsLabel = element("div")
 	keyLabelsLabel.append(
 		element("div", "setting-title", "Keyboard Labels"),
-		element("div", "setting-sub", 'Set custom text for keys like Meta, Ctrl, Alt, Shift. Use JSON: {"Meta":"Meta"}.'),
+		element("div", "setting-sub", "Customize the names shown for keyboard keys."),
 	)
-	const keyLabelsInput = element("textarea", "setting-textarea")
-	keyLabelsInput.dataset.setting = "keyLabels"
-	keyLabelsInput.setAttribute("aria-label", "Keyboard Labels")
-	keyLabelsInput.rows = 4
-	keyLabelsRow.append(keyLabelsLabel, keyLabelsInput)
+	const editKeyLabelsButton = element("button", "setting-btn", "Edit Labels")
+	keyLabelsRow.append(keyLabelsLabel, editKeyLabelsButton)
 	container.append(keyLabelsRow)
+
+	const keyLabelsEditor = element("div", "keyboard-labels-editor")
+	const keyLabelsMode = element("div", "keyboard-label-mode")
+	const uiModeButton = element("button", "active", "UI")
+	const jsonModeButton = element("button", "", "JSON")
+	uiModeButton.type = jsonModeButton.type = "button"
+	uiModeButton.setAttribute("aria-pressed", "true")
+	jsonModeButton.setAttribute("aria-pressed", "false")
+	keyLabelsMode.append(uiModeButton, jsonModeButton)
+	const uiModePanel = element("div", "keyboard-label-ui")
+	const uiModeDescription = element("div", "setting-sub", "Edit each key and its displayed label.")
+	const keyLabelRows = element("div", "keyboard-label-rows")
+	const addKeyLabelButton = element("button", "setting-btn", "Add Key")
+	addKeyLabelButton.type = "button"
+	uiModePanel.append(uiModeDescription, keyLabelRows, addKeyLabelButton)
+	const jsonModePanel = element("div", "keyboard-label-json")
+	jsonModePanel.hidden = true
+	jsonModePanel.append(element("div", "setting-sub", 'Edit key labels as JSON, for example: {"Meta":"Meta"}.'))
+	const keyLabelsInput = element("textarea", "setting-textarea")
+	keyLabelsInput.setAttribute("aria-label", "Keyboard Labels JSON")
+	keyLabelsInput.rows = 12
+	jsonModePanel.append(keyLabelsInput)
+	keyLabelsEditor.append(keyLabelsMode, uiModePanel, jsonModePanel)
+	keyboardLabelsContainer.replaceChildren(keyLabelsEditor)
+
+	const setKeyLabelMode = (mode: "ui" | "json") => {
+		uiModeButton.classList.toggle("active", mode === "ui")
+		jsonModeButton.classList.toggle("active", mode === "json")
+		uiModeButton.setAttribute("aria-pressed", String(mode === "ui"))
+		jsonModeButton.setAttribute("aria-pressed", String(mode === "json"))
+		uiModePanel.hidden = mode !== "ui"
+		jsonModePanel.hidden = mode !== "json"
+	}
+	uiModeButton.onclick = () => setKeyLabelMode("ui")
+	jsonModeButton.onclick = () => setKeyLabelMode("json")
+	editKeyLabelsButton.onclick = () => {
+		setKeyLabelMode("ui")
+		openKeyboardLabels()
+	}
+
+	const saveKeyLabelRows = () => {
+		const labels: Record<string, string> = {}
+		keyLabelRows.querySelectorAll<HTMLElement>(".keyboard-label-row").forEach(row => {
+			const keyInput = row.querySelector<HTMLInputElement>('[data-label-field="key"]')
+			const valueInput = row.querySelector<HTMLInputElement>('[data-label-field="value"]')
+			const key = keyInput?.value.trim()
+			if (key && valueInput) labels[key] = valueInput.value.trim() || key
+		})
+		void api.command("settings", { keyLabels: labels })
+	}
+	const addKeyLabelRow = (key = "", value = "") => {
+		const row = element("div", "keyboard-label-row")
+		const isBuiltIn = builtInKeyLabels.has(key)
+		const keyInput = element("input", "keyboard-label-input")
+		keyInput.type = "text"
+		keyInput.value = key
+		keyInput.placeholder = "Key name, e.g. Meta"
+		keyInput.setAttribute("aria-label", "Key name")
+		keyInput.dataset.labelField = "key"
+		keyInput.readOnly = isBuiltIn
+		const valueInput = element("input", "keyboard-label-input")
+		valueInput.type = "text"
+		valueInput.value = value
+		valueInput.placeholder = "Displayed label"
+		valueInput.setAttribute("aria-label", "Displayed label")
+		valueInput.dataset.labelField = "value"
+		const removeButton = element("button", "setting-btn", "Remove")
+		removeButton.type = "button"
+		removeButton.setAttribute("aria-label", `Remove ${key || "key label"}`)
+		removeButton.hidden = isBuiltIn
+		removeButton.onclick = () => {
+			row.remove()
+			saveKeyLabelRows()
+		}
+		keyInput.addEventListener("change", saveKeyLabelRows)
+		valueInput.addEventListener("change", saveKeyLabelRows)
+		row.append(keyInput, valueInput, removeButton)
+		keyLabelRows.append(row)
+	}
+	const renderKeyLabelRows = (labels: Record<string, string>) => {
+		keyLabelRows.replaceChildren()
+		for (const [key, value] of Object.entries(labels)) addKeyLabelRow(key, value)
+	}
+	addKeyLabelButton.onclick = () => {
+		addKeyLabelRow()
+		keyLabelRows.lastElementChild?.querySelector<HTMLInputElement>('[data-label-field="key"]')?.focus()
+	}
 
 	const controllerStyleRow = element("div", "setting-item has-sub")
 	const controllerStyleLabel = element("div")
@@ -182,7 +271,10 @@ export function mountSettingsPanel({
 	const controllerStyleSelect = element("select", "setting-select")
 	controllerStyleSelect.dataset.setting = "controllerStyle"
 	controllerStyleSelect.setAttribute("aria-label", "Controller Bubble Style")
-	for (const [value, label] of [["xbox", "Xbox"], ["ps", "PlayStation"]] as const) {
+	for (const [value, label] of [
+		["xbox", "Xbox"],
+		["ps", "PlayStation"],
+	] as const) {
 		const option = element("option", "", label)
 		option.value = value
 		controllerStyleSelect.append(option)
@@ -250,20 +342,6 @@ export function mountSettingsPanel({
 			})
 			return
 		}
-		if (input.dataset.setting === "keyLabels") {
-			if (!(input instanceof HTMLTextAreaElement)) return
-			try {
-				const parsed = JSON.parse(input.value || "{}")
-				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
-					void api.command("settings", { keyLabels: parsed })
-					return
-				}
-				throw new Error("Not an object")
-			} catch {
-				toast('Use valid JSON like {"Meta":"Meta"}')
-			}
-			return
-		}
 		const value =
 			input instanceof HTMLInputElement && input.type === "checkbox"
 				? input.checked
@@ -274,6 +352,19 @@ export function mountSettingsPanel({
 						: undefined
 		if (value === undefined) return
 		void api.command("settings", { [input.dataset.setting]: value })
+	})
+
+	keyLabelsInput.addEventListener("change", () => {
+		try {
+			const parsed = JSON.parse(keyLabelsInput.value || "{}")
+			if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+				void api.command("settings", { keyLabels: parsed })
+				return
+			}
+			throw new Error("Not an object")
+		} catch {
+			toast('Use valid JSON like {"Meta":"Meta"}')
+		}
 	})
 
 	return (settings, monitorCount) => {
@@ -302,6 +393,7 @@ export function mountSettingsPanel({
 		counterLimitInput.disabled = settings.counterLimit === null
 		unlimitedInput.checked = settings.counterLimit === null
 		keyLabelsInput.value = JSON.stringify(settings.keyLabels, null, 2)
+		renderKeyLabelRows(settings.keyLabels)
 		container.querySelector<HTMLElement>("#scaleValue")!.textContent = `${Math.round(settings.scale * 100)}%`
 		container.querySelector<HTMLElement>("#opacityValue")!.textContent = `${Math.round(settings.opacity * 100)}%`
 		container.querySelector<HTMLElement>("#bubbleLifetimeValue")!.textContent =

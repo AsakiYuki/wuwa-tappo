@@ -34,14 +34,16 @@ export function mountStudioController() {
 	function navigate(p) {
 		replaceSlot = null
 		page = p
-		for (const k of ["collection", "draw", "synthesis", "presets", "settings"])
+		for (const k of ["collection", "draw", "synthesis", "presets", "settings", "keyboard-labels"])
 			$("page-" + k).hidden = k !== (p === "atlas" ? "collection" : p)
 		document
 			.querySelectorAll<any>("[data-page]")
 			.forEach(b =>
 				b.classList.toggle(
 					"tab-btn--active",
-					b.dataset.page === p || (p === "presets" && b.dataset.page === "collection"),
+					b.dataset.page === p ||
+						(p === "presets" && b.dataset.page === "collection") ||
+						(p === "keyboard-labels" && b.dataset.page === "settings"),
 				),
 			)
 		$("currentOutfit").hidden = p === "atlas"
@@ -185,7 +187,7 @@ export function mountStudioController() {
 		}
 		if (page === "synthesis") renderSynthesis()
 		if (page === "presets") renderPresets()
-		if (page === "settings") renderSettings(state.settings, monitorCount)
+		if (page === "settings" || page === "keyboard-labels") renderSettings(state.settings, monitorCount)
 	}
 	const resultsPanel = mountResultsPanel({
 		getItem: id => map.get(id),
@@ -208,11 +210,14 @@ export function mountStudioController() {
 	let monitorCount = 1
 	const renderSettings = mountSettingsPanel({
 		container: $("settingsRows"),
+		keyboardLabelsContainer: $("keyboardLabelsRows"),
+		openKeyboardLabels: () => navigate("keyboard-labels"),
 		api: window.petAPI,
 		toast,
 		confirmReset: () => confirm("Reset all collection data, counters, presets and settings? This cannot be undone."),
 		version: `v${__APP_VERSION__}`,
 	})
+	$("backToSettings").onclick = () => navigate("settings")
 	$("openFolder").onclick = () => command("folder")
 	$("recenter").onclick = () => command("recenter")
 	$("quit").onclick = () => command("quit")
