@@ -11,6 +11,7 @@ import { mountResultsPanel } from "./studio/results-panel"
 import type { CatalogItem, PetState } from "./types"
 
 declare const __APP_VERSION__: string
+declare const __BUILD_VERSION__: string
 
 export function mountStudioController() {
 	const toast = createToast()
@@ -217,6 +218,7 @@ export function mountStudioController() {
 		confirmReset: () => confirm("Reset all collection data, counters, presets and settings? This cannot be undone."),
 	})
 	$("appVersion").textContent = `v${__APP_VERSION__}`
+	$("buildVersion").textContent = `Build ${__BUILD_VERSION__}`
 	$("backToSettings").onclick = () => navigate("settings")
 	$("openFolder").onclick = () => command("folder")
 	$("recenter").onclick = () => command("recenter")

@@ -479,6 +479,11 @@ h3 {
 #appVersion {
 	margin-left: 6px;
 }
+#buildVersion {
+	display: block;
+	font-size: 11px;
+	color: $color-muted;
+}
 .settings-subpage-header {
 	display: flex;
 	align-items: center;
@@ -491,6 +496,15 @@ h3 {
 		font-size: 18px;
 		font-weight: 600;
 	}
+}
+.settings-back-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 116px;
+	height: 34px;
+	padding: 0 12px;
+	line-height: 1;
 }
 .keyboard-labels-editor {
 	display: flex;
@@ -547,10 +561,14 @@ h3 {
 	overflow-y: auto;
 }
 .keyboard-label-add {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	align-self: flex-start;
 	min-width: 92px;
 	height: 32px;
 	padding: 0 12px;
+	line-height: 1;
 }
 .keyboard-label-row {
 	display: grid;
@@ -559,10 +577,14 @@ h3 {
 	align-items: center;
 }
 .keyboard-label-remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	min-width: 72px;
 	height: 34px;
 	padding: 0 10px;
 	font-size: 12px;
+	line-height: 1;
 }
 .keyboard-label-input {
 	width: 100%;

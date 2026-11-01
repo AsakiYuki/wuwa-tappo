@@ -166,6 +166,7 @@ export function StudioLayout() {
 							<div className="setting-copyright">
 								<span>Wuwa Tappo</span>
 								<span id="appVersion"></span>
+								<span id="buildVersion"></span>
 								<span id="hookStatus"></span>
 							</div>
 						</div>
@@ -173,7 +174,7 @@ export function StudioLayout() {
 					<section id="page-keyboard-labels" hidden className="page module-block settings-module">
 						<div className="panel-content">
 							<div className="settings-subpage-header">
-								<button className="setting-btn" id="backToSettings">
+								<button className="common-btn settings-back-button" id="backToSettings">
 									← Settings
 								</button>
 								<h2>Keyboard Labels</h2>
