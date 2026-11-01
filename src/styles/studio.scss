@@ -393,6 +393,17 @@ h3 {
     text-align: center;
   }
 
+  .setting-select {
+    width: 142px;
+    height: 34px;
+    padding: 0 10px;
+    border: 1px solid $color-border;
+    border-radius: 10px;
+    background: $color-paper;
+    color: $color-text;
+    font: inherit;
+  }
+
   .setting-unlimited {
     display: flex;
     align-items: center;

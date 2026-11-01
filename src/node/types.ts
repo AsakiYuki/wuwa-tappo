@@ -24,6 +24,13 @@ export interface PetPosition {
   y: number;
 }
 
+export type HandAnimationMode =
+  | "adaptive"
+  | "alternate"
+  | "random"
+  | "right"
+  | "left";
+
 export interface Settings {
   scale: number;
   opacity: number;
@@ -38,6 +45,7 @@ export interface Settings {
   showKeyboard: boolean;
   counterLeft: boolean;
   counterLimit: number | null;
+  handAnimation: HandAnimationMode;
   petPosition: PetPosition | null;
 }
 

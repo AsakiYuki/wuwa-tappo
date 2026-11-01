@@ -15,6 +15,7 @@ const DEFAULTS: Settings = {
   showKeyboard: true,
   counterLeft: false,
   counterLimit: 999,
+  handAnimation: "adaptive",
   petPosition: null,
 };
 export { RARITIES, DEFAULTS };

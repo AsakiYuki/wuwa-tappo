@@ -95,6 +95,11 @@ function settings(s: Partial<Settings>): Settings {
       : Number.isSafeInteger(s.counterLimit)
         ? Math.max(1, s.counterLimit)
         : DEFAULTS.counterLimit;
+  out.handAnimation = ["adaptive", "alternate", "random", "right", "left"].includes(
+    s.handAnimation,
+  )
+    ? s.handAnimation
+    : DEFAULTS.handAnimation;
   out.monitor = Number.isInteger(s.monitor) ? Math.max(0, s.monitor) : 0;
   if (
     s.petPosition &&

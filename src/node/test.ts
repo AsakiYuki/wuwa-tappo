@@ -191,6 +191,16 @@ test("Legacy large counters migrate to three digits and preserve always-on-top",
   assert.equal(next.settings.alwaysOnTop, false);
   assert.equal(core.settings({ alwaysOnTop: false }).alwaysOnTop, false);
 });
+test("Hand animation defaults to adaptive and validates saved modes", () => {
+  const s = core.initial(items);
+  assert.equal(s.settings.handAnimation, "adaptive");
+  s.settings.handAnimation = "alternate";
+  assert.equal(core.normalize(s, items).settings.handAnimation, "alternate");
+  assert.equal(
+    core.settings({ handAnimation: "unknown" as never }).handAnimation,
+    "adaptive",
+  );
+});
 test("Counter wraps at its configured limit or keeps counting when unlimited", () => {
   const s = core.initial(items);
   s.settings.counterLimit = 2;

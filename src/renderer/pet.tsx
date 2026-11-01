@@ -74,6 +74,11 @@ function PetApp() {
   const drag = useRef<DragState | null>(null);
   const bodyTimer = useRef<number | undefined>(undefined);
   const menuTimer = useRef<number | undefined>(undefined);
+  const pointerDownAt = useRef(0);
+  const lastMouseInputAt = useRef(0);
+  const handAnimation = useRef<PetState["settings"]["handAnimation"]>("adaptive");
+  const alternateHand = useRef<"left" | "right">("left");
+  handAnimation.current = state?.settings.handAnimation ?? "adaptive";
   const itemMap = useMemo(
     () => new Map(items.map((item) => [item.id, item])),
     [items],
@@ -83,7 +88,23 @@ function PetApp() {
   const character = state ? itemMap.get(state.character) : undefined;
   const accessory = state ? itemMap.get(state.accessory) : undefined;
 
-  const playAction = useCallback((side: "left" | "right") => {
+  const playAction = useCallback((inputSide: "left" | "right") => {
+    let side = inputSide;
+    switch (handAnimation.current) {
+      case "alternate":
+        side = alternateHand.current;
+        alternateHand.current = side === "left" ? "right" : "left";
+        break;
+      case "random":
+        side = Math.random() < 0.5 ? "left" : "right";
+        break;
+      case "right":
+        side = "right";
+        break;
+      case "left":
+        side = "left";
+        break;
+    }
     setAction(side === "left" ? 2 : 3);
     window.clearTimeout(bodyTimer.current);
     bodyTimer.current = window.setTimeout(() => setAction(1), 150);
@@ -101,7 +122,10 @@ function PetApp() {
         event.down ? next.add(event.key) : next.delete(event.key);
         return next;
       });
-      if (event.down) playAction(event.side);
+      if (event.down) {
+        if (event.key.startsWith("Mouse")) lastMouseInputAt.current = Date.now();
+        playAction(event.side);
+      }
     });
     window.petAPI.onEmote((id) => {
       const item = itemMapRef.current.get(id);
@@ -161,6 +185,7 @@ function PetApp() {
       )
     )
       return;
+    pointerDownAt.current = Date.now();
     drag.current = {
       pointerId: event.pointerId,
       x: event.screenX,
@@ -185,10 +210,14 @@ function PetApp() {
     const active = drag.current;
     if (!active || event.pointerId !== active.pointerId) return;
     if (active.distance < 4) {
-      playAction("left");
+      const handledByInputHook =
+        state.settings.inputEnabled &&
+        lastMouseInputAt.current >= pointerDownAt.current - 150;
+      if (!handledByInputHook) playAction("left");
       void window.petAPI.command("tap");
     }
     drag.current = null;
+    pointerDownAt.current = 0;
   }
 
   if (!state) return <main id="petRoot" />;

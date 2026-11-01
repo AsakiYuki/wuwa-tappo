@@ -139,6 +139,29 @@ export function mountSettingsPanel({
 
 	switches.slice(6).forEach(({ key, title, description }) => addSwitch(key, title, description))
 
+	const handAnimationRow = element("div", "setting-item has-sub")
+	const handAnimationLabel = element("div")
+	handAnimationLabel.append(
+		element("div", "setting-title", "Hand Animation"),
+		element("div", "setting-sub", "Choose how the character moves its arms."),
+	)
+	const handAnimationSelect = element("select", "setting-select")
+	handAnimationSelect.dataset.setting = "handAnimation"
+	handAnimationSelect.setAttribute("aria-label", "Hand Animation")
+	for (const [value, label] of [
+		["adaptive", "Adaptive"],
+		["alternate", "Alternate"],
+		["random", "Random"],
+		["right", "Right Hand"],
+		["left", "Left Hand"],
+	] as const) {
+		const option = element("option", "", label)
+		option.value = value
+		handAnimationSelect.append(option)
+	}
+	handAnimationRow.append(handAnimationLabel, handAnimationSelect)
+	container.append(handAnimationRow)
+
 	const versionRow = element("div", "setting-item")
 	const versionButton = element("button", "setting-btn", "Version Info")
 	versionButton.onclick = () => toast(`Wuwa Tappo ${version}`)
@@ -167,24 +190,40 @@ export function mountSettingsPanel({
 
 	container.addEventListener("change", event => {
 		const input = event.target
-		if (!(input instanceof HTMLInputElement) || !input.dataset.setting) return
+		if (
+			(!(input instanceof HTMLInputElement) && !(input instanceof HTMLSelectElement)) ||
+			!input.dataset.setting
+		)
+			return
 		if (input.dataset.setting === "counterUnlimited") {
+			if (!(input instanceof HTMLInputElement)) return
 			const limit = Number(counterLimitInput.value) || 999
 			void api.command("settings", {
 				counterLimit: input.checked ? null : limit,
 			})
 			return
 		}
-		const value = input.type === "checkbox" ? input.checked : Number(input.value)
+		const value =
+			input instanceof HTMLInputElement && input.type === "checkbox"
+				? input.checked
+				: input instanceof HTMLSelectElement
+					? input.value
+					: Number(input.value)
 		void api.command("settings", { [input.dataset.setting]: value })
 	})
 
 	return (settings, monitorCount) => {
 		container
-			.querySelectorAll<HTMLInputElement>('[data-setting]:not([data-setting="counterUnlimited"])')
+			.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
+				'[data-setting]:not([data-setting="counterUnlimited"])',
+			)
 			.forEach(input => {
 				const key = input.dataset.setting as SettingKey
 				const value = settings[key]
+				if (input instanceof HTMLSelectElement) {
+					input.value = String(value)
+					return
+				}
 				if (typeof value === "boolean") {
 					input.checked = value
 					return
