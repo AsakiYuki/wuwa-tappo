@@ -1,4 +1,16 @@
-import { app, BrowserWindow, ipcMain, screen, Tray, Menu, nativeImage, globalShortcut, session, shell } from "electron"
+import {
+	app,
+	BrowserWindow,
+	dialog,
+	ipcMain,
+	screen,
+	Tray,
+	Menu,
+	nativeImage,
+	globalShortcut,
+	session,
+	shell,
+} from "electron"
 import fs from "node:fs"
 import path from "node:path"
 import { exec } from "node:child_process"
@@ -201,6 +213,7 @@ ipcMain.handle("init", () => ({
 ipcMain.handle("command", (_event, name, argument) =>
 	executeCommand(name, argument, {
 		app,
+		dialog,
 		shell,
 		dataDirectory: dataDir,
 		items,

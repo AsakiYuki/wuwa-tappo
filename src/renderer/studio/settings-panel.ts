@@ -376,6 +376,30 @@ export function mountSettingsPanel({
 	dataRow.append(dataDescription, dataActions)
 	panelFor("data").append(dataRow)
 
+	const transferRow = element("div", "setting-item has-sub")
+	const transferDescription = element("div")
+	transferDescription.append(
+		element("div", "setting-title", "Backup and Restore"),
+		element("div", "setting-sub", "Export or import your collection and settings as a JSON file."),
+	)
+	const transferActions = element("div", "setting-content")
+	const exportButton = element("button", "setting-btn", "Export Data")
+	const importButton = element("button", "setting-btn", "Import Data")
+	exportButton.onclick = async () => {
+		const result = await api.command("export-data")
+		if (!result.ok) toast(result.error || "Data export failed")
+		else if (result.result === "exported") toast("Data exported")
+	}
+	importButton.onclick = async () => {
+		if (!confirm("Importing replaces your current collection and settings. Continue?")) return
+		const result = await api.command("import-data")
+		if (!result.ok) toast(result.error || "Data import failed")
+		else if (result.result === "imported") toast("Data imported")
+	}
+	transferActions.append(exportButton, importButton)
+	transferRow.append(transferDescription, transferActions)
+	panelFor("data").append(transferRow)
+
 	container.addEventListener("change", event => {
 		const input = event.target
 		if (!(input instanceof HTMLElement) || !input.dataset.setting) return
