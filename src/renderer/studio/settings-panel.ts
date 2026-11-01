@@ -7,7 +7,6 @@ interface SettingsPanelOptions {
 	api: PetAPI
 	toast(message: string): void
 	confirmReset(): boolean
-	version: string
 }
 
 type SettingKey = keyof PetSettings
@@ -99,7 +98,6 @@ export function mountSettingsPanel({
 	api,
 	toast,
 	confirmReset,
-	version,
 }: SettingsPanelOptions): (settings: PetSettings, monitorCount: number) => void {
 	const tabDefinitions: Array<{ id: SettingsTab; label: string }> = [
 		{ id: "general", label: "General" },
@@ -135,6 +133,16 @@ export function mountSettingsPanel({
 	}
 	container.replaceChildren(tabBar, tabContent)
 	const panelFor = (tab: SettingsTab) => tabPanels.get(tab)!
+	const addCommandRow = (tab: SettingsTab, title: string, label: string, id: string) => {
+		const row = element("div", "setting-item")
+		const button = element("button", "setting-btn", label)
+		button.id = id
+		row.append(element("div", "setting-title", title), button)
+		panelFor(tab).append(row)
+	}
+	addCommandRow("general", "Application", "Quit App", "quit")
+	addCommandRow("pet", "Pet Position", "Recenter Pet", "recenter")
+	addCommandRow("data", "Save Data", "Open Save Folder", "openFolder")
 
 	const addSwitch = (key: SettingKey, title: string, tab: SettingsTab, description?: string) => {
 		const row = element("div", `setting-item${description ? " has-sub" : ""}`)
@@ -347,12 +355,6 @@ export function mountSettingsPanel({
 	}
 	handAnimationRow.append(handAnimationLabel, handAnimationSelect)
 	panelFor("input").append(handAnimationRow)
-
-	const versionRow = element("div", "setting-item")
-	const versionButton = element("button", "setting-btn", "Version Info")
-	versionButton.onclick = () => toast(`Wuwa Tappo ${version}`)
-	versionRow.append(element("div", "setting-title", `Current Version ${version}`), versionButton)
-	panelFor("data").append(versionRow)
 
 	const dataRow = element("div", "setting-item has-sub")
 	const dataDescription = element("div")

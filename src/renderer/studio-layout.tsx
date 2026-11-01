@@ -163,21 +163,9 @@ export function StudioLayout() {
 					<section id="page-settings" hidden className="page module-block settings-module">
 						<div className="panel-content">
 							<div id="settingsRows"></div>
-							<div className="setting-btns">
-								<button className="common-btn" id="openFolder">
-									Open Save Folder
-								</button>
-								<div className="setting-btns-right">
-									<button className="common-btn" id="recenter">
-										Recenter Pet
-									</button>
-									<button className="common-btn" id="quit">
-										Quit App
-									</button>
-								</div>
-							</div>
 							<div className="setting-copyright">
-								Wuwa Tappo
+								<span>Wuwa Tappo</span>
+								<span id="appVersion"></span>
 								<span id="hookStatus"></span>
 							</div>
 						</div>

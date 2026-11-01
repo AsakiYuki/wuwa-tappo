@@ -215,8 +215,8 @@ export function mountStudioController() {
 		api: window.petAPI,
 		toast,
 		confirmReset: () => confirm("Reset all collection data, counters, presets and settings? This cannot be undone."),
-		version: `v${__APP_VERSION__}`,
 	})
+	$("appVersion").textContent = `v${__APP_VERSION__}`
 	$("backToSettings").onclick = () => navigate("settings")
 	$("openFolder").onclick = () => command("folder")
 	$("recenter").onclick = () => command("recenter")
