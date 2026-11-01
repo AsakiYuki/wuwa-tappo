@@ -11,7 +11,7 @@
 	"description": "Wuwa Tappo for Linux",
 	"main": "runtime/main.js",
 	"scripts": {
-		"start": "npm run node:build && npm run renderer:build && electron --ozone-platform=x11 .",
+		"start": "node scripts/register-dev-desktop.cjs && npm run node:build && npm run renderer:build && electron --ozone-platform=x11 .",
 		"node:build": "node scripts/clean-runtime.cjs && tsc -p tsconfig.node.json",
 		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && tsc --noEmit",
 		"test": "npm run node:build && node --test runtime/test.js",
