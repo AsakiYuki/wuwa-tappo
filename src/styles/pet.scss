@@ -284,3 +284,70 @@ button {
 		opacity: 0.4;
 	}
 }
+
+.local-emotion-bubble-layer {
+	position: absolute;
+	inset: 0 16px;
+	overflow: visible;
+	pointer-events: none;
+	z-index: 12;
+}
+
+.local-emotion-bubble,
+.local-key-bubble {
+	position: absolute;
+	left: 50%;
+	top: 62%;
+	transform: translate(-50%, -50%) translate(var(--bubble-ox), var(--bubble-oy));
+	animation: emotion-bubble 1s ease-out forwards;
+	pointer-events: none;
+	filter: drop-shadow(0 6px 10px #0006);
+}
+
+.local-emotion-bubble {
+	z-index: 2;
+}
+
+.local-emotion-bubble__img {
+	display: block;
+	width: 80px;
+	height: 80px;
+	object-fit: contain;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.18);
+	backdrop-filter: blur(1px);
+}
+
+.local-key-bubble {
+	z-index: 1;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 36px;
+	height: 30px;
+	padding: 0 12px;
+	border-radius: 999px;
+	background: linear-gradient(180deg, #fffef7 0%, #ffd26f 100%);
+	border: 2px solid rgba(140, 82, 21, 0.8);
+	color: #532d12;
+	font-size: 13px;
+	font-weight: 900;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+	box-shadow: 0 6px 16px rgba(91, 60, 16, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+@keyframes emotion-bubble {
+	0% {
+		opacity: 0;
+		transform: translate(-50%, -50%) translate(var(--bubble-ox), calc(var(--bubble-oy) + 22px)) scale(0.8);
+	}
+	15% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		transform: translate(-50%, -50%) translate(var(--bubble-ox), calc(var(--bubble-oy) - 32px)) scale(1.1);
+	}
+}

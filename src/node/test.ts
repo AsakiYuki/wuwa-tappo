@@ -78,6 +78,47 @@ test("Hold animation defaults off and persists when enabled", () => {
 	assert.equal(core.normalize(s, items).settings.holdAnimation, true)
 	assert.equal(core.settings({ holdAnimation: "yes" as never }).holdAnimation, false)
 })
+
+test("Auto-emote and pressed-key settings default correctly and honor toggles", () => {
+	const s = core.initial(items)
+	assert.equal(s.settings.autoEmote, true)
+	assert.equal(s.settings.showPressedKeys, true)
+	s.settings.autoEmote = false
+	s.settings.showPressedKeys = false
+	const next = core.normalize(s, items)
+	assert.equal(next.settings.autoEmote, false)
+	assert.equal(next.settings.showPressedKeys, false)
+	assert.equal(core.settings({ autoEmote: "yes" as never }).autoEmote, true)
+	assert.equal(core.settings({ showPressedKeys: "yes" as never }).showPressedKeys, true)
+})
+
+test("Keyboard key labels can be overridden from settings", () => {
+	const s = core.initial(items)
+	assert.equal(s.settings.keyLabels.Meta, "Meta")
+	const next = core.settings({ keyLabels: { Meta: "Super", Ctrl: "Control" } })
+	assert.equal(next.keyLabels.Meta, "Super")
+	assert.equal(next.keyLabels.Ctrl, "Control")
+	assert.equal(core.settings({ keyLabels: { Meta: "  " } as never }).keyLabels.Meta, "Meta")
+})
+
+test("Bubble lifetime defaults to one second and stays within its supported range", () => {
+	const s = core.initial(items)
+	assert.equal(s.settings.bubbleLifetime, 1)
+	assert.equal(core.settings({ bubbleLifetime: 2.5 }).bubbleLifetime, 2.5)
+	assert.equal(core.settings({ bubbleLifetime: 0 }).bubbleLifetime, 0.5)
+	assert.equal(core.settings({ bubbleLifetime: 5 }).bubbleLifetime, 3)
+	assert.equal(core.settings({ bubbleLifetime: Number.NaN }).bubbleLifetime, 1)
+})
+
+test("Counter still tracks taps when auto-emote is disabled", () => {
+	const s = core.initial(items)
+	s.settings.autoEmote = false
+	s.count = 998
+	assert.equal(core.registerTap(s, items, () => 0), null)
+	assert.equal(s.count, 999)
+	assert.equal(core.registerTap(s, items, () => 0), null)
+	assert.equal(s.count, 0)
+})
 test("Reloading a save preserves collection, counter, presets, and draw progress", () => {
 	const s = core.initial(items)
 	core.draw(s, items, 10, () => 0.95)

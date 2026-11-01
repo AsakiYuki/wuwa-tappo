@@ -13,6 +13,7 @@ type SettingKey = keyof PetSettings
 const ranges = [
 	{ key: "opacity", title: "Pet Opacity", min: 0.3, max: 1, step: 0.05 },
 	{ key: "scale", title: "Pet Scale", min: 0.65, max: 1.5, step: 0.05 },
+	{ key: "bubbleLifetime", title: "Bubble Lifetime", min: 0.5, max: 3, step: 0.25 },
 ] as const
 
 const switches: Array<{
@@ -37,6 +38,16 @@ const switches: Array<{
 		description: "Always show chest shortcut next to pet.",
 	},
 	{ key: "showKeyboard", title: "Show Keyboard" },
+	{
+		key: "autoEmote",
+		title: "Auto Emote on Key Taps",
+		description: "Show a random equipped emote after the counter wraps.",
+	},
+	{
+		key: "showPressedKeys",
+		title: "Show Pressed Keys",
+		description: "Highlight keyboard keys while they are being held.",
+	},
 	{ key: "counterLeft", title: "Move Counter to Left" },
 	{ key: "alwaysOnTop", title: "Always On Top" },
 	{ key: "inputEnabled", title: "Keyboard & Mouse Reaction" },
@@ -144,6 +155,19 @@ export function mountSettingsPanel({
 
 	switches.slice(6).forEach(({ key, title, description }) => addSwitch(key, title, description))
 
+	const keyLabelsRow = element("div", "setting-item has-sub")
+	const keyLabelsLabel = element("div")
+	keyLabelsLabel.append(
+		element("div", "setting-title", "Keyboard Labels"),
+		element("div", "setting-sub", "Set custom text for keys like Meta, Ctrl, Alt, Shift. Use JSON: {\"Meta\":\"Meta\"}."),
+	)
+	const keyLabelsInput = element("textarea", "setting-textarea")
+	keyLabelsInput.dataset.setting = "keyLabels"
+	keyLabelsInput.setAttribute("aria-label", "Keyboard Labels")
+	keyLabelsInput.rows = 4
+	keyLabelsRow.append(keyLabelsLabel, keyLabelsInput)
+	container.append(keyLabelsRow)
+
 	const handAnimationRow = element("div", "setting-item has-sub")
 	const handAnimationLabel = element("div")
 	handAnimationLabel.append(
@@ -195,8 +219,7 @@ export function mountSettingsPanel({
 
 	container.addEventListener("change", event => {
 		const input = event.target
-		if ((!(input instanceof HTMLInputElement) && !(input instanceof HTMLSelectElement)) || !input.dataset.setting)
-			return
+		if (!(input instanceof HTMLElement) || !input.dataset.setting) return
 		if (input.dataset.setting === "counterUnlimited") {
 			if (!(input instanceof HTMLInputElement)) return
 			const limit = Number(counterLimitInput.value) || 999
@@ -205,12 +228,29 @@ export function mountSettingsPanel({
 			})
 			return
 		}
+		if (input.dataset.setting === "keyLabels") {
+			if (!(input instanceof HTMLTextAreaElement)) return
+			try {
+				const parsed = JSON.parse(input.value || "{}")
+				if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+					void api.command("settings", { keyLabels: parsed })
+					return
+				}
+				throw new Error("Not an object")
+			} catch {
+				toast("Use valid JSON like {\"Meta\":\"Meta\"}")
+			}
+			return
+		}
 		const value =
 			input instanceof HTMLInputElement && input.type === "checkbox"
 				? input.checked
 				: input instanceof HTMLSelectElement
 					? input.value
-					: Number(input.value)
+					: input instanceof HTMLInputElement
+						? Number(input.value)
+						: undefined
+		if (value === undefined) return
 		void api.command("settings", { [input.dataset.setting]: value })
 	})
 
@@ -239,8 +279,10 @@ export function mountSettingsPanel({
 		if (settings.counterLimit !== null) counterLimitInput.value = String(settings.counterLimit)
 		counterLimitInput.disabled = settings.counterLimit === null
 		unlimitedInput.checked = settings.counterLimit === null
+		keyLabelsInput.value = JSON.stringify(settings.keyLabels, null, 2)
 		container.querySelector<HTMLElement>("#scaleValue")!.textContent = `${Math.round(settings.scale * 100)}%`
 		container.querySelector<HTMLElement>("#opacityValue")!.textContent = `${Math.round(settings.opacity * 100)}%`
+		container.querySelector<HTMLElement>("#bubbleLifetimeValue")!.textContent = `${settings.bubbleLifetime.toFixed(2).replace(/0$/, "")} s`
 		container.querySelector<HTMLElement>("#monitorLabel")!.textContent =
 			`Display Screen: ${settings.monitor + 1} / ${monitorCount}`
 		cycleButton.onclick = () =>

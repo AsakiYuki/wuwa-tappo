@@ -217,12 +217,13 @@ const bubbleOffsets = [
   [-6, 8],
 ];
 let bubbleIndex = 0;
-function floatEmotion(layer: HTMLElement, item: CatalogItem) {
+function floatEmotion(layer: HTMLElement, item: CatalogItem, lifetime = 1) {
   const [x, y] = bubbleOffsets[bubbleIndex++ % bubbleOffsets.length],
     bubble = document.createElement("div"),
     img = document.createElement("img");
   bubble.className = "local-emotion-bubble";
   bubble.dataset.emote = item.id;
+  bubble.style.animationDuration = `${lifetime}s`;
   bubble.style.setProperty(
     "--bubble-ox",
     Math.round(x + Math.random() * 10 - 5) + "px",
@@ -239,6 +240,29 @@ function floatEmotion(layer: HTMLElement, item: CatalogItem) {
   bubble.addEventListener("animationend", () => bubble.remove(), {
     once: true,
   });
-  window.setTimeout(() => bubble.remove(), 1200);
+  window.setTimeout(() => bubble.remove(), lifetime * 1000 + 200);
 }
-export { emotionMotion, floatEmotion };
+function floatKeyBubble(layer: HTMLElement, label: string, lifetime = 1) {
+  if (!label) return;
+  const [x, y] = bubbleOffsets[bubbleIndex++ % bubbleOffsets.length],
+    bubble = document.createElement("div");
+  bubble.className = "local-key-bubble";
+  bubble.dataset.key = label;
+  bubble.style.animationDuration = `${lifetime}s`;
+  bubble.style.setProperty(
+    "--bubble-ox",
+    Math.round(x + Math.random() * 8 - 4) + "px",
+  );
+  bubble.style.setProperty(
+    "--bubble-oy",
+    Math.round(y + Math.random() * 6 - 3 - 50) + "px",
+  );
+  bubble.textContent = label;
+  bubble.style.setProperty("--bubble-scale", "1.2");
+  layer.append(bubble);
+  bubble.addEventListener("animationend", () => bubble.remove(), {
+    once: true,
+  });
+  window.setTimeout(() => bubble.remove(), lifetime * 1000 + 200);
+}
+export { emotionMotion, floatEmotion, floatKeyBubble };

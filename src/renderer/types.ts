@@ -28,8 +28,12 @@ export interface PetSettings {
 	hoverFade: boolean
 	showChest: boolean
 	showKeyboard: boolean
+	autoEmote: boolean
+	showPressedKeys: boolean
 	counterLeft: boolean
 	counterLimit: number | null
+	bubbleLifetime: number
+	keyLabels: Record<string, string>
 	holdAnimation: boolean
 	handAnimation: "adaptive" | "alternate" | "random" | "right" | "left"
 }

@@ -4,15 +4,43 @@ import "../../assets/ui/application/styles.css"
 import "../styles/pet.scss"
 import type { CatalogItem, InputMessage, PetState } from "./types"
 import { assetPath } from "./types"
-import { emotionMotion, floatEmotion } from "./emotions"
+import { emotionMotion, floatEmotion, floatKeyBubble } from "./emotions"
 import { getItemName } from "./names"
 
 const keyboardRows = [
 	["Tab|Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Backspace|⌫"],
 	["CapsLock|Caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", "Semicolon|;", "Enter|↵"],
 	["Shift|Shift", "Z", "X", "C", "V", "B", "N", "M", "Comma|,", "Period|.", "Slash|/"],
-	["Ctrl|Ctrl", "Meta|Win", "Alt|Alt", "Space|SPACE", "AltRight|Alt", "ShiftRight|Shift", "CtrlRight|Ctrl"],
+	["Ctrl|Ctrl", "Meta|Meta", "Alt|Alt", "Space|SPACE", "AltRight|Alt", "ShiftRight|Shift", "CtrlRight|Ctrl"],
 ]
+
+const controllerLabels: Record<string, string> = {
+	South: "A",
+	East: "B",
+	West: "X",
+	North: "Y",
+	L1: "LB",
+	R1: "RB",
+	L2: "LT",
+	R2: "RT",
+	LeftTriggerAxisPositive: "LT",
+	LeftTriggerAxisNegative: "LT",
+	RightTriggerAxisPositive: "RT",
+	RightTriggerAxisNegative: "RT",
+	L3: "LS",
+	R3: "RS",
+	Select: "BACK",
+	Start: "START",
+	Mode: "GUIDE",
+	DPadUp: "Up",
+	DPadDown: "Down",
+	DPadLeft: "Left",
+	DPadRight: "Right",
+	DPadXPositive: "Right",
+	DPadXNegative: "Left",
+	DPadYPositive: "Down",
+	DPadYNegative: "Up",
+}
 
 interface DragState {
 	pointerId: number
@@ -39,14 +67,42 @@ function PetApp() {
 	const heldActionKeys = useRef(new Map<string, 2 | 3>())
 	const handAnimation = useRef<PetState["settings"]["handAnimation"]>("adaptive")
 	const holdAnimation = useRef(false)
+	const showPressedKeys = useRef(true)
+	const bubbleLifetime = useRef(1)
+	const keyLabels = useRef<Record<string, string>>({})
 	const alternateHand = useRef<"left" | "right">("left")
 	handAnimation.current = state?.settings.handAnimation ?? "adaptive"
 	holdAnimation.current = state?.settings.holdAnimation ?? false
+	showPressedKeys.current = state?.settings.showPressedKeys ?? true
+	bubbleLifetime.current = state?.settings.bubbleLifetime ?? 1
 	const itemMap = useMemo(() => new Map(items.map(item => [item.id, item])), [items])
 	const itemMapRef = useRef(itemMap)
 	itemMapRef.current = itemMap
+	keyLabels.current = {
+		Meta: "Meta",
+		Ctrl: "Ctrl",
+		Alt: "Alt",
+		Shift: "Shift",
+		Tab: "Tab",
+		CapsLock: "Caps",
+		Backspace: "⌫",
+		Enter: "↵",
+		Space: "SPACE",
+		...(state?.settings.keyLabels ?? {}),
+	}
 	const character = state ? itemMap.get(state.character) : undefined
 	const accessory = state ? itemMap.get(state.accessory) : undefined
+	const getKeyLabel = useCallback((key: string) => {
+		const trimmed = key.trim()
+		if (!trimmed) return key
+		if (keyLabels.current[trimmed]) return keyLabels.current[trimmed]
+		const separator = trimmed.lastIndexOf(":")
+		if (separator >= 0) {
+			const button = trimmed.slice(separator + 1)
+			return keyLabels.current[button] ?? controllerLabels[button] ?? (/^Button(\d+)$/.exec(button)?.[1] ? `B${/^Button(\d+)$/.exec(button)![1]}` : button)
+		}
+		return trimmed
+	}, [])
 
 	const resolveAction = useCallback((inputSide: "left" | "right") => {
 		let side = inputSide
@@ -97,6 +153,10 @@ function PetApp() {
 			})
 			if (event.down) {
 				if (event.key.startsWith("Mouse")) lastMouseInputAt.current = Date.now()
+				const layer = document.getElementById("bubble")
+				if (showPressedKeys.current && layer && !event.key.startsWith("Mouse")) {
+					floatKeyBubble(layer, getKeyLabel(event.key), bubbleLifetime.current)
+				}
 				if (holdAnimation.current) {
 					const action = resolveAction(event.side)
 					heldActionKeys.current.set(event.key, action)
@@ -119,7 +179,7 @@ function PetApp() {
 		window.petAPI.onEmote(id => {
 			const item = itemMapRef.current.get(id)
 			const layer = document.getElementById("bubble")
-			if (item && layer) floatEmotion(layer, item)
+			if (item && layer) floatEmotion(layer, item, bubbleLifetime.current)
 		})
 		window.petAPI.onStatus(status => {
 			const element = document.getElementById("inputStatus")
@@ -280,7 +340,7 @@ function PetApp() {
 										const wide = ["Shift", "ShiftRight", "Enter", "Backspace", "CapsLock", "Tab"].includes(key)
 										return (
 											<span
-												className={`key${key === "Space" ? " space" : wide ? " wide" : ""}${activeKeys.has(key) ? " active" : ""}`}
+												className={`key${key === "Space" ? " space" : wide ? " wide" : ""}${state.settings.showPressedKeys && activeKeys.has(key) ? " active" : ""}`}
 												data-key={key}
 												key={key}
 											>

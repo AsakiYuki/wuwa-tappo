@@ -60,6 +60,8 @@ function settings(s: Partial<Settings>): Settings {
 		"hoverFade",
 		"showChest",
 		"showKeyboard",
+		"autoEmote",
+		"showPressedKeys",
 		"counterLeft",
 		"holdAnimation",
 	])
@@ -72,9 +74,17 @@ function settings(s: Partial<Settings>): Settings {
 			: Number.isSafeInteger(s.counterLimit)
 				? Math.max(1, s.counterLimit)
 				: DEFAULTS.counterLimit
+	out.bubbleLifetime = Number.isFinite(s.bubbleLifetime)
+		? Math.max(0.5, Math.min(3, s.bubbleLifetime))
+		: DEFAULTS.bubbleLifetime
 	out.handAnimation = ["adaptive", "alternate", "random", "right", "left"].includes(s.handAnimation)
 		? s.handAnimation
 		: DEFAULTS.handAnimation
+	const candidateLabels = s.keyLabels && typeof s.keyLabels === "object" ? s.keyLabels : {}
+	out.keyLabels = { ...DEFAULTS.keyLabels }
+	for (const [key, value] of Object.entries(candidateLabels)) {
+		if (typeof value === "string" && value.trim()) out.keyLabels[key] = value.trim()
+	}
 	out.monitor = Number.isInteger(s.monitor) ? Math.max(0, s.monitor) : 0
 	if (s.petPosition && typeof s.petPosition.x === "number" && typeof s.petPosition.y === "number")
 		out.petPosition = {
