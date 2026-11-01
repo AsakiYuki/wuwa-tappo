@@ -61,6 +61,7 @@ function settings(s: Partial<Settings>): Settings {
 		"showChest",
 		"showKeyboard",
 		"counterLeft",
+		"holdAnimation",
 	])
 		if (typeof s[k] === "boolean") out[k] = s[k]
 	out.scale = Math.max(0.65, Math.min(1.5, Number(s.scale) || 1))

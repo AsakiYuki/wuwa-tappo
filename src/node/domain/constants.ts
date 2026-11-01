@@ -15,6 +15,7 @@ const DEFAULTS: Settings = {
 	showKeyboard: true,
 	counterLeft: false,
 	counterLimit: 999,
+	holdAnimation: false,
 	handAnimation: "adaptive",
 	petPosition: null,
 }

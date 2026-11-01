@@ -89,6 +89,19 @@ export async function runQa({
     await capture("pet", pet);
 
     if (process.argv.includes("--snapshot")) {
+      await js(studio, "window.petAPI.command('settings',{holdAnimation:true})");
+      input("Q", true, "left");
+      input("P", true, "right");
+      await wait(100);
+      assert.equal((await js(pet, "window.__petTest()")).action, 4);
+      await capture("pet-both-hands", pet);
+      input("P", false);
+      await wait(80);
+      assert.equal((await js(pet, "window.__petTest()")).action, 2);
+      input("Q", false);
+      await wait(80);
+      assert.equal((await js(pet, "window.__petTest()")).action, 1);
+      await js(studio, "window.petAPI.command('settings',{holdAnimation:false})");
       await js(studio, "window.petAPI.command('settings',{hoverFade:false})");
       await js(
         pet,
@@ -187,6 +200,23 @@ export async function runQa({
       false,
     );
     results.push("Input events, tap animation, reset, and counter");
+
+    await js(studio, "window.petAPI.command('settings',{holdAnimation:true})");
+    await wait(80);
+    input("R", true, "left");
+    await wait(250);
+    assert.equal((await js(pet, "window.__petTest()")).action, 2);
+    input("F", true, "right");
+    await wait(80);
+    assert.equal((await js(pet, "window.__petTest()")).action, 3);
+    input("F", false);
+    await wait(80);
+    assert.equal((await js(pet, "window.__petTest()")).action, 2);
+    input("R", false);
+    await wait(80);
+    assert.equal((await js(pet, "window.__petTest()")).action, 1);
+    await js(studio, "window.petAPI.command('settings',{holdAnimation:false})");
+    results.push("Latest held input animates and earlier held input resumes on release");
 
     getState().count = 998;
     input("Q", true, "left");

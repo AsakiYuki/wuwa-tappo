@@ -41,6 +41,11 @@ const switches: Array<{
 	{ key: "alwaysOnTop", title: "Always On Top" },
 	{ key: "inputEnabled", title: "Keyboard & Mouse Reaction" },
 	{
+		key: "holdAnimation",
+		title: "Hold Animation",
+		description: "Keep the hand animation active until the key or button is released.",
+	},
+	{
 		key: "passthrough",
 		title: "Mouse Passthrough",
 		description: "Press Ctrl+Alt+P to toggle.",

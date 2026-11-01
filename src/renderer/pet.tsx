@@ -36,16 +36,19 @@ function PetApp() {
 	const menuTimer = useRef<number | undefined>(undefined)
 	const pointerDownAt = useRef(0)
 	const lastMouseInputAt = useRef(0)
+	const heldActionKeys = useRef(new Map<string, 2 | 3>())
 	const handAnimation = useRef<PetState["settings"]["handAnimation"]>("adaptive")
+	const holdAnimation = useRef(false)
 	const alternateHand = useRef<"left" | "right">("left")
 	handAnimation.current = state?.settings.handAnimation ?? "adaptive"
+	holdAnimation.current = state?.settings.holdAnimation ?? false
 	const itemMap = useMemo(() => new Map(items.map(item => [item.id, item])), [items])
 	const itemMapRef = useRef(itemMap)
 	itemMapRef.current = itemMap
 	const character = state ? itemMap.get(state.character) : undefined
 	const accessory = state ? itemMap.get(state.accessory) : undefined
 
-	const playAction = useCallback((inputSide: "left" | "right") => {
+	const resolveAction = useCallback((inputSide: "left" | "right") => {
 		let side = inputSide
 		switch (handAnimation.current) {
 			case "alternate":
@@ -62,10 +65,22 @@ function PetApp() {
 				side = "left"
 				break
 		}
-		setAction(side === "left" ? 2 : 3)
+		return side === "left" ? 2 : 3
+	}, [])
+
+	const playAction = useCallback((inputSide: "left" | "right") => {
+		setAction(resolveAction(inputSide))
 		window.clearTimeout(bodyTimer.current)
 		bodyTimer.current = window.setTimeout(() => setAction(1), 150)
-	}, [])
+	}, [resolveAction])
+
+	useEffect(() => {
+		if (state?.settings.holdAnimation && state.settings.inputEnabled) return
+		heldActionKeys.current.clear()
+		window.clearTimeout(bodyTimer.current)
+		bodyTimer.current = undefined
+		setAction(1)
+	}, [state?.settings.holdAnimation, state?.settings.inputEnabled])
 
 	useEffect(() => {
 		window.petAPI.onState(setState)
@@ -79,7 +94,23 @@ function PetApp() {
 			})
 			if (event.down) {
 				if (event.key.startsWith("Mouse")) lastMouseInputAt.current = Date.now()
-				playAction(event.side)
+				if (holdAnimation.current) {
+					const action = resolveAction(event.side)
+					heldActionKeys.current.set(event.key, action)
+					window.clearTimeout(bodyTimer.current)
+					bodyTimer.current = undefined
+					setAction(action)
+				} else {
+					playAction(event.side)
+				}
+			} else {
+				const wasHeld = heldActionKeys.current.delete(event.key)
+				if (holdAnimation.current && wasHeld) {
+					const remainingActions = [...heldActionKeys.current.values()]
+					window.clearTimeout(bodyTimer.current)
+					bodyTimer.current = undefined
+					setAction(remainingActions.at(-1) ?? 1)
+				}
 			}
 		})
 		window.petAPI.onEmote(id => {

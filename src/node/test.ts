@@ -71,6 +71,13 @@ test("Ten syntheses consume 100 duplicates, keep one copy, and do nothing when m
 	assert.throws(() => core.synthesize(s, items, 10, "common"))
 	assert.equal(JSON.stringify(s), snapshot)
 })
+test("Hold animation defaults off and persists when enabled", () => {
+	const s = core.initial(items)
+	assert.equal(s.settings.holdAnimation, false)
+	s.settings.holdAnimation = true
+	assert.equal(core.normalize(s, items).settings.holdAnimation, true)
+	assert.equal(core.settings({ holdAnimation: "yes" as never }).holdAnimation, false)
+})
 test("Reloading a save preserves collection, counter, presets, and draw progress", () => {
 	const s = core.initial(items)
 	core.draw(s, items, 10, () => 0.95)
