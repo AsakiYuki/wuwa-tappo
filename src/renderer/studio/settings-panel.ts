@@ -190,10 +190,7 @@ export function mountSettingsPanel({
 
 	container.addEventListener("change", event => {
 		const input = event.target
-		if (
-			(!(input instanceof HTMLInputElement) && !(input instanceof HTMLSelectElement)) ||
-			!input.dataset.setting
-		)
+		if ((!(input instanceof HTMLInputElement) && !(input instanceof HTMLSelectElement)) || !input.dataset.setting)
 			return
 		if (input.dataset.setting === "counterUnlimited") {
 			if (!(input instanceof HTMLInputElement)) return
@@ -214,9 +211,7 @@ export function mountSettingsPanel({
 
 	return (settings, monitorCount) => {
 		container
-			.querySelectorAll<HTMLInputElement | HTMLSelectElement>(
-				'[data-setting]:not([data-setting="counterUnlimited"])',
-			)
+			.querySelectorAll<HTMLInputElement | HTMLSelectElement>('[data-setting]:not([data-setting="counterUnlimited"])')
 			.forEach(input => {
 				const key = input.dataset.setting as SettingKey
 				const value = settings[key]
