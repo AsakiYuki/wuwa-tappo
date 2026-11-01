@@ -83,13 +83,17 @@ test("Auto-emote and pressed-key settings default correctly and honor toggles", 
 	const s = core.initial(items)
 	assert.equal(s.settings.autoEmote, true)
 	assert.equal(s.settings.showPressedKeys, true)
+	assert.equal(s.settings.showMouseBubbles, true)
 	s.settings.autoEmote = false
 	s.settings.showPressedKeys = false
+	s.settings.showMouseBubbles = false
 	const next = core.normalize(s, items)
 	assert.equal(next.settings.autoEmote, false)
 	assert.equal(next.settings.showPressedKeys, false)
+	assert.equal(next.settings.showMouseBubbles, false)
 	assert.equal(core.settings({ autoEmote: "yes" as never }).autoEmote, true)
 	assert.equal(core.settings({ showPressedKeys: "yes" as never }).showPressedKeys, true)
+	assert.equal(core.settings({ showMouseBubbles: "yes" as never }).showMouseBubbles, true)
 })
 
 test("Keyboard key labels can be overridden from settings", () => {

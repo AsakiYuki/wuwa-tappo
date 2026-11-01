@@ -48,6 +48,11 @@ const switches: Array<{
 		title: "Show Pressed Keys",
 		description: "Highlight keyboard keys while they are being held.",
 	},
+	{
+		key: "showMouseBubbles",
+		title: "Show Mouse Bubbles",
+		description: "Show a bubble when a mouse button is pressed.",
+	},
 	{ key: "counterLeft", title: "Move Counter to Left" },
 	{ key: "alwaysOnTop", title: "Always On Top" },
 	{ key: "inputEnabled", title: "Keyboard & Mouse Reaction" },

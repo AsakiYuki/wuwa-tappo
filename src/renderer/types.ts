@@ -30,6 +30,7 @@ export interface PetSettings {
 	showKeyboard: boolean
 	autoEmote: boolean
 	showPressedKeys: boolean
+	showMouseBubbles: boolean
 	counterLeft: boolean
 	counterLimit: number | null
 	bubbleLifetime: number

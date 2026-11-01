@@ -41,6 +41,7 @@ export interface Settings {
 	showKeyboard: boolean
 	autoEmote: boolean
 	showPressedKeys: boolean
+	showMouseBubbles: boolean
 	counterLeft: boolean
 	counterLimit: number | null
 	bubbleLifetime: number

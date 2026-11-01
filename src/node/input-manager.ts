@@ -154,6 +154,17 @@ export function createInputManager(options: InputManagerOptions) {
     272: "MouseLeft",
     273: "MouseRight",
     274: "MouseMiddle",
+    275: "MouseBack",
+    276: "MouseForward",
+    277: "MouseForward",
+    278: "MouseBack",
+  };
+  const UIOHOOK_MOUSEMAP: Record<number, string> = {
+    1: "MouseLeft",
+    2: "MouseRight",
+    3: "MouseMiddle",
+    4: "MouseBack",
+    5: "MouseForward",
   };
 
   const LINUX_GAMEPAD_BUTTONS: Record<number, string> = {
@@ -283,13 +294,7 @@ export function createInputManager(options: InputManagerOptions) {
           );
         continue;
       }
-      const mouse =
-        LINUX_MOUSEMAP[code] ||
-        (code >= 272 && code <= 287
-          ? code === 273
-            ? "MouseRight"
-            : "MouseLeft"
-          : null);
+      const mouse = LINUX_MOUSEMAP[code];
       const key = LINUX_KEYMAP[code] || "Key" + code;
       if (mouse && (value === 1 || value === 0))
         input(mouse, value === 1, mouse === "MouseLeft" ? "left" : "right");
@@ -342,7 +347,7 @@ export function createInputManager(options: InputManagerOptions) {
         /gamepad|joystick|controller|xbox|x-box|dualsense|dualshock|joy-?con/i.test(
           deviceName,
         );
-      if (!isGamepad && !/\b(kbd|mouse)\b/.test(handlers)) continue;
+        if (!isGamepad && !/\b(?:kbd|mouse\d*)\b/.test(handlers)) continue;
       const eventNumber = block.match(/\bevent(\d+)\b/)?.[1];
       if (eventNumber)
         candidates.set(`/dev/input/event${eventNumber}`, {
@@ -528,26 +533,13 @@ export function createInputManager(options: InputManagerOptions) {
         });
         hook.on("mousedown", (e) => {
           if (qa && process.argv.includes("--selftest")) return;
-          input(
-            e.button === 1
-              ? "MouseLeft"
-              : e.button === 2
-                ? "MouseRight"
-                : "MouseMiddle",
-            true,
-            e.button === 1 ? "left" : "right",
-          );
+          const key = UIOHOOK_MOUSEMAP[Number(e.button)];
+          if (key) input(key, true, key === "MouseLeft" ? "left" : "right");
         });
         hook.on("mouseup", (e) => {
           if (qa && process.argv.includes("--selftest")) return;
-          input(
-            e.button === 1
-              ? "MouseLeft"
-              : e.button === 2
-                ? "MouseRight"
-                : "MouseMiddle",
-            false,
-          );
+          const key = UIOHOOK_MOUSEMAP[Number(e.button)];
+          if (key) input(key, false);
         });
         hook.start();
         hookActive = true;

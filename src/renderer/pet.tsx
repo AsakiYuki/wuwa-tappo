@@ -66,6 +66,14 @@ const controllerDirections: Record<string, string> = {
 	DPadYNegative: "Up",
 }
 
+const mouseLabels: Record<string, string> = {
+	MouseLeft: "LMB",
+	MouseRight: "RMB",
+	MouseMiddle: "MMB",
+	MouseBack: "BACK",
+	MouseForward: "FORWARD",
+}
+
 interface DragState {
 	pointerId: number
 	x: number
@@ -92,6 +100,7 @@ function PetApp() {
 	const handAnimation = useRef<PetState["settings"]["handAnimation"]>("adaptive")
 	const holdAnimation = useRef(false)
 	const showPressedKeys = useRef(true)
+	const showMouseBubbles = useRef(true)
 	const bubbleLifetime = useRef(1)
 	const controllerStyle = useRef<"xbox" | "ps">("xbox")
 	const keyLabels = useRef<Record<string, string>>({})
@@ -99,6 +108,7 @@ function PetApp() {
 	handAnimation.current = state?.settings.handAnimation ?? "adaptive"
 	holdAnimation.current = state?.settings.holdAnimation ?? false
 	showPressedKeys.current = state?.settings.showPressedKeys ?? true
+	showMouseBubbles.current = state?.settings.showMouseBubbles ?? true
 	bubbleLifetime.current = state?.settings.bubbleLifetime ?? 1
 	controllerStyle.current = state?.settings.controllerStyle ?? "xbox"
 	const itemMap = useMemo(() => new Map(items.map(item => [item.id, item])), [items])
@@ -121,7 +131,7 @@ function PetApp() {
 	const getKeyLabel = useCallback((key: string) => {
 		const trimmed = key.trim()
 		if (!trimmed) return key
-		if (keyLabels.current[trimmed]) return keyLabels.current[trimmed]
+		if (keyLabels.current[trimmed] || mouseLabels[trimmed]) return keyLabels.current[trimmed] ?? mouseLabels[trimmed]
 		const separator = trimmed.lastIndexOf(":")
 		if (separator >= 0) {
 			const button = trimmed.slice(separator + 1)
@@ -185,7 +195,8 @@ function PetApp() {
 			if (event.down) {
 				if (event.key.startsWith("Mouse")) lastMouseInputAt.current = Date.now()
 				const layer = document.getElementById("bubble")
-				if (showPressedKeys.current && layer && !event.key.startsWith("Mouse")) {
+				const isMouse = event.key.startsWith("Mouse")
+				if (layer && (isMouse ? showMouseBubbles.current : showPressedKeys.current)) {
 					floatKeyBubble(layer, getKeyLabel(event.key), bubbleLifetime.current)
 				}
 				if (holdAnimation.current) {

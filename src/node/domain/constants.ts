@@ -15,6 +15,7 @@ const DEFAULTS: Settings = {
 	showKeyboard: true,
 	autoEmote: true,
 	showPressedKeys: true,
+	showMouseBubbles: true,
 	counterLeft: false,
 	counterLimit: 999,
 	bubbleLifetime: 1,

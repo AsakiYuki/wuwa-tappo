@@ -62,6 +62,7 @@ function settings(s: Partial<Settings>): Settings {
 		"showKeyboard",
 		"autoEmote",
 		"showPressedKeys",
+		"showMouseBubbles",
 		"counterLeft",
 		"holdAnimation",
 	])
