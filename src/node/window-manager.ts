@@ -45,18 +45,8 @@ export function createWindowManager(options: WindowManagerOptions) {
 		const savedPosition = settings.petPosition
 
 		if (!resetToCorner && savedPosition && Number.isFinite(savedPosition.x) && Number.isFinite(savedPosition.y)) {
-			const savedDisplayArea = screen.getDisplayMatching({
-				x: savedPosition.x,
-				y: savedPosition.y,
-				width,
-				height,
-			}).workArea
-			const x = Math.round(
-				Math.max(savedDisplayArea.x, Math.min(savedPosition.x, savedDisplayArea.x + savedDisplayArea.width - width)),
-			)
-			const y = Math.round(
-				Math.max(savedDisplayArea.y, Math.min(savedPosition.y, savedDisplayArea.y + savedDisplayArea.height - height)),
-			)
+			const x = Math.round(savedPosition.x)
+			const y = Math.round(savedPosition.y)
 			pet.setBounds({ x, y, width, height })
 			settings.petPosition = { x, y }
 			return

@@ -233,10 +233,8 @@ ipcMain.on("move", (_, dx, dy) => {
 	)
 		return
 	const [x, y] = pet.getPosition()
-	const a = screen.getDisplayMatching(pet.getBounds()).workArea
-	const b = pet.getBounds()
-	const nx = Math.round(Math.max(a.x, Math.min(a.x + a.width - b.width, x + dx)))
-	const ny = Math.round(Math.max(a.y, Math.min(a.y + a.height - b.height, y + dy)))
+	const nx = Math.round(x + dx)
+	const ny = Math.round(y + dy)
 	pet.setPosition(nx, ny)
 	state.settings.petPosition = { x: nx, y: ny }
 	laterSave()
