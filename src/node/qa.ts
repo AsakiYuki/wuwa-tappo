@@ -59,6 +59,14 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			),
 			1,
 		)
+		await js(studio, "document.querySelector('[data-page=settings]').click()")
+		assert.equal(await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length'), 5)
+		assert.equal(await js(studio, 'document.querySelector("#settingsRows [data-setting=autoStart]")?.type'), "checkbox")
+		assert.equal(
+			await js(studio, 'document.querySelectorAll("#keyboardLabelsRows .keyboard-label-row").length'),
+			Object.keys(getState().settings.keyLabels).length,
+		)
+		await js(studio, "document.querySelector('[data-page=collection]').click()")
 		results.push("Initial 11 items, layered character images, and 42-key layout")
 		await capture("collection", studio)
 		await capture("pet", pet)
@@ -134,7 +142,31 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		await js(studio, `window.petAPI.command('equip',${JSON.stringify(male.id)})`)
 		await wait(400)
 		assert.equal((await js(pet, "window.__petTest()")).character, male.id)
+		await js(studio, "document.querySelector('#miniPresets .preset-item--add').click()")
+		await wait(100)
+		assert.equal(await js(studio, '!!document.querySelector("#presetsRoot #presetName")'), true)
+		assert.equal(await js(studio, '!!document.querySelector("#presetsRoot #presets")'), true)
+		await js(studio, "document.querySelector('[data-page=synthesis]').click()")
+		await wait(100)
+		assert.equal(await js(studio, 'document.querySelectorAll("#synthesisRoot [data-synth-mode]").length'), 2)
+		assert.equal(await js(studio, 'document.querySelectorAll("#synthesisRoot [data-synth-count]").length'), 2)
+		assert.equal(await js(studio, '!!document.querySelector("#materialPicker #materialGroups")'), true)
+		await js(studio, "document.querySelector('[data-page=collection]').click()")
 		results.push("Outfit changes sync to the desktop pet")
+		await js(studio, "document.getElementById('savePreset').click()")
+		await wait(250)
+		assert.equal(getState().presets.length, 1)
+		const temporaryPreset = getState().presets[0]
+		await js(studio, `window.petAPI.command('preset-delete',${JSON.stringify(temporaryPreset.id)})`)
+		await wait(100)
+		await js(studio, "document.querySelector('[data-page=synthesis]').click()")
+		await wait(100)
+		await js(studio, "document.querySelector('#synthesisSlots .synthesis-item').click()")
+		await wait(100)
+		assert.equal(await js(studio, "document.getElementById('materialPicker').open"), true)
+		await js(studio, "document.getElementById('closeMaterials').click()")
+		await wait(100)
+		await js(studio, "document.querySelector('[data-page=collection]').click()")
 		const before = getState().count
 		input("A", true, "left")
 		await wait(50)

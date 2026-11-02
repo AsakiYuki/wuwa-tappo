@@ -1,5 +1,4 @@
 import { getItemName } from "./names"
-import { labels } from "./studio/constants"
 import { type InventoryFilters, type InventoryPage, type InventoryType } from "./studio/collection"
 import { createElement as el, createImage as img, byId as $, createToast } from "./studio/dom"
 import { mountSettingsPanel } from "./studio/settings-panel"
@@ -65,83 +64,42 @@ export function mountStudioController() {
 				? state.accessory === it.id
 				: state.emotes.includes(it.id)
 	}
-	function card(it, interactive = true) {
-		const owned = state.owned[it.id] || 0,
-			kind = it.type === "character" ? "character_skin" : it.type,
-			c = el(
-				"article",
-				"atlas-item item-card atlas-item--" +
-					kind +
-					(!owned ? " atlas-item--unowned" : "") +
-					(equipped(it) && page !== "atlas" ? " atlas-item--active" : ""),
-			)
-		c.dataset.id = it.id
+	async function selectItem(it: CatalogItem) {
 		const titleName = getItemName(it)
-		c.title = titleName + " · " + labels[it.rarity]
-		const art = el("div", "atlas-thumb atlas-thumb--" + it.rarity)
-		art.append(img(it.thumbnail))
-		const name = el("div", "atlas-name")
-		name.append(el("div", "atlas-name-inner", titleName))
-		c.append(art, name, el("span", "atlas-type-icon"))
-		if (owned > 1) c.append(el("span", "atlas-qty", String(owned)))
-		if (interactive) {
-			const fav = el("button", "atlas-collect" + (state.favorites.includes(it.id) ? " atlas-collect--active" : ""))
-			fav.title = "Favorite / Unfavorite"
-			fav.onclick = e => {
-				e.stopPropagation()
-				command("favorite", it.id)
-			}
-			c.append(fav)
-			c.tabIndex = 0
-			c.onclick = async () => {
-				if (!owned) {
-					toast("Obtain via chests or synthesis")
-					return
-				}
-				if (it.type === "emote" && replaceSlot !== null) {
-					const slot = replaceSlot
-					if ((await command("emote-replace", { id: it.id, slot })).ok) {
-						replaceSlot = null
-						render()
-						toast("Emote " + (slot + 1) + " replaced with " + titleName)
-					}
-					return
-				}
-				if (it.type === "character") {
-					if (equipped(it)) {
-						toast(titleName + " is already equipped")
-						return
-					}
-					const result = await command("equip", it.id)
-					if (result.ok) {
-						state.character = it.id
-						render()
-						toast("Equipped " + titleName)
-					}
-					return
-				}
-				if (it.type === "emote" && !equipped(it) && state.emotes.length >= 5) {
-					chooseEmote(it)
-					return
-				}
-				const result = await command("equip", it.id)
-				if (result.ok) render()
-			}
-			c.onkeydown = e => {
-				if (e.target === c && (e.key === "Enter" || e.key === " ")) {
-					e.preventDefault()
-					c.click()
-				}
-			}
-			if (it.type === "emote" && owned)
-				c.oncontextmenu = e => {
-					e.preventDefault()
-					command("emote", it.id)
-				}
+		if (!state.owned[it.id]) {
+			toast("Obtain via chests or synthesis")
+			return
 		}
-		return c
+		if (it.type === "emote" && replaceSlot !== null) {
+			const slot = replaceSlot
+			if ((await command("emote-replace", { id: it.id, slot })).ok) {
+				replaceSlot = null
+				render()
+				toast("Emote " + (slot + 1) + " replaced with " + titleName)
+			}
+			return
+		}
+		if (it.type === "character" && equipped(it)) {
+			toast(titleName + " is already equipped")
+			return
+		}
+		if (it.type === "emote" && !equipped(it) && state.emotes.length >= 5) {
+			chooseEmote(it)
+			return
+		}
+		const result = await command("equip", it.id)
+		if (!result.ok) return
+		if (it.type === "character") {
+			state.character = it.id
+			toast("Equipped " + titleName)
+		}
+		render()
 	}
 	const inventoryPanel = mountInventoryPanel({
+		root: $("inventoryRoot"),
+		typeTabs: $("typeTabs"),
+		filterBar: $("filterBar"),
+		inventory: $("inventory"),
 		getItems: () => items,
 		getState: () => state,
 		getPage: () => page,
@@ -154,9 +112,18 @@ export function mountStudioController() {
 			filters = nextFilters
 		},
 		getFilterMetadata: () => filterMeta,
-		createCard: item => card(item),
+		isEquipped: equipped,
+		onSelect: item => void selectItem(item),
+		onFavorite: item => void command("favorite", item.id),
+		onContextMenu: (item, event) => {
+			if (item.type === "emote" && state.owned[item.id]) {
+				event.preventDefault()
+				void command("emote", item.id)
+			}
+		},
 	})
 	const renderPreview = mountOutfitPreview({
+		container: $("currentOutfit"),
 		getState: () => state,
 		getItem: id => map.get(id),
 		getReplacementSlot: () => replaceSlot,
@@ -191,18 +158,24 @@ export function mountStudioController() {
 		if (page === "settings" || page === "keyboard-labels") renderSettings(state.settings, monitorCount)
 	}
 	const resultsPanel = mountResultsPanel({
+		container: $("resultDialogRoot"),
+		drawButtonsContainer: $("drawButtonsRoot"),
+		dialog: $("results"),
 		getItem: id => map.get(id),
-		createCard: (item, interactive) => card(item, interactive),
 		command,
 		toast,
 	})
 	const renderSynthesis = mountSynthesisPanel({
+		container: $("synthesisRoot"),
+		materialDialog: $("materialPicker"),
 		api: window.petAPI,
 		getItems: () => items,
 		getState: () => state,
 		showResults: resultsPanel.showSynthesisResults,
+		toast,
 	})
 	const renderPresets = mountPresetsPanel({
+		container: $("presetsRoot"),
 		getState: () => state,
 		getItem: id => map.get(id),
 		command,
@@ -220,9 +193,6 @@ export function mountStudioController() {
 	$("appVersion").textContent = `v${__APP_VERSION__}`
 	$("buildVersion").textContent = `Build ${__BUILD_VERSION__}`
 	$("backToSettings").onclick = () => navigate("settings")
-	$("openFolder").onclick = () => command("folder")
-	$("recenter").onclick = () => command("recenter")
-	$("quit").onclick = () => command("quit")
 	window.petAPI.onState(s => {
 		state = s
 		render()
