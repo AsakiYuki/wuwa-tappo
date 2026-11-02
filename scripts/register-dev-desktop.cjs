@@ -43,7 +43,7 @@ fs.chmodSync(launcherPath, 0o755)
 const desktopEntry = [
 	"[Desktop Entry]",
 	"Type=Application",
-	`Name=${packageMetadata.build.productName} (Development)`,
+	`Name=${packageMetadata.build.productName}`,
 	`Comment=${packageMetadata.description}`,
 	`Exec=${quoteDesktopArg(launcherPath)}`,
 	`Icon=${iconPath}`,
