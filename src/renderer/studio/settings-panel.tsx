@@ -77,10 +77,28 @@ const switches: Array<{
 	{ key: "passthrough", title: "Mouse Passthrough", tab: "input", description: "Press Ctrl+Alt+P to toggle." },
 ]
 
-const builtInKeyLabels = new Set(["Meta", "Ctrl", "Alt", "Shift", "Tab", "CapsLock", "Backspace", "Enter", "Space"])
-
 function createKeyLabelRows(labels: Record<string, string>): KeyLabelRow[] {
 	return Object.entries(labels).map(([key, value], index) => ({ id: `${key}-${index}`, key, value }))
+}
+
+function capturedKeyName(event: KeyboardEvent): string {
+	const aliases: Record<string, string> = {
+		ControlLeft: "Ctrl",
+		ControlRight: "CtrlRight",
+		ShiftLeft: "Shift",
+		ShiftRight: "ShiftRight",
+		AltLeft: "Alt",
+		AltRight: "AltRight",
+		MetaLeft: "Meta",
+		MetaRight: "MetaRight",
+		NumpadEnter: "Enter",
+	}
+	if (aliases[event.code]) return aliases[event.code]
+	if (event.code.startsWith("Key")) return event.code.slice(3)
+	if (event.code.startsWith("Digit")) return event.code.slice(5)
+	if (event.code === "Space") return "Space"
+	if (event.code) return event.code
+	return event.key === " " ? "Space" : event.key.length === 1 ? event.key.toUpperCase() : event.key
 }
 
 export function mountSettingsPanel(options: SettingsPanelOptions) {
@@ -491,7 +509,7 @@ function KeyboardLabelsEditor({
 }) {
 	const [rows, setRows] = useState<KeyLabelRow[]>(() => createKeyLabelRows(labels))
 	const [jsonDraft, setJsonDraft] = useState(() => JSON.stringify(labels, null, 2))
-	const nextId = useRef(0)
+	const [isCapturingKey, setIsCapturingKey] = useState(false)
 	const rowsRef = useRef(rows)
 
 	useEffect(() => {
@@ -510,16 +528,52 @@ function KeyboardLabelsEditor({
 		void api.command("settings", { keyLabels: nextLabels })
 	}
 
-	const addRow = () => {
-		const nextRows = [...rowsRef.current, { id: `new-${nextId.current++}`, key: "", value: "" }]
+	const addCapturedKey = (key: string) => {
+		const existingRow = rowsRef.current.find(row => row.key === key)
+		setIsCapturingKey(false)
+		if (existingRow) {
+			toast(`${key} already has a label`)
+			requestAnimationFrame(() => document.getElementById(`key-label-value-${existingRow.id}`)?.focus())
+			return
+		}
+		const row = { id: `${key}-${rowsRef.current.length}`, key, value: key }
+		const nextRows = [...rowsRef.current, row]
 		rowsRef.current = nextRows
 		setRows(nextRows)
+		requestAnimationFrame(() => {
+			const input = document.getElementById(`key-label-value-${row.id}`) as HTMLInputElement | null
+			input?.focus()
+			input?.select()
+		})
 	}
+
+	useEffect(() => {
+		if (!isCapturingKey) return
+		const handleKeyDown = (event: KeyboardEvent) => {
+			event.preventDefault()
+			event.stopPropagation()
+			if (event.key === "Escape") {
+				setIsCapturingKey(false)
+				return
+			}
+			const key = capturedKeyName(event)
+			if (key && key !== "Unidentified") addCapturedKey(key)
+		}
+		window.addEventListener("keydown", handleKeyDown, true)
+		return () => window.removeEventListener("keydown", handleKeyDown, true)
+	}, [isCapturingKey])
 
 	const updateRow = (id: string, field: "key" | "value", value: string) => {
 		const nextRows = rowsRef.current.map(row => (row.id === id ? { ...row, [field]: value } : row))
 		rowsRef.current = nextRows
 		setRows(nextRows)
+	}
+
+	const saveRowField = (id: string, field: "key" | "value", value: string) => {
+		const nextRows = rowsRef.current.map(row => (row.id === id ? { ...row, [field]: value } : row))
+		rowsRef.current = nextRows
+		setRows(nextRows)
+		saveRows(nextRows)
 	}
 
 	const removeRow = (id: string) => {
@@ -566,7 +620,6 @@ function KeyboardLabelsEditor({
 				<div className="setting-sub">Edit each key and its displayed label.</div>
 				<div className="keyboard-label-rows">
 					{rows.map(row => {
-						const isBuiltIn = builtInKeyLabels.has(row.key)
 						return (
 							<div className="keyboard-label-row" key={row.id}>
 								<input
@@ -575,24 +628,23 @@ function KeyboardLabelsEditor({
 									data-label-field="key"
 									placeholder="Key name, e.g. Meta"
 									value={row.key}
-									readOnly={isBuiltIn}
 									onChange={event => updateRow(row.id, "key", event.currentTarget.value)}
-									onBlur={() => saveRows()}
+									onBlur={event => saveRowField(row.id, "key", event.currentTarget.value)}
 								/>
 								<input
 									className="keyboard-label-input"
 									aria-label="Displayed label"
+									id={`key-label-value-${row.id}`}
 									data-label-field="value"
 									placeholder="Displayed label"
 									value={row.value}
 									onChange={event => updateRow(row.id, "value", event.currentTarget.value)}
-									onBlur={() => saveRows()}
+									onBlur={event => saveRowField(row.id, "value", event.currentTarget.value)}
 								/>
 								<button
 									className="common-btn keyboard-label-remove"
 									aria-label={`Remove ${row.key || "key label"}`}
 									type="button"
-									hidden={isBuiltIn}
 									onClick={() => removeRow(row.id)}
 								>
 									Remove
@@ -601,9 +653,16 @@ function KeyboardLabelsEditor({
 						)
 					})}
 				</div>
-				<button className="common-btn keyboard-label-add" type="button" onClick={addRow}>
-					Add Key
-				</button>
+				<div className="keyboard-label-add-actions">
+					<button className="common-btn keyboard-label-add" type="button" onClick={() => setIsCapturingKey(true)}>
+						{isCapturingKey ? "Press a key..." : "Add Key"}
+					</button>
+					{isCapturingKey && (
+						<button className="common-btn keyboard-label-cancel" type="button" onClick={() => setIsCapturingKey(false)}>
+							Cancel
+						</button>
+					)}
+				</div>
 			</div>
 			<div className="keyboard-label-json" hidden={mode !== "json"}>
 				<div className="setting-sub">

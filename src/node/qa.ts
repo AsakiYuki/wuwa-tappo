@@ -156,6 +156,29 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			await js(studio, 'document.querySelectorAll("#keyboardLabelsRows .keyboard-label-row").length'),
 			Object.keys(getState().settings.keyLabels).length,
 		)
+		await js(
+			studio,
+			'document.querySelectorAll("#settingsRows [role=tab]")[2].click();[...document.querySelectorAll("#settingsRows button")].find(button=>button.textContent==="Edit Labels").click()',
+		)
+		await wait(100)
+		assert.equal(
+			await js(
+				studio,
+				'(()=>{const button=document.querySelector("#keyboardLabelsRows .keyboard-label-add"),page=document.querySelector("#page-keyboard-labels"),rows=document.querySelector("#keyboardLabelsRows .keyboard-label-rows");return button.getBoundingClientRect().bottom<=page.getBoundingClientRect().bottom&&rows.getBoundingClientRect().height===0;})()',
+			),
+			true,
+		)
+		await js(studio, 'document.querySelector("#keyboardLabelsRows .keyboard-label-add").click()')
+		await js(
+			studio,
+			'document.body.dispatchEvent(new KeyboardEvent("keydown",{key:"a",code:"KeyA",bubbles:true,cancelable:true}))',
+		)
+		await wait(100)
+		assert.equal(await js(studio, 'document.querySelector("#keyboardLabelsRows [data-label-field=key]")?.value'), "A")
+		assert.equal(await js(studio, 'document.activeElement?.getAttribute("data-label-field")'), "value")
+		await js(studio, 'document.querySelector("#keyboardLabelsRows .keyboard-label-remove").click()')
+		await wait(150)
+		assert.equal(getState().settings.keyLabels.A, undefined)
 		await js(studio, "document.querySelector('[data-page=collection]').click()")
 		results.push("Initial 11 items, layered character images, and 42-key layout")
 		await capture("collection", studio)

@@ -142,11 +142,32 @@ test("Auto-emote and pressed-key settings default correctly and honor toggles", 
 
 test("Keyboard key labels can be overridden from settings", () => {
 	const s = core.initial(items)
-	assert.equal(s.settings.keyLabels.Meta, "Meta")
+	assert.deepEqual(s.settings.keyLabels, {})
 	const next = core.settings({ keyLabels: { Meta: "Super", Ctrl: "Control" } })
 	assert.equal(next.keyLabels.Meta, "Super")
 	assert.equal(next.keyLabels.Ctrl, "Control")
-	assert.equal(core.settings({ keyLabels: { Meta: "  " } as never }).keyLabels.Meta, "Meta")
+	assert.equal(core.settings({ keyLabels: { Meta: "  " } as never }).keyLabels.Meta, undefined)
+	const migrated = core.normalize(
+		{
+			...s,
+			settings: {
+				...s.settings,
+				keyLabels: {
+					Meta: "Meta",
+					Ctrl: "Control",
+					Alt: "Alt",
+					Shift: "Shift",
+					Tab: "Tab",
+					CapsLock: "Caps",
+					Backspace: "⌫",
+					Enter: "↵",
+					Space: "SPACE",
+				},
+			},
+		},
+		items,
+	)
+	assert.deepEqual(migrated.settings.keyLabels, { Ctrl: "Control" })
 })
 
 test("Bubble lifetime defaults to one second and stays within its supported range", () => {

@@ -1,6 +1,18 @@
 import type { CatalogItem, CollectionState, RawCollection, Settings } from "../types.js"
 import { DEFAULTS } from "./constants.js"
 
+const legacyDefaultKeyLabels: Record<string, string> = {
+	Meta: "Meta",
+	Ctrl: "Ctrl",
+	Alt: "Alt",
+	Shift: "Shift",
+	Tab: "Tab",
+	CapsLock: "Caps",
+	Backspace: "⌫",
+	Enter: "↵",
+	Space: "SPACE",
+}
+
 function initial(items: CatalogItem[]): CollectionState {
 	const starters = items.filter(x => x.starter)
 	return {
@@ -90,7 +102,8 @@ function settings(s: Partial<Settings>): Settings {
 	const candidateLabels = s.keyLabels && typeof s.keyLabels === "object" ? s.keyLabels : {}
 	out.keyLabels = { ...DEFAULTS.keyLabels }
 	for (const [key, value] of Object.entries(candidateLabels)) {
-		if (typeof value === "string" && value.trim()) out.keyLabels[key] = value.trim()
+		const label = typeof value === "string" ? value.trim() : ""
+		if (label && legacyDefaultKeyLabels[key] !== label) out.keyLabels[key] = label
 	}
 	out.monitor = Number.isInteger(s.monitor) ? Math.max(0, s.monitor) : 0
 	if (s.petPosition && typeof s.petPosition.x === "number" && typeof s.petPosition.y === "number")

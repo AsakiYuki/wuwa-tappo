@@ -524,10 +524,11 @@ h3 {
 }
 .keyboard-labels-editor {
 	display: flex;
-	flex: 1 1 auto;
+	flex: 1 1 0;
 	flex-direction: column;
 	gap: 10px;
 	min-height: 0;
+	overflow: hidden;
 }
 #keyboardLabelsRows {
 	display: flex;
@@ -536,6 +537,7 @@ h3 {
 }
 .keyboard-label-mode {
 	display: inline-flex;
+	flex: 0 0 auto;
 	align-self: flex-start;
 	gap: 3px;
 	padding: 3px;
@@ -563,28 +565,44 @@ h3 {
 .keyboard-label-ui,
 .keyboard-label-json {
 	display: flex;
-	flex: 1 1 auto;
+	flex: 1 1 0;
 	flex-direction: column;
 	gap: 8px;
 	min-height: 0;
+	overflow: hidden;
 }
 .keyboard-label-rows {
 	display: flex;
-	flex: 1 1 auto;
+	flex: 1 1 0;
 	flex-direction: column;
 	gap: 7px;
 	min-height: 0;
 	overflow-y: auto;
+}
+.keyboard-label-rows:empty {
+	flex: 0 0 0;
+}
+.keyboard-label-add-actions {
+	flex: 0 0 auto;
 }
 .keyboard-label-add {
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	align-self: flex-start;
-	min-width: 92px;
+	min-width: 128px;
 	height: 32px;
 	padding: 0 12px;
 	line-height: 1;
+}
+.keyboard-label-add-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+.keyboard-label-cancel {
+	min-width: 72px;
+	height: 32px;
 }
 .keyboard-label-row {
 	display: grid;

@@ -192,18 +192,7 @@ function PetApp() {
 	const itemMap = useMemo(() => new Map(items.map(item => [item.id, item])), [items])
 	const itemMapRef = useRef(itemMap)
 	itemMapRef.current = itemMap
-	keyLabels.current = {
-		Meta: "Meta",
-		Ctrl: "Ctrl",
-		Alt: "Alt",
-		Shift: "Shift",
-		Tab: "Tab",
-		CapsLock: "Caps",
-		Backspace: "⌫",
-		Enter: "↵",
-		Space: "SPACE",
-		...(state?.settings.keyLabels ?? {}),
-	}
+	keyLabels.current = { ...(state?.settings.keyLabels ?? {}) }
 	const character = state ? itemMap.get(state.character) : undefined
 	const accessory = state ? itemMap.get(state.accessory) : undefined
 	const getKeyLabel = useCallback((key: string) => {
