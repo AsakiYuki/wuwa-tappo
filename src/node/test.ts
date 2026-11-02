@@ -4,9 +4,33 @@ import fs from "node:fs"
 import path from "node:path"
 import * as core from "./core.js"
 import * as storage from "./storage.js"
+import os from "node:os"
+import { setLinuxAutoStart } from "./autostart.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
 const items = catalog.items
+test("Linux launch-at-startup creates and removes an XDG autostart entry", () => {
+	const configDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-autostart-"))
+	const entry = path.join(configDirectory, "autostart", "wuwa-tappo.desktop")
+	try {
+		setLinuxAutoStart(true, configDirectory, "/opt/Wuwa Tappo/wuwa-tappo")
+		assert.equal(
+			fs.readFileSync(entry, "utf8"),
+			[
+				"[Desktop Entry]",
+				"Type=Application",
+				"Name=Wuwa Tappo",
+				'Exec="/opt/Wuwa Tappo/wuwa-tappo"',
+				"Terminal=false",
+				"",
+			].join("\n"),
+		)
+		setLinuxAutoStart(false, configDirectory, "/opt/Wuwa Tappo/wuwa-tappo")
+		assert.equal(fs.existsSync(entry), false)
+	} finally {
+		fs.rmSync(configDirectory, { recursive: true, force: true })
+	}
+})
 test("Starts with the classic Rover pair, Abby, and eight base emotes", () => {
 	const s = core.initial(items)
 	assert.equal(Object.keys(s.owned).length, 11)

@@ -21,6 +21,7 @@ import { runQa } from "./qa.js"
 import { createInputManager } from "./input-manager.js"
 import { executeCommand } from "./commands.js"
 import { createWindowManager } from "./window-manager.js"
+import { setAutoStart } from "./autostart.js"
 
 if (process.platform === "linux") {
 	try {
@@ -283,6 +284,13 @@ if (!primaryInstance) {
 		showStudio()
 	})
 	app.whenReady().then(async () => {
+		if (app.isPackaged) {
+			try {
+				setAutoStart(state.settings.autoStart, app)
+			} catch {
+				saveWarning = "Failed to update launch-at-startup registration"
+			}
+		}
 		session.defaultSession.webRequest.onBeforeRequest(
 			{ urls: ["http://*/*", "https://*/*", "ws://*/*", "wss://*/*"] },
 			(_details, callback) => callback({ cancel: true }),

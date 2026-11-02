@@ -4,6 +4,7 @@ import path from "node:path"
 import type { CatalogItem, CollectionState } from "./types.js"
 import * as core from "./core.js"
 import * as storage from "./storage.js"
+import { setAutoStart } from "./autostart.js"
 
 export interface CommandContext {
 	app: App
@@ -119,13 +120,7 @@ export async function executeCommand(name: string, argument: any, context: Comma
 				if (!app.isPackaged && state.settings.autoStart) state.settings.autoStart = false
 				context.setState(state)
 				clearPressedKeys()
-				if (app.isPackaged) {
-					app.setLoginItemSettings({
-						openAtLogin: state.settings.autoStart,
-						path: process.execPath,
-						args: [],
-					})
-				}
+				setAutoStart(state.settings.autoStart, app)
 				applySettings()
 				placePet()
 				result = "imported"
@@ -135,13 +130,7 @@ export async function executeCommand(name: string, argument: any, context: Comma
 				state = core.initial(items)
 				context.setState(state)
 				clearPressedKeys()
-				if (app.isPackaged) {
-					app.setLoginItemSettings({
-						openAtLogin: false,
-						path: process.execPath,
-						args: [],
-					})
-				}
+				setAutoStart(false, app)
 				applySettings()
 				placePet(true)
 				break
@@ -231,11 +220,7 @@ function updateSettings(context: CommandContext, state: CollectionState, patch: 
 	if (next.autoStart !== previous.autoStart) {
 		if (!context.app.isPackaged && next.autoStart) throw new Error("Please enable auto-start from packaged build")
 
-		context.app.setLoginItemSettings({
-			openAtLogin: next.autoStart,
-			path: process.execPath,
-			args: [],
-		})
+		setAutoStart(next.autoStart, context.app)
 	}
 
 	state.settings = next
