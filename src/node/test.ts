@@ -5,10 +5,30 @@ import path from "node:path"
 import * as core from "./core.js"
 import * as storage from "./storage.js"
 import os from "node:os"
-import { setLinuxAutoStart } from "./autostart.js"
+import { getLinuxAutoStartExecutable, setLinuxAutoStart } from "./autostart.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
 const items = catalog.items
+test("Linux auto-start uses the AppImage file or the development launcher", () => {
+	const dataHome = "/home/test/.local/share"
+	assert.equal(
+		getLinuxAutoStartExecutable({
+			isPackaged: true,
+			appImagePath: "/home/test/Wuwa Tappo.AppImage",
+			executablePath: "/tmp/.mount-app/usr/bin/wuwa-tappo",
+			dataHome,
+		}),
+		"/home/test/Wuwa Tappo.AppImage",
+	)
+	assert.equal(
+		getLinuxAutoStartExecutable({
+			isPackaged: false,
+			executablePath: "/nix/store/electron",
+			dataHome,
+		}),
+		path.join(dataHome, "wuwa-tappo-dev", "launch.sh"),
+	)
+})
 test("Linux launch-at-startup creates and removes an XDG autostart entry", () => {
 	const configDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-autostart-"))
 	const entry = path.join(configDirectory, "autostart", "wuwa-tappo.desktop")

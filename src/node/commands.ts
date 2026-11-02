@@ -218,7 +218,8 @@ function updateSettings(context: CommandContext, state: CollectionState, patch: 
 	const next = core.settings({ ...previous, ...(patch as object) })
 
 	if (next.autoStart !== previous.autoStart) {
-		if (!context.app.isPackaged && next.autoStart) throw new Error("Please enable auto-start from packaged build")
+		if (!context.app.isPackaged && process.platform !== "linux" && next.autoStart)
+			throw new Error("Please enable auto-start from packaged build")
 
 		setAutoStart(next.autoStart, context.app)
 	}

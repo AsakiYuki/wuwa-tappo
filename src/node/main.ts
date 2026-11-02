@@ -284,7 +284,7 @@ if (!primaryInstance) {
 		showStudio()
 	})
 	app.whenReady().then(async () => {
-		if (app.isPackaged) {
+		if (app.isPackaged || process.platform === "linux") {
 			try {
 				setAutoStart(state.settings.autoStart, app)
 			} catch {

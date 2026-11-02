@@ -1,6 +1,22 @@
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
 import type { App } from "electron"
+
+export function getLinuxAutoStartExecutable({
+	isPackaged,
+	appImagePath,
+	executablePath,
+	dataHome,
+}: {
+	isPackaged: boolean
+	appImagePath?: string
+	executablePath: string
+	dataHome: string
+}) {
+	if (isPackaged) return appImagePath || executablePath
+	return path.join(dataHome, "wuwa-tappo-dev", "launch.sh")
+}
 
 export function setLinuxAutoStart(enabled: boolean, configDirectory: string, executablePath: string) {
 	const directory = path.join(configDirectory, "autostart")
@@ -22,12 +38,18 @@ export function setLinuxAutoStart(enabled: boolean, configDirectory: string, exe
 }
 
 export function setAutoStart(enabled: boolean, app: App) {
-	if (!app.isPackaged) return
-
 	if (process.platform === "linux") {
-		setLinuxAutoStart(enabled, app.getPath("appData"), process.execPath)
+		const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share")
+		const executablePath = getLinuxAutoStartExecutable({
+			isPackaged: app.isPackaged,
+			appImagePath: process.env.APPIMAGE,
+			executablePath: process.execPath,
+			dataHome,
+		})
+		setLinuxAutoStart(enabled, app.getPath("appData"), executablePath)
 		return
 	}
+	if (!app.isPackaged) return
 
 	app.setLoginItemSettings({
 		openAtLogin: enabled,
