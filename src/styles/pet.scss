@@ -314,7 +314,7 @@ button {
 	height: 80px;
 	object-fit: contain;
 	border-radius: 50%;
-	background: rgba(255, 255, 255, 0.18);
+	background: color-mix(in srgb, var(--bubble-color, #ffd26f) 20%, transparent);
 	backdrop-filter: blur(1px);
 }
 
@@ -327,17 +327,20 @@ button {
 	height: 30px;
 	padding: 0 12px;
 	border-radius: 999px;
-	background: linear-gradient(180deg, #fffef7 0%, #ffd26f 100%);
-	border: 2px solid rgba(140, 82, 21, 0.8);
-	color: #532d12;
+	background: linear-gradient(
+		180deg,
+		color-mix(in srgb, var(--bubble-color, #ffd26f) 80%, white),
+		var(--bubble-color, #ffd26f)
+	);
+	border: 2px solid var(--bubble-text-color, #532d12);
+	color: var(--bubble-text-color, #532d12);
 	font-size: 13px;
 	font-weight: 900;
 	letter-spacing: 0.08em;
 	text-transform: uppercase;
 	box-shadow:
-		0 6px 16px rgba(91, 60, 16, 0.32),
+		0 6px 16px color-mix(in srgb, var(--bubble-text-color, #532d12) 32%, transparent),
 		inset 0 1px 0 rgba(255, 255, 255, 0.9);
-	text-shadow: 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 @keyframes emotion-bubble {

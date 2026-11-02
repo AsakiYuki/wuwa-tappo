@@ -443,6 +443,16 @@ h3 {
 		font: inherit;
 	}
 
+	.setting-color {
+		width: 48px;
+		height: 32px;
+		padding: 3px;
+		border: 1px solid $color-border;
+		border-radius: 8px;
+		background: $color-paper;
+		cursor: pointer;
+	}
+
 	.setting-unlimited {
 		display: flex;
 		align-items: center;

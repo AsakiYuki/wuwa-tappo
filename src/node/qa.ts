@@ -63,6 +63,34 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		assert.equal(await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length'), 5)
 		assert.equal(await js(studio, 'document.querySelector("#settingsRows [data-setting=autoStart]")?.type'), "checkbox")
 		assert.equal(
+			await js(studio, 'document.querySelector("#settingsRows [data-setting=bubbleColor]")?.value'),
+			"#ffd26f",
+		)
+		await js(
+			studio,
+			"(()=>{const input=document.querySelector('[data-setting=bubbleColor]');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'#123456');input.dispatchEvent(new Event('input',{bubbles:true}));})()",
+		)
+		await wait(100)
+		assert.equal(getState().settings.bubbleColor, "#123456")
+		assert.equal(await js(pet, 'document.getElementById("bubble").style.getPropertyValue("--bubble-color")'), "#123456")
+		const darkBubbleStyle = await js(
+			pet,
+			`(()=>{const bubble=document.createElement('div');bubble.className='local-key-bubble';document.getElementById('bubble').append(bubble);const style=getComputedStyle(bubble);const result={text:style.color,border:style.borderTopColor};bubble.remove();return result;})()`,
+		)
+		assert.notEqual(darkBubbleStyle.text, "rgb(83, 45, 18)")
+		assert.equal(darkBubbleStyle.border, darkBubbleStyle.text)
+		await js(studio, "window.petAPI.command('settings',{bubbleColor:'#ffb6c1'})")
+		await wait(100)
+		assert.equal(getState().settings.bubbleColor, "#ffb6c1")
+		const pinkBubbleStyle = await js(
+			pet,
+			`(()=>{const bubble=document.createElement('div');bubble.className='local-key-bubble';document.getElementById('bubble').append(bubble);const style=getComputedStyle(bubble);const result={text:style.color,border:style.borderTopColor};bubble.remove();return result;})()`,
+		)
+		assert.notEqual(pinkBubbleStyle.text, "rgb(83, 45, 18)")
+		assert.equal(pinkBubbleStyle.border, pinkBubbleStyle.text)
+		await js(studio, "window.petAPI.command('settings',{bubbleColor:'#ffd26f'})")
+		await wait(100)
+		assert.equal(
 			await js(studio, 'document.querySelectorAll("#keyboardLabelsRows .keyboard-label-row").length'),
 			Object.keys(getState().settings.keyLabels).length,
 		)

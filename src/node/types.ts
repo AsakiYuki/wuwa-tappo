@@ -45,6 +45,7 @@ export interface Settings {
 	counterLeft: boolean
 	counterLimit: number | null
 	bubbleLifetime: number
+	bubbleColor: string
 	controllerStyle: ControllerStyle
 	keyLabels: Record<string, string>
 	holdAnimation: boolean

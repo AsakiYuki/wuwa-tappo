@@ -158,6 +158,15 @@ test("Bubble lifetime defaults to one second and stays within its supported rang
 	assert.equal(core.settings({ bubbleLifetime: Number.NaN }).bubbleLifetime, 1)
 })
 
+test("Bubble color defaults to warm yellow and accepts only six-digit hex colors", () => {
+	const s = core.initial(items)
+	assert.equal(s.settings.bubbleColor, "#ffd26f")
+	assert.equal(core.settings({ bubbleColor: "#12AbEf" }).bubbleColor, "#12abef")
+	assert.equal(core.settings({ bubbleColor: "gold" as never }).bubbleColor, "#ffd26f")
+	s.settings.bubbleColor = "#123456"
+	assert.equal(core.normalize(JSON.parse(JSON.stringify(s)), items).settings.bubbleColor, "#123456")
+})
+
 test("Controller bubble style defaults to Xbox and validates Xbox or PlayStation", () => {
 	const s = core.initial(items)
 	assert.equal(s.settings.controllerStyle, "xbox")

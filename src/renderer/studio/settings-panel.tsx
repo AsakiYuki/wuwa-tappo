@@ -301,6 +301,16 @@ function SettingsPanel({
 			<>
 				{renderSwitches("bubbles")}
 				{renderRange("bubbleLifetime")}
+				<SettingRow title="Bubble Color" description="Used for key and emote bubbles.">
+					<input
+						className="setting-color"
+						data-setting="bubbleColor"
+						aria-label="Bubble Color"
+						type="color"
+						value={settings.bubbleColor}
+						onChange={event => updateSetting("bubbleColor", event.currentTarget.value)}
+					/>
+				</SettingRow>
 				<SettingRow title="Controller Bubble Style" description="Choose Xbox or PlayStation button labels.">
 					<select
 						className="setting-select"
