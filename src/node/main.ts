@@ -54,7 +54,7 @@ const SELFTEST =
 	!process.argv.includes("--interactive-test")
 const dataDir = QA
 	? path.join(process.env.WUWA_QA_OUTPUT || path.join(APP_ROOT, ".."), "qa-data-" + process.pid)
-	: path.join(app.getPath("appData"), "WuwaTappoOffline")
+	: path.join(app.getPath("appData"), "wuwa-tappo")
 fs.mkdirSync(dataDir, { recursive: true })
 app.setName("Wuwa Tappo")
 app.setPath("userData", path.join(dataDir, "runtime"))
