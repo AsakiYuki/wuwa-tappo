@@ -368,9 +368,10 @@ class WuwaTappoApplication {
 		this.pet.on("blur", reapplyWindowBehavior)
 		this.topTimer = setInterval(() => this.windowManager.keepPetOnTop(), 3000)
 		this.pointerTimer = setInterval(() => this.windowManager.updateMousePassthrough(), 80)
-		const icon = nativeImage
-			.createFromPath(path.join(this.appRoot, "assets", "appicon.png"))
-			.resize({ width: 24, height: 24 })
+		const appIconPath = path.join(this.appRoot, "assets", "appicon.png")
+		const packagedAppIconPath = path.join(path.dirname(process.resourcesPath), "appicon.png")
+		const trayIconPath = fs.existsSync(appIconPath) ? appIconPath : packagedAppIconPath
+		const icon = nativeImage.createFromPath(trayIconPath).resize({ width: 24, height: 24 })
 		this.tray = new Tray(icon)
 		this.tray.setToolTip("Wuwa Tappo · Desktop Companion")
 		this.tray.setContextMenu(this.createTrayMenu())
