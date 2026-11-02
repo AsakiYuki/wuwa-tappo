@@ -16,8 +16,9 @@
 		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && tsc --noEmit",
 		"test": "npm run node:build && node --test runtime/test.js",
 		"test:ui": "npm run node:build && npm run renderer:build && node scripts/test-ui.cjs",
+		"nix:build": "nix-shell --run 'bun run build'",
+		"nix:start": "nix-shell --run 'bun start'",
 		"build": "node scripts/build.cjs",
-		"nix-build": "nix-shell --run 'bun run build'",
 		"postinstall": "node node_modules/electron/install.js"
 	},
 	"devDependencies": {

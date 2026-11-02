@@ -166,9 +166,7 @@ class WuwaTappoApplication {
 	}
 
 	private windows(): BrowserWindow[] {
-		return [this.pet, this.studio].filter(
-			(window): window is BrowserWindow => Boolean(window && !window.isDestroyed()),
-		)
+		return [this.pet, this.studio].filter((window): window is BrowserWindow => Boolean(window && !window.isDestroyed()))
 	}
 
 	private broadcastState() {
