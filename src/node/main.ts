@@ -340,12 +340,12 @@ if (!primaryInstance) {
 		topTimer = setInterval(keepPetOnTop, 3000)
 		pointerTimer = setInterval(pointerMode, 80)
 		const icon = nativeImage
-			.createFromPath(path.join(APP_ROOT, items.find(x => x.starter && x.type === "character").thumbnail))
+			.createFromPath(path.join(APP_ROOT, "assets", "appicon.png"))
 			.resize({ width: 24, height: 24 })
 		tray = new Tray(icon)
 		tray.setToolTip("Wuwa Tappo · Desktop Companion")
 		tray.setContextMenu(menu())
-		tray.on("double-click", showStudio)
+		tray.on("click", showStudio)
 		globalShortcut.register("CommandOrControl+Alt+P", () => {
 			state.settings.passthrough = !state.settings.passthrough
 			applySettings()
