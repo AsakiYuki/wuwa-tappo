@@ -98,6 +98,32 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			),
 			sliderBounds.contentWidth,
 		)
+		const previousOpacity = getState().settings.opacity
+		const opacityBounds = await js(
+			studio,
+			'(()=>{const input=document.querySelector("#settingsRows [data-setting=opacity]"),bounds=input.getBoundingClientRect(),min=Number(input.min),max=Number(input.max),value=Number(input.value),ratio=(value-min)/(max-min);return{x:bounds.x+8+ratio*(bounds.width-16),y:bounds.y+bounds.height/2,targetX:ratio>0.5?bounds.x+10:bounds.x+bounds.width-10};})()',
+		)
+		studio.webContents.sendInputEvent({
+			type: "mouseDown",
+			x: opacityBounds.x,
+			y: opacityBounds.y,
+			button: "left",
+			clickCount: 1,
+		})
+		studio.webContents.sendInputEvent({ type: "mouseMove", x: opacityBounds.targetX, y: opacityBounds.y })
+		studio.webContents.sendInputEvent({
+			type: "mouseUp",
+			x: opacityBounds.targetX,
+			y: opacityBounds.y,
+			button: "left",
+			clickCount: 1,
+		})
+		await wait(150)
+		assert.notEqual(getState().settings.opacity, previousOpacity)
+		assert.equal(
+			await js(pet, 'getComputedStyle(document.getElementById("petRoot")).opacity'),
+			String(getState().settings.opacity),
+		)
 		assert.equal(
 			await js(studio, 'document.querySelector("#settingsRows [data-setting=bubbleColor]")?.value'),
 			"#ffd26f",

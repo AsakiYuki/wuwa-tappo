@@ -178,7 +178,6 @@ export function createWindowManager(options: WindowManagerOptions) {
 		pet.setAlwaysOnTop(settings.alwaysOnTop, settings.alwaysOnTop ? "screen-saver" : "normal", 1)
 		pet.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 		if (settings.alwaysOnTop) keepPetOnTop()
-		pet.setOpacity(settings.opacity)
 		updateMousePassthrough()
 		options.getTray()?.setContextMenu(options.getContextMenu())
 	}

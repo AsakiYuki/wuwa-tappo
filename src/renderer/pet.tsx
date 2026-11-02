@@ -387,7 +387,7 @@ function PetApp() {
 		<main
 			id="petRoot"
 			className={`${state.settings.hoverFade ? "hover-fade" : ""} ${state.settings.showKeyboard ? "" : "hide-keyboard"} ${state.settings.counterLeft ? "counter-left" : ""}`}
-			style={{ transform: `scale(${scale})` }}
+			style={{ transform: `scale(${scale})`, opacity: state.settings.opacity }}
 			onPointerDown={startDrag}
 			onPointerMove={moveDrag}
 			onPointerUp={endDrag}
