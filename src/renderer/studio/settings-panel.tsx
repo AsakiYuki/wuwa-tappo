@@ -69,6 +69,12 @@ const switches: Array<{
 	{ key: "alwaysOnTop", title: "Always On Top", tab: "general" },
 	{ key: "inputEnabled", title: "Keyboard & Mouse Reaction", tab: "input" },
 	{
+		key: "touchpadInput",
+		title: "Touchpad Touch Input",
+		tab: "input",
+		description: "React when a finger touches a Linux touchpad.",
+	},
+	{
 		key: "holdAnimation",
 		title: "Hold Animation",
 		tab: "input",

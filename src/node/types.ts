@@ -33,6 +33,7 @@ export interface Settings {
 	alwaysOnTop: boolean
 	passthrough: boolean
 	inputEnabled: boolean
+	touchpadInput: boolean
 	autoStart: boolean
 	monitor: number
 	lockDrag: boolean

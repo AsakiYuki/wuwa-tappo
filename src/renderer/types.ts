@@ -21,6 +21,7 @@ export interface PetSettings {
 	alwaysOnTop: boolean
 	passthrough: boolean
 	inputEnabled: boolean
+	touchpadInput: boolean
 	autoStart: boolean
 	monitor: number
 	petPosition: { x: number; y: number } | null

@@ -67,6 +67,7 @@ function settings(s: Partial<Settings>): Settings {
 		"alwaysOnTop",
 		"passthrough",
 		"inputEnabled",
+		"touchpadInput",
 		"autoStart",
 		"lockDrag",
 		"hoverFade",

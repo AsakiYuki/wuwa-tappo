@@ -123,6 +123,14 @@ test("Hold animation defaults off and persists when enabled", () => {
 	assert.equal(core.settings({ holdAnimation: "yes" as never }).holdAnimation, false)
 })
 
+test("Touchpad input defaults off and validates setting updates", () => {
+	const s = core.initial(items)
+	assert.equal(s.settings.touchpadInput, false)
+	s.settings.touchpadInput = true
+	assert.equal(core.normalize(s, items).settings.touchpadInput, true)
+	assert.equal(core.settings({ touchpadInput: "yes" as never }).touchpadInput, false)
+})
+
 test("Auto-emote and pressed-key settings default correctly and honor toggles", () => {
 	const s = core.initial(items)
 	assert.equal(s.settings.autoEmote, true)
@@ -142,11 +150,31 @@ test("Auto-emote and pressed-key settings default correctly and honor toggles", 
 
 test("Keyboard key labels can be overridden from settings", () => {
 	const s = core.initial(items)
-	assert.deepEqual(s.settings.keyLabels, {})
+	assert.deepEqual(s.settings.keyLabels, {
+		ShiftRight: "RShift",
+		ArrowLeft: "Left",
+		ArrowUp: "Up",
+		ArrowRight: "Right",
+		ArrowDown: "Down",
+		Comma: ",",
+		Period: ".",
+		Slash: "/",
+		Semicolon: ";",
+		Quote: "'",
+		BracketLeft: "[",
+		BracketRight: "]",
+		Minus: "-",
+		Equal: "=",
+		Backquote: "`",
+	})
 	const next = core.settings({ keyLabels: { Meta: "Super", Ctrl: "Control" } })
 	assert.equal(next.keyLabels.Meta, "Super")
 	assert.equal(next.keyLabels.Ctrl, "Control")
-	assert.equal(core.settings({ keyLabels: { Meta: "  " } as never }).keyLabels.Meta, undefined)
+	assert.equal(core.settings({ keyLabels: { ShiftRight: "RShift" } }).keyLabels.ShiftRight, "RShift")
+	assert.equal(
+		core.settings({ keyLabels: { ShiftRight: "  " } as never }).keyLabels.ShiftRight,
+		"RShift",
+	)
 	const migrated = core.normalize(
 		{
 			...s,
@@ -167,7 +195,7 @@ test("Keyboard key labels can be overridden from settings", () => {
 		},
 		items,
 	)
-	assert.deepEqual(migrated.settings.keyLabels, { Ctrl: "Control" })
+	assert.deepEqual(migrated.settings.keyLabels, { ...s.settings.keyLabels, Ctrl: "Control" })
 })
 
 test("Bubble lifetime defaults to one second and stays within its supported range", () => {

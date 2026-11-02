@@ -266,9 +266,19 @@ export function createInputManager(options: InputManagerOptions) {
 					input(gamepadButtonName(device, code), value === 1, gamepadSide(gamepadButtonName(device, code)), value === 1)
 				continue
 			}
+			const receiveTouchpadInput = device.isTouchpad && state.settings.touchpadInput
+			if (device.isTouchpad && code === 330 && (value === 0 || value === 1)) {
+				if (receiveTouchpadInput) input("Touchpad", value === 1, "left", value === 1)
+				continue
+			}
 			const mouse = LINUX_MOUSEMAP[code]
 			const key = LINUX_KEYMAP[code] || "Key" + code
-			if (mouse && (value === 1 || value === 0)) input(mouse, value === 1, mouse === "MouseLeft" ? "left" : "right")
+			if (mouse && (value === 1 || value === 0))
+				input(
+					receiveTouchpadInput && mouse === "MouseLeft" ? "Touchpad" : mouse,
+					value === 1,
+					mouse === "MouseLeft" ? "left" : "right",
+				)
 			else if (code < 256 && (value === 0 || value === 1)) {
 				const down = value === 1
 				input(
@@ -295,19 +305,21 @@ export function createInputManager(options: InputManagerOptions) {
 			return
 		}
 
-		const candidates = new Map<string, { handlers: string; isGamepad: boolean }>()
+		const candidates = new Map<string, { handlers: string; isGamepad: boolean; isTouchpad: boolean }>()
 		for (const block of deviceEntries) {
 			const handlers = block.match(/Handlers=(.*)/)?.[1] || ""
 			const deviceName = block.match(/Name="([^"]+)"/)?.[1] || ""
 			const isGamepad =
 				/\bjs\d+\b/.test(handlers) ||
 				/gamepad|joystick|controller|xbox|x-box|dualsense|dualshock|joy-?con/i.test(deviceName)
-			if (!isGamepad && !/\b(?:kbd|mouse\d*)\b/.test(handlers)) continue
+			const isTouchpad = /touchpad|trackpad|synaptics|elan|alps|glidepoint/i.test(deviceName)
+			if (!isGamepad && !isTouchpad && !/\b(?:kbd|mouse\d*)\b/.test(handlers)) continue
 			const eventNumber = block.match(/\bevent(\d+)\b/)?.[1]
 			if (eventNumber)
 				candidates.set(`/dev/input/event${eventNumber}`, {
 					handlers,
 					isGamepad,
+					isTouchpad,
 				})
 		}
 
@@ -332,6 +344,7 @@ export function createInputManager(options: InputManagerOptions) {
 					path: devPath,
 					isKeyboard: /\bkbd\b/.test(candidate.handlers),
 					isGamepad: candidate.isGamepad,
+					isTouchpad: candidate.isTouchpad,
 					name: candidate.isGamepad ? `Gamepad${++nextGamepadNumber}` : "",
 					axes: new Map<number, string>(),
 					buffer: Buffer.alloc(4096),

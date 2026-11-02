@@ -150,6 +150,7 @@ const mouseLabels: Record<string, string> = {
 	MouseMiddle: "MMB",
 	MouseBack: "BACK",
 	MouseForward: "FORWARD",
+	Touchpad: "TOUCH",
 }
 
 interface DragState {
@@ -260,10 +261,11 @@ function PetApp() {
 				return next
 			})
 			if (event.down) {
-				if (event.key.startsWith("Mouse")) lastMouseInputAt.current = Date.now()
-				const layer = document.getElementById("bubble")
+				const isTouchpad = event.key === "Touchpad"
 				const isMouse = event.key.startsWith("Mouse")
-				if (layer && (isMouse ? showMouseBubbles.current : showPressedKeys.current)) {
+				if (isMouse || isTouchpad) lastMouseInputAt.current = Date.now()
+				const layer = document.getElementById("bubble")
+				if (layer && (isMouse || isTouchpad ? showMouseBubbles.current : showPressedKeys.current)) {
 					floatKeyBubble(layer, getKeyLabel(event.key), bubbleLifetime.current)
 				}
 				if (holdAnimation.current) {
