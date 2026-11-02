@@ -136,15 +136,18 @@ function SettingsPanel({
 		scale: settings.scale,
 		bubbleLifetime: settings.bubbleLifetime,
 	})
+	const rangeValuesRef = useRef(rangeValues)
 	const [counterLimitDraft, setCounterLimitDraft] = useState(String(settings.counterLimit ?? 999))
 	const updateSetting = (key: SettingKey, value: unknown) => void api.command("settings", { [key]: value })
 
 	useEffect(() => {
-		setRangeValues({
+		const nextValues = {
 			opacity: settings.opacity,
 			scale: settings.scale,
 			bubbleLifetime: settings.bubbleLifetime,
-		})
+		}
+		rangeValuesRef.current = nextValues
+		setRangeValues(nextValues)
 	}, [settings.opacity, settings.scale, settings.bubbleLifetime])
 
 	useEffect(() => {
@@ -185,9 +188,13 @@ function SettingsPanel({
 						step={setting.step}
 						value={value}
 						style={{ "--range-progress": `${progress}%` } as CSSProperties}
-						onChange={event => setRangeValues(previous => ({ ...previous, [key]: Number(event.currentTarget.value) }))}
-						onPointerUp={event => updateSetting(key, Number(event.currentTarget.value))}
-						onKeyUp={event => updateSetting(key, Number(event.currentTarget.value))}
+						onChange={event => {
+							const nextValues = { ...rangeValuesRef.current, [key]: Number(event.currentTarget.value) }
+							rangeValuesRef.current = nextValues
+							setRangeValues(nextValues)
+						}}
+						onPointerUp={() => updateSetting(key, rangeValuesRef.current[key])}
+						onKeyUp={() => updateSetting(key, rangeValuesRef.current[key])}
 					/>
 					<span className="setting-value" id={`${key}Value`}>
 						{displayValue}

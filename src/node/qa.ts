@@ -60,8 +60,44 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			1,
 		)
 		await js(studio, "document.querySelector('[data-page=settings]').click()")
+		for (let i = 0; i < 20; i++) {
+			if (await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length === 5')) break
+			await wait(25)
+		}
 		assert.equal(await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length'), 5)
 		assert.equal(await js(studio, 'document.querySelector("#settingsRows [data-setting=autoStart]")?.type'), "checkbox")
+		await js(studio, 'document.querySelectorAll("#settingsRows [role=tab]")[1].click()')
+		const previousScale = getState().settings.scale
+		const sliderBounds = await js(
+			studio,
+			'(()=>{const input=document.querySelector("#settingsRows [data-setting=scale]"),bounds=input.getBoundingClientRect(),content=input.parentElement.getBoundingClientRect(),min=Number(input.min),max=Number(input.max),value=Number(input.value),ratio=(value-min)/(max-min);return{x:bounds.x+8+ratio*(bounds.width-16),y:bounds.y+bounds.height/2,targetX:ratio>0.5?bounds.x+10:bounds.x+bounds.width-10,contentWidth:content.width};})()',
+		)
+		studio.webContents.sendInputEvent({
+			type: "mouseDown",
+			x: sliderBounds.x,
+			y: sliderBounds.y,
+			button: "left",
+			clickCount: 1,
+		})
+		studio.webContents.sendInputEvent({ type: "mouseMove", x: sliderBounds.targetX, y: sliderBounds.y })
+		studio.webContents.sendInputEvent({
+			type: "mouseUp",
+			x: sliderBounds.targetX,
+			y: sliderBounds.y,
+			button: "left",
+			clickCount: 1,
+		})
+		await wait(150)
+		assert.equal(await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length'), 5)
+		assert.equal(await js(studio, 'document.querySelector("#settingsRows [data-setting=scale]") !== null'), true)
+		assert.notEqual(getState().settings.scale, previousScale)
+		assert.equal(
+			await js(
+				studio,
+				'document.querySelector("#settingsRows [data-setting=scale]").parentElement.getBoundingClientRect().width',
+			),
+			sliderBounds.contentWidth,
+		)
 		assert.equal(
 			await js(studio, 'document.querySelector("#settingsRows [data-setting=bubbleColor]")?.value'),
 			"#ffd26f",

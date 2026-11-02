@@ -474,6 +474,12 @@ h3 {
 		flex-shrink: 0;
 	}
 
+	.setting-value {
+		flex: 0 0 64px;
+		text-align: right;
+		white-space: nowrap;
+	}
+
 	.setting-title {
 		font-weight: normal;
 	}
