@@ -226,6 +226,13 @@ function updateSettings(context: CommandContext, state: CollectionState, patch: 
 
 	state.settings = next
 	if (next.counterLimit !== null && state.count > next.counterLimit) state.count = next.counterLimit
+	if (next.showKeyboard !== previous.showKeyboard) {
+		const pet = context.getPet()
+		if (pet && !pet.isDestroyed()) {
+			pet.reload()
+			setTimeout(() => context.placePet(), 150)
+		}
+	}
 	context.setState(state)
 	context.applySettings()
 	if (next.scale !== previous.scale || next.monitor !== previous.monitor) context.placePet()

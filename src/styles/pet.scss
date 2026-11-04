@@ -46,7 +46,7 @@ button {
 	position: absolute;
 	left: 0;
 	top: 100px;
-	width: 320px;
+	width: 100%;
 	height: 250px;
 	touch-action: none;
 }
@@ -108,7 +108,7 @@ button {
 .desk {
 	position: absolute;
 	left: 24px;
-	top: 181px;
+	top: 179px;
 	width: 286px;
 	height: 40px;
 	filter: drop-shadow(0 2px 2px #0002);
@@ -231,14 +231,58 @@ button {
 	}
 }
 
+#petRoot.hide-keyboard {
+	width: 225px;
+	height: 215px;
+	left: 20px;
+
+	#petContent {
+		top: 0px;
+		#stage {
+			left: 0;
+		}
+		#emoteBar {
+			left: 0;
+		}
+	}
+}
+
 .hide-keyboard {
 	.keyboard-plane {
 		display: none;
 	}
 
+	.desk {
+		left: 20px;
+		width: 170px;
+	}
+
+	.desk::before {
+		width: 120px;
+		height: 35px;
+		overflow: hidden;
+	}
+
 	.pet-info {
-		left: 0;
+		left: 0px;
+		top: 2px;
 		width: 96px;
+		height: 35px;
+	}
+
+	.pet-toolbar {
+		left: 116px;
+
+		height: 35px;
+		width: 66.333px;
+
+		#openChest {
+			height: 35px;
+		}
+
+		.settings-btn {
+			height: 35px;
+		}
 	}
 }
 

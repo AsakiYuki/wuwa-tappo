@@ -40,8 +40,9 @@ export function createWindowManager(options: WindowManagerOptions) {
 
 		const settings = options.getState().settings
 		const workArea = activeDisplay().workArea
-		const width = Math.round(320 * settings.scale)
-		const height = Math.round(350 * settings.scale)
+		const width = Math.round((settings.showKeyboard ? 320 : 225) * settings.scale)
+		const height = Math.round((settings.showKeyboard ? 350 : 215) * settings.scale)
+
 		const savedPosition = settings.petPosition
 
 		if (!resetToCorner && savedPosition && Number.isFinite(savedPosition.x) && Number.isFinite(savedPosition.y)) {

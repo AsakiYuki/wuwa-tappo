@@ -169,7 +169,6 @@ function PetApp() {
 	const [serial, setSerial] = useState(0)
 	const [menuOpen, setMenuOpen] = useState(false)
 	const [menuPinned, setMenuPinned] = useState(false)
-	const [scale, setScale] = useState(innerWidth / 320)
 	const drag = useRef<DragState | null>(null)
 	const bodyTimer = useRef<number | undefined>(undefined)
 	const menuTimer = useRef<number | undefined>(undefined)
@@ -301,14 +300,11 @@ function PetApp() {
 			setItems(catalog)
 		})
 
-		const resize = () => setScale(innerWidth / 320)
-		window.addEventListener("resize", resize)
 		const blink = window.setInterval(() => {
 			setFace(2)
 			window.setTimeout(() => setFace(1), 180)
 		}, 4200)
 		return () => {
-			window.removeEventListener("resize", resize)
 			window.clearInterval(blink)
 			window.clearTimeout(bodyTimer.current)
 			window.clearTimeout(menuTimer.current)
@@ -378,7 +374,7 @@ function PetApp() {
 		<main
 			id="petRoot"
 			className={`${state.settings.hoverFade ? "hover-fade" : ""} ${state.settings.showKeyboard ? "" : "hide-keyboard"} ${state.settings.counterLeft ? "counter-left" : ""}`}
-			style={{ transform: `scale(${scale})`, opacity: state.settings.opacity }}
+			style={{ transform: `scale(${state.settings.scale})`, opacity: state.settings.opacity }}
 			onPointerDown={startDrag}
 			onPointerMove={moveDrag}
 			onPointerUp={endDrag}
