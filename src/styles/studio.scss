@@ -129,6 +129,7 @@ h3 {
 .atlas-tab-item {
 	flex: 1;
 	padding: 0 15px;
+	outline: none;
 
 	&.selected {
 		height: 40px;
@@ -140,6 +141,7 @@ h3 {
 		line-height: 38px;
 	}
 }
+
 .atlas-select {
 	z-index: 6;
 
@@ -364,36 +366,7 @@ h3 {
 #settingsRows {
 	min-width: 0;
 }
-.settings-tabs {
-	position: sticky;
-	top: 0;
-	z-index: 3;
-	display: flex;
-	gap: 3px;
-	padding: 4px;
-	border: 1px solid $color-border;
-	border-radius: 7px;
-	background: $color-paper-light;
 
-	button {
-		flex: 1 1 0;
-		min-width: 0;
-		height: 32px;
-		padding: 0 8px;
-		border: 0;
-		border-radius: 4px;
-		background: transparent;
-		color: $color-text;
-		font: inherit;
-		white-space: nowrap;
-	}
-
-	button.active {
-		background: $color-paper;
-		box-shadow: 0 1px 3px #55351e22;
-		font-weight: 600;
-	}
-}
 .settings-tab-content {
 	padding-top: 6px;
 }
@@ -804,9 +777,12 @@ dialog {
 	overflow-y: auto;
 	overscroll-behavior: contain;
 }
+
 .atlas-tab {
+	margin-top: 4px;
 	flex-shrink: 0;
 }
+
 #page-settings > .panel-content,
 #page-keyboard-labels > .panel-content,
 #page-presets > .panel-content,

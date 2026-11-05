@@ -422,11 +422,11 @@ function SettingsPanel({
 
 	return (
 		<>
-			<div className="settings-tabs" role="tablist">
+			<div className="atlas-tab" role="tablist">
 				{tabs.map(tab => (
 					<button
 						key={tab.id}
-						className={activeTab === tab.id ? "active" : ""}
+						className={`atlas-tab-item${activeTab === tab.id ? " selected" : ""}`}
 						type="button"
 						role="tab"
 						aria-selected={activeTab === tab.id}
