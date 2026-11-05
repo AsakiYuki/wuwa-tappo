@@ -29,30 +29,40 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      - name: Remove old Linux package artifacts
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          failOnError: false
+          name: |
+            wuwa-tappo-linux-x64-deb
+            wuwa-tappo-linux-x64-rpm
+            wuwa-tappo-linux-x64-appimage
+            wuwa-tappo-linux-x64-tar-gz
+
       - uses: actions/upload-artifact@v4
         with:
           name: wuwa-tappo-linux-x64-deb
           path: dist/*.deb
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
           name: wuwa-tappo-linux-x64-rpm
           path: dist/*.rpm
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
           name: wuwa-tappo-linux-x64-appimage
           path: dist/*.AppImage
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: error
 
       - uses: actions/upload-artifact@v4
         with:
           name: wuwa-tappo-linux-x64-tar-gz
           path: dist/*.tar.gz
-          retention-days: 7
+          retention-days: 1
           if-no-files-found: error
