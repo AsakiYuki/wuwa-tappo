@@ -86,6 +86,7 @@ interface InventoryPanelProps extends Omit<
 const InventoryPanel = forwardRef<InventoryPanelHandle, InventoryPanelProps>(function InventoryPanel(props, ref) {
 	const [viewType, setViewType] = useState(props.type)
 	const [viewFilters, setViewFilters] = useState(props.filters)
+	const [openFilter, setOpenFilter] = useState<keyof InventoryFilters | null>(null)
 	const itemCount = useRef(0)
 	const closeFilters = () => {
 		document.querySelectorAll<HTMLElement>(".select-option:popover-open").forEach(popup => popup.hidePopover())
@@ -93,6 +94,7 @@ const InventoryPanel = forwardRef<InventoryPanelHandle, InventoryPanelProps>(fun
 			box.classList.remove("select-item--open")
 			box.querySelector(".select-input")?.setAttribute("aria-expanded", "false")
 		})
+		setOpenFilter(null)
 	}
 	useImperativeHandle(ref, () => ({ closeFilters, getItemCount: () => itemCount.current }), [closeFilters])
 
@@ -166,7 +168,14 @@ const InventoryPanel = forwardRef<InventoryPanelHandle, InventoryPanelProps>(fun
 				props.typeTabs,
 			)}
 			{createPortal(
-				<FilterBar {...props} type={viewType} filters={viewFilters} updateFilter={updateFilter} />,
+				<FilterBar
+					{...props}
+					type={viewType}
+					filters={viewFilters}
+					openFilter={openFilter}
+					setOpenFilter={setOpenFilter}
+					updateFilter={updateFilter}
+				/>,
 				props.filterBar,
 			)}
 			{createPortal(
@@ -197,6 +206,8 @@ function FilterBar({
 	type,
 	filters,
 	metadata,
+	openFilter,
+	setOpenFilter,
 	updateFilter,
 }: Omit<
 	InventoryPanelProps,
@@ -220,6 +231,8 @@ function FilterBar({
 	type: InventoryType
 	filters: InventoryFilters
 	metadata: FilterMetadata
+	openFilter: keyof InventoryFilters | null
+	setOpenFilter: React.Dispatch<React.SetStateAction<keyof InventoryFilters | null>>
 	updateFilter(key: keyof InventoryFilters, value: string): void
 }) {
 	if (type === "all") return null
@@ -239,6 +252,8 @@ function FilterBar({
 					title={title}
 					values={values}
 					selected={filters[key]}
+					open={openFilter === key}
+					onToggle={next => setOpenFilter(next ? key : null)}
 					onSelect={value => updateFilter(key, value)}
 				/>
 			))}
@@ -251,18 +266,21 @@ function FilterSelect({
 	title,
 	values,
 	selected,
+	open,
+	onToggle,
 	onSelect,
 }: {
 	filterKey: keyof InventoryFilters
 	title: string
 	values: Record<string, string>
 	selected: string
+	open: boolean
+	onToggle(open: boolean): void
 	onSelect(value: string): void
 }) {
 	const boxRef = useRef<HTMLDivElement>(null)
 	const popupRef = useRef<HTMLDivElement>(null)
 	const triggerRef = useRef<HTMLButtonElement>(null)
-	const [open, setOpen] = useState(false)
 	const currentTitle =
 		selected === "all"
 			? title
@@ -276,10 +294,14 @@ function FilterSelect({
 		event.stopPropagation()
 		if (open) {
 			popupRef.current?.hidePopover()
-			setOpen(false)
+			onToggle(false)
 			return
 		}
 		document.querySelectorAll<HTMLElement>(".select-option:popover-open").forEach(popup => popup.hidePopover())
+		document.querySelectorAll<HTMLElement>(".select-item--open").forEach(box => {
+			box.classList.remove("select-item--open")
+			box.querySelector(".select-input")?.setAttribute("aria-expanded", "false")
+		})
 		const popup = popupRef.current
 		const box = boxRef.current
 		if (!popup || !box) return
@@ -309,7 +331,7 @@ function FilterSelect({
 		popup.classList.toggle("popup-above", showAbove)
 		box.classList.add("select-item--open")
 		triggerRef.current?.setAttribute("aria-expanded", "true")
-		setOpen(true)
+		onToggle(true)
 	}
 
 	return (
@@ -325,10 +347,10 @@ function FilterSelect({
 				className="select-option"
 				popover="manual"
 				ref={popupRef}
-				onToggle={event => setOpen(event.currentTarget.matches(":popover-open"))}
+				onToggle={event => onToggle(event.currentTarget.matches(":popover-open"))}
 			>
 				<div className="select-option-list" role="listbox">
-					{[["all", "All"], ...Object.entries(values)].map(([value, label]) => {
+					{[["all", "All"], ...Object.entries(values).sort(([_, left], [__, right]) => String(left).localeCompare(String(right)))].map(([value, label]) => {
 						const optionTitle =
 							value === "all"
 								? "All"
