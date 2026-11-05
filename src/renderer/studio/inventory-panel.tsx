@@ -350,7 +350,10 @@ function FilterSelect({
 				onToggle={event => onToggle(event.currentTarget.matches(":popover-open"))}
 			>
 				<div className="select-option-list" role="listbox">
-					{[["all", "All"], ...Object.entries(values).sort(([_, left], [__, right]) => String(left).localeCompare(String(right)))].map(([value, label]) => {
+					{[
+						["all", "All"],
+						...Object.entries(values).sort(([_, left], [__, right]) => String(left).localeCompare(String(right))),
+					].map(([value, label]) => {
 						const optionTitle =
 							value === "all"
 								? "All"
