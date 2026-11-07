@@ -421,14 +421,28 @@ export function createInputManager(options: InputManagerOptions) {
 		if (macGamepadProcess) return true
 
 		const appRoot = path.resolve(__dirname, "..")
-		const candidates = [
-			path.join(appRoot, "assets", "bin", "mac-gamepad-watcher"),
-			path.join(appRoot.replace("app.asar", "app.asar.unpacked"), "assets", "bin", "mac-gamepad-watcher"),
-		]
+		const candidates: string[] = []
+
+		if (process.resourcesPath) {
+			candidates.push(
+				path.join(process.resourcesPath, "app.asar.unpacked", "assets", "bin", "mac-gamepad-watcher"),
+			)
+		}
+		if (appRoot.includes("app.asar")) {
+			candidates.push(
+				path.join(appRoot.replace("app.asar", "app.asar.unpacked"), "assets", "bin", "mac-gamepad-watcher"),
+			)
+		} else {
+			candidates.push(path.join(appRoot, "assets", "bin", "mac-gamepad-watcher"))
+		}
+
 		const watcherPath = candidates.find(candidate => fs.existsSync(candidate))
 		if (!watcherPath) return false
 
 		try {
+			try {
+				fs.chmodSync(watcherPath, 0o755)
+			} catch {}
 			const proc = spawn(watcherPath, [], {
 				stdio: ["ignore", "pipe", "ignore"],
 			})
@@ -458,6 +472,13 @@ export function createInputManager(options: InputManagerOptions) {
 						const down = parts[1] === "1"
 						input(key, down, gamepadSide(key), down)
 					}
+				}
+			})
+
+			proc.on("error", error => {
+				fs.appendFileSync(path.join(dataDir, "errors.log"), `mac-gamepad: ${String(error)}\n`)
+				if (macGamepadProcess === proc) {
+					macGamepadProcess = null
 				}
 			})
 
