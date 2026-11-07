@@ -1,3 +1,4 @@
+import { spawn, type ChildProcess } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import type { BrowserWindow } from "electron"
@@ -25,6 +26,7 @@ export function createInputManager(options: InputManagerOptions) {
 	let evdevTimer: NodeJS.Timeout | null = null
 	let evdevScanTimer: NodeJS.Timeout | null = null
 	let nextGamepadNumber = 0
+	let macGamepadProcess: ChildProcess | null = null
 	let hookStatus = "Connecting keyboard..."
 
 	function input(
@@ -414,6 +416,64 @@ export function createInputManager(options: InputManagerOptions) {
 		return evdevDevices.length > 0
 	}
 
+	function startMacGamepad() {
+		if (process.platform !== "darwin") return false
+		if (macGamepadProcess) return true
+
+		const appRoot = path.resolve(__dirname, "..")
+		const candidates = [
+			path.join(appRoot, "assets", "bin", "mac-gamepad-watcher"),
+			path.join(appRoot.replace("app.asar", "app.asar.unpacked"), "assets", "bin", "mac-gamepad-watcher"),
+		]
+		const watcherPath = candidates.find(candidate => fs.existsSync(candidate))
+		if (!watcherPath) return false
+
+		try {
+			const proc = spawn(watcherPath, [], {
+				stdio: ["ignore", "pipe", "ignore"],
+			})
+			macGamepadProcess = proc
+
+			let leftover = ""
+			proc.stdout?.on("data", (chunk: Buffer) => {
+				const text = leftover + chunk.toString("utf8")
+				const lines = text.split("\n")
+				leftover = lines.pop() || ""
+
+				for (const line of lines) {
+					const trimmed = line.trim()
+					if (!trimmed) continue
+					if (trimmed.startsWith("STATUS:")) {
+						continue
+					}
+					const parts = trimmed.split("\t")
+					if (parts.length >= 3) {
+						const deviceName = parts[0]
+						const code = Number(parts[1])
+						const down = parts[2] === "1"
+						const buttonName = gamepadButtonName({ name: deviceName }, code)
+						input(buttonName, down, gamepadSide(buttonName), down)
+					} else if (parts.length >= 2) {
+						const key = parts[0]
+						const down = parts[1] === "1"
+						input(key, down, gamepadSide(key), down)
+					}
+				}
+			})
+
+			proc.on("exit", () => {
+				if (macGamepadProcess === proc) {
+					macGamepadProcess = null
+				}
+			})
+
+			return true
+		} catch (error) {
+			fs.appendFileSync(path.join(dataDir, "errors.log"), `mac-gamepad: ${String(error)}\n`)
+			return false
+		}
+	}
+
 	function attachWindowInput(w) {
 		if (!w || w.isDestroyed()) return
 		w.webContents.on("before-input-event", (_event, ev) => {
@@ -445,6 +505,7 @@ export function createInputManager(options: InputManagerOptions) {
 
 	function startHook() {
 		const evdevOk = startEvdev()
+		const macGamepadOk = startMacGamepad()
 		let uiohookOk = false
 		if (!process.env.WAYLAND_DISPLAY) {
 			try {
@@ -488,6 +549,7 @@ export function createInputManager(options: InputManagerOptions) {
 		}
 		if (evdevOk) hookStatus = "Global input connected (evdev)"
 		else if (uiohookOk) hookStatus = "Global input connected (uiohook)"
+		else if (macGamepadOk) hookStatus = "Global input connected (IOKit Gamepad)"
 		else
 			hookStatus =
 				process.platform === "darwin"
@@ -514,6 +576,12 @@ export function createInputManager(options: InputManagerOptions) {
 		try {
 			hook?.stop()
 		} catch {}
+		if (macGamepadProcess) {
+			try {
+				macGamepadProcess.kill()
+			} catch {}
+			macGamepadProcess = null
+		}
 	}
 
 	return {

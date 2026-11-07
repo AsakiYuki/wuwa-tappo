@@ -8,4 +8,5 @@ qa-data-*/
 *.log
 *.tmp
 *.bak
-build
+!build/
+!build/**

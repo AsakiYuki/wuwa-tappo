@@ -14,7 +14,7 @@
 		"start": "node scripts/start.cjs",
 		"start:mac": "node scripts/start.cjs --mac",
 		"start:linux": "node scripts/start.cjs --linux",
-		"node:build": "node scripts/clean-runtime.cjs && tsc -p tsconfig.node.json",
+		"node:build": "node scripts/clean-runtime.cjs && node scripts/build-mac-gamepad.cjs && tsc -p tsconfig.node.json",
 		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && tsc --noEmit",
 		"test": "npm run node:build && node --test runtime/test.js",
 		"test:ui": "npm run node:build && npm run renderer:build && node scripts/test-ui.cjs",
@@ -58,7 +58,8 @@
 			"package.json"
 		],
 		"asarUnpack": [
-			"**/*.node"
+			"**/*.node",
+			"assets/bin/*"
 		],
 		"npmRebuild": false,
 		"mac": {

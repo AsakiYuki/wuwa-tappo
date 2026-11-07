@@ -9,6 +9,13 @@ import { getLinuxAutoStartExecutable, setLinuxAutoStart } from "./autostart.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
 const items = catalog.items
+test("macOS controller watcher is available as a universal binary", () => {
+	if (process.platform !== "darwin") return
+	const watcher = path.join(PROJECT_ROOT, "assets", "bin", "mac-gamepad-watcher")
+	assert.ok(fs.existsSync(watcher), "mac-gamepad-watcher exists")
+	const stats = fs.statSync(watcher)
+	assert.ok((stats.mode & 0o111) !== 0, "mac-gamepad-watcher is executable")
+})
 test("Linux auto-start uses the AppImage file or the development launcher", () => {
 	const dataHome = "/home/test/.local/share"
 	assert.equal(
