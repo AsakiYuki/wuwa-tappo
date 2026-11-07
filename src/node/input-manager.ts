@@ -287,7 +287,12 @@ export function createInputManager(options: InputManagerOptions) {
 					/^[QWERTASDFGZXCVB12345]$|Left|^Ctrl$|^Shift$|^Alt$|Tab|CapsLock/.test(key) ? "left" : "right",
 					down,
 				)
-				if (down && pressed.has("Ctrl") && pressed.has("Alt") && ["1", "2", "3", "4", "5"].includes(key)) {
+				if (
+					down &&
+					(pressed.has("Ctrl") || pressed.has("Meta")) &&
+					pressed.has("Alt") &&
+					["1", "2", "3", "4", "5"].includes(key)
+				) {
 					const id = state.emotes[Number(key) - 1]
 					if (id) getPet()?.webContents.send("emote", id)
 				}
@@ -430,7 +435,7 @@ export function createInputManager(options: InputManagerOptions) {
 				else if (k === ".") k = "Period"
 				else if (k === "/") k = "Slash"
 				input(k, down, /^[QWERTASDFGZXCVB12345]$|Left|^Ctrl$|^Shift$|^Alt$|Tab|CapsLock/.test(k) ? "left" : "right")
-				if (down && ev.control && ev.alt && ["1", "2", "3", "4", "5"].includes(k)) {
+				if (down && (ev.control || ev.meta) && ev.alt && ["1", "2", "3", "4", "5"].includes(k)) {
 					const id = state.emotes[Number(k) - 1]
 					if (id) getPet()?.webContents.send("emote", id)
 				}
@@ -455,7 +460,7 @@ export function createInputManager(options: InputManagerOptions) {
 						true,
 						/^[QWERTASDFGZXCVB12345]$|Left|^Ctrl$|^Shift$|^Alt$|Tab|CapsLock/.test(key) ? "left" : "right",
 					)
-					if (e.ctrlKey && e.altKey && ["1", "2", "3", "4", "5"].includes(key)) {
+					if ((e.ctrlKey || e.metaKey) && e.altKey && ["1", "2", "3", "4", "5"].includes(key)) {
 						const id = state.emotes[Number(key) - 1]
 						if (id) getPet()?.webContents.send("emote", id)
 					}
