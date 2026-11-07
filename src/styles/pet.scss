@@ -166,7 +166,8 @@ button {
 	min-height: 0;
 
 	&:last-child .key:not(.space) {
-		font-size: 4.7px;
+		font-size: 3.8px;
+		letter-spacing: -0.2px;
 	}
 }
 

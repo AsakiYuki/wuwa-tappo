@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 contextBridge.exposeInMainWorld("petAPI", {
+  platform: process.platform,
   init: () => ipcRenderer.invoke("init"),
   command: (name, args) => ipcRenderer.invoke("command", name, args),
   onPage: (cb) => ipcRenderer.on("page", (_, p) => cb(p)),

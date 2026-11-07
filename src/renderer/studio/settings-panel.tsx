@@ -80,7 +80,15 @@ const switches: Array<{
 		tab: "input",
 		description: "Keep the hand animation active until the key or button is released.",
 	},
-	{ key: "passthrough", title: "Mouse Passthrough", tab: "input", description: "Press Ctrl+Alt+P to toggle." },
+	{
+		key: "passthrough",
+		title: "Mouse Passthrough",
+		tab: "input",
+		description:
+			typeof navigator !== "undefined" && /Mac/i.test(navigator.userAgent)
+				? "Press Command+Option+P to toggle."
+				: "Press Ctrl+Alt+P to toggle.",
+	},
 ]
 
 function createKeyLabelRows(labels: Record<string, string>): KeyLabelRow[] {

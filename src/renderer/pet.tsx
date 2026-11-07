@@ -7,11 +7,34 @@ import { assetPath } from "./types"
 import { emotionMotion, floatEmotion, floatKeyBubble } from "./emotions"
 import { getItemName } from "./names"
 
+const isMac =
+	(typeof window !== "undefined" && window.petAPI?.platform === "darwin") ||
+	(typeof navigator !== "undefined" &&
+		(/Mac|iPhone|iPod|iPad/.test(navigator.platform) || /Macintosh|Mac OS X/.test(navigator.userAgent))) ||
+	(typeof process !== "undefined" && process.platform === "darwin")
+
+const macKeyLabels: Record<string, string> = {
+	Ctrl: "Control",
+	CtrlLeft: "Control",
+	CtrlRight: "Control",
+	ControlLeft: "Control",
+	ControlRight: "Control",
+	Alt: "Option",
+	AltLeft: "Option",
+	AltRight: "Option",
+	Meta: "Command",
+	MetaLeft: "Command",
+	MetaRight: "Command",
+	Command: "Command",
+}
+
 const keyboardRows = [
 	["Tab|Tab", "Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P", "Backspace|⌫"],
 	["CapsLock|Caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", "Semicolon|;", "Enter|↵"],
 	["Shift|Shift", "Z", "X", "C", "V", "B", "N", "M", "Comma|,", "Period|.", "Slash|/"],
-	["Ctrl|Ctrl", "Meta|Meta", "Alt|Alt", "Space|SPACE", "AltRight|Alt", "ShiftRight|Shift", "CtrlRight|Ctrl"],
+	isMac
+		? ["Ctrl|Control", "Alt|Option", "Meta|Command", "Space|SPACE", "MetaRight|Command", "AltRight|Option", "CtrlRight|Control"]
+		: ["Ctrl|Ctrl", "Meta|Meta", "Alt|Alt", "Space|SPACE", "AltRight|Alt", "ShiftRight|Shift", "CtrlRight|Ctrl"],
 ]
 
 function colorLuminance(color: string) {
@@ -199,6 +222,7 @@ function PetApp() {
 		const trimmed = key.trim()
 		if (!trimmed) return key
 		if (keyLabels.current[trimmed] || mouseLabels[trimmed]) return keyLabels.current[trimmed] ?? mouseLabels[trimmed]
+		if (isMac && macKeyLabels[trimmed]) return macKeyLabels[trimmed]
 		const separator = trimmed.lastIndexOf(":")
 		if (separator >= 0) {
 			const button = trimmed.slice(separator + 1)
@@ -430,7 +454,7 @@ function PetApp() {
 							<div className="emotion-dot-slot" style={{ "--fan-i": index } as CSSProperties} key={id}>
 								<button
 									className="emotion-dot"
-									title={`${getItemName(emote) || emote.name} · Ctrl+Alt+${index + 1}`}
+									title={`${getItemName(emote) || emote.name} · ${isMac ? "Control+Option+" : "Ctrl+Alt+"}${index + 1}`}
 									ref={button => {
 										const image = button?.querySelector("img")
 										if (button && image) emotionMotion.bind(button, image)
@@ -454,9 +478,15 @@ function PetApp() {
 									{row.map(entry => {
 										const [key, label] = entry.split("|")
 										const wide = ["Shift", "ShiftRight", "Enter", "Backspace", "CapsLock", "Tab"].includes(key)
+										const isActive =
+											state.settings.showPressedKeys &&
+											(activeKeys.has(key) ||
+												(key === "MetaRight" && activeKeys.has("Meta")) ||
+												(key === "AltRight" && activeKeys.has("Alt")) ||
+												(key === "CtrlRight" && activeKeys.has("Ctrl")))
 										return (
 											<span
-												className={`key${key === "Space" ? " space" : wide ? " wide" : ""}${state.settings.showPressedKeys && activeKeys.has(key) ? " active" : ""}`}
+												className={`key${key === "Space" ? " space" : wide ? " wide" : ""}${isActive ? " active" : ""}`}
 												data-key={key}
 												key={key}
 											>

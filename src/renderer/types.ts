@@ -88,6 +88,7 @@ export interface CommandResult<T = unknown> {
 }
 
 export interface PetAPI {
+	platform?: string
 	init(): Promise<{
 		state: PetState
 		items: CatalogItem[]
