@@ -8,10 +8,12 @@
 		"email": "noreply@asakiyuki.com"
 	},
 	"desktopName": "com.asakiyuki.wuwa-tappo",
-	"description": "Wuwa Tappo for Linux",
+	"description": "Wuwa Tappo - Desktop Companion",
 	"main": "runtime/main.js",
 	"scripts": {
-		"start": "node scripts/register-dev-desktop.cjs && npm run node:build && npm run renderer:build && electron --ozone-platform=x11 .",
+		"start": "node scripts/start.cjs",
+		"start:mac": "node scripts/start.cjs --mac",
+		"start:linux": "node scripts/start.cjs --linux",
 		"node:build": "node scripts/clean-runtime.cjs && tsc -p tsconfig.node.json",
 		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && tsc --noEmit",
 		"test": "npm run node:build && node --test runtime/test.js",
@@ -19,6 +21,8 @@
 		"nix:build": "nix-shell --run 'bun run build'",
 		"nix:start": "nix-shell --run 'bun start'",
 		"build": "node scripts/build.cjs",
+		"build:mac": "node scripts/build.cjs --mac",
+		"build:linux": "node scripts/build.cjs --linux",
 		"postinstall": "node node_modules/electron/install.js"
 	},
 	"devDependencies": {
@@ -57,6 +61,35 @@
 			"**/*.node"
 		],
 		"npmRebuild": false,
+		"mac": {
+			"target": [
+				"dmg",
+				"zip"
+			],
+			"category": "public.app-category.utilities",
+			"icon": "assets/appicon.icns",
+			"identity": null,
+			"hardenedRuntime": true,
+			"gatekeeperAssess": false,
+			"entitlements": "build/entitlements.mac.plist",
+			"entitlementsInherit": "build/entitlements.mac.inherit.plist",
+			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
+		},
+		"dmg": {
+			"contents": [
+				{
+					"x": 130,
+					"y": 220
+				},
+				{
+					"x": 410,
+					"y": 220,
+					"type": "link",
+					"path": "/Applications"
+				}
+			],
+			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
+		},
 		"linux": {
 			"target": [
 				"deb",

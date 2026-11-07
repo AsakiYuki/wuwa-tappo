@@ -1,0 +1,41 @@
+name: macOS packages
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        arch: [arm64, x64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+      - run: npm test
+      - run: node scripts/build.cjs --mac --${{ matrix.arch }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-macos-${{ matrix.arch }}-dmg
+          path: dist/*-${{ matrix.arch }}.dmg
+          retention-days: 1
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-macos-${{ matrix.arch }}-zip
+          path: dist/*-${{ matrix.arch }}.zip
+          retention-days: 1
+          if-no-files-found: error

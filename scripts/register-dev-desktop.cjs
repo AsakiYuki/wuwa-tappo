@@ -3,6 +3,10 @@ const fs = require("node:fs")
 const os = require("node:os")
 const path = require("node:path")
 
+if (process.platform !== "linux") {
+	process.exit(0)
+}
+
 const projectRoot = path.resolve(__dirname, "..")
 const packageMetadata = JSON.parse(fs.readFileSync(path.join(projectRoot, "package.json"), "utf8"))
 const xdgDataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share")

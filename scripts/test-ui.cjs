@@ -6,10 +6,12 @@ const root = path.resolve(__dirname, ".."),
 fs.mkdirSync(out, { recursive: true });
 const result = path.join(out, "result.json");
 if (fs.existsSync(result)) fs.unlinkSync(result);
+const env = { ...process.env, WUWA_QA_OUTPUT: out };
+delete env.ELECTRON_RUN_AS_NODE;
 const child = spawn(
   require("electron"),
   [".", "--qa", "--selftest", "--interactive-test"],
-  { cwd: root, stdio: "inherit", env: { ...process.env, WUWA_QA_OUTPUT: out } },
+  { cwd: root, stdio: "inherit", env },
 );
 const timeout = setTimeout(() => {
   child.kill();

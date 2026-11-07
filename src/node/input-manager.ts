@@ -483,7 +483,11 @@ export function createInputManager(options: InputManagerOptions) {
 		}
 		if (evdevOk) hookStatus = "Global input connected (evdev)"
 		else if (uiohookOk) hookStatus = "Global input connected (uiohook)"
-		else hookStatus = "Wayland: Input permission required (run ./fix-permissions.sh)"
+		else
+			hookStatus =
+				process.platform === "darwin"
+					? "macOS: Accessibility permission required (System Settings > Privacy & Security > Accessibility)"
+					: "Wayland: Input permission required (run ./fix-permissions.sh)"
 		onStatus()
 	}
 

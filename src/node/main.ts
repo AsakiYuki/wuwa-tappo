@@ -226,6 +226,14 @@ class WuwaTappoApplication {
 				},
 			})
 		}
+		if (process.platform === "darwin" && !this.inputManager.status.includes("connected")) {
+			menuItems.push({
+				label: "⚡ Open Accessibility Settings (macOS)",
+				click: () => {
+					shell.openExternal("x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility")
+				},
+			})
+		}
 		menuItems.push({ type: "separator" }, { label: "Exit Wuwa Tappo", click: () => app.quit() })
 		return Menu.buildFromTemplate(menuItems)
 	}
@@ -372,6 +380,9 @@ class WuwaTappoApplication {
 		const packagedAppIconPath = path.join(path.dirname(process.resourcesPath), "appicon.png")
 		const trayIconPath = fs.existsSync(appIconPath) ? appIconPath : packagedAppIconPath
 		const icon = nativeImage.createFromPath(trayIconPath).resize({ width: 24, height: 24 })
+		if (process.platform === "darwin" && app.dock) {
+			app.dock.setIcon(trayIconPath)
+		}
 		this.tray = new Tray(icon)
 		this.tray.setToolTip("Wuwa Tappo · Desktop Companion")
 		this.tray.setContextMenu(this.createTrayMenu())

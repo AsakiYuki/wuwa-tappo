@@ -1,6 +1,6 @@
 # Wuwa Tappo
 
-Wuwa Tappo is a Linux desktop companion app inspired by the Wuthering Waves desktop pet experience. This project is an enhanced, open-source adaptation of the original concept, built for better Linux compatibility, smoother desktop integration, and a more complete collection-management workflow.
+Wuwa Tappo is a desktop companion app inspired by the Wuthering Waves desktop pet experience, built for Linux and macOS with smooth desktop integration and a complete collection-management workflow.
 
 ## Overview
 
@@ -36,10 +36,11 @@ This project is based on the original Wuwa Tappo concept, but it is optimized fo
 
 ## Requirements
 
-- Linux
+- Linux or macOS
 - Node.js 18+
 - npm
-- X11
+- On Linux: X11 or Wayland
+- On macOS: Accessibility permission for global input tracking (System Settings > Privacy & Security > Accessibility)
 
 ## Installation
 
@@ -49,16 +50,38 @@ npm install
 
 ## Development
 
+Start on your current platform:
+
 ```bash
 npm start
 ```
 
-This builds the runtime and renderer, then launches the Electron app.
+Or target a specific platform:
+
+```bash
+# macOS
+npm run start:mac
+
+# Linux
+npm run start:linux
+```
 
 ## Build
 
+Build packages for your current operating system:
+
 ```bash
 npm run build
+```
+
+Or target a specific platform:
+
+```bash
+# macOS (.dmg and .zip)
+npm run build:mac
+
+# Linux (deb, rpm, AppImage, tar.gz)
+npm run build:linux
 ```
 
 ## Testing
