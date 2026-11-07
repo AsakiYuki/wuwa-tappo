@@ -94,6 +94,19 @@ static int hid_usage_to_linux_code(uint32_t usage) {
         case 11: return BTN_THUMBL;
         case 12: return BTN_THUMBR;
         case 13: return BTN_MODE;
+        // Standard Gamepad / WebHID / DualSense button offsets for D-Pad
+        case 14:
+        case 146:
+            return BTN_DPAD_LEFT;
+        case 15:
+        case 147:
+            return BTN_DPAD_RIGHT;
+        case 16:
+        case 144:
+            return BTN_DPAD_UP;
+        case 17:
+        case 145:
+            return BTN_DPAD_DOWN;
         default:
             return (int)usage;
     }
@@ -178,6 +191,12 @@ static void on_input_value(void* context, IOReturn result, void* sender, IOHIDVa
             handle_hatswitch(slot, intVal, minVal, maxVal);
             return;
         }
+
+        // Discrete D-Pad usages in Generic Desktop (0x90=Up, 0x91=Down, 0x92=Right, 0x93=Left)
+        if (usage == 0x90) { emit_input(slot->name, BTN_DPAD_UP, intVal != 0); return; }
+        if (usage == 0x91) { emit_input(slot->name, BTN_DPAD_DOWN, intVal != 0); return; }
+        if (usage == 0x92) { emit_input(slot->name, BTN_DPAD_RIGHT, intVal != 0); return; }
+        if (usage == 0x93) { emit_input(slot->name, BTN_DPAD_LEFT, intVal != 0); return; }
 
         // Z axis (Left Trigger) or Rz axis (Right Trigger) -> BTN_TL2 / BTN_TR2
         if (usage == kHIDUsage_GD_Z) {
