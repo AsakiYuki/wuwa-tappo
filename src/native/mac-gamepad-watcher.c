@@ -81,20 +81,23 @@ static void emit_input(const char* deviceName, int code, int down) {
 
 static int hid_usage_to_linux_code(uint32_t usage) {
     switch (usage) {
-        case 1: return BTN_SOUTH;
-        case 2: return BTN_EAST;
-        case 3: return BTN_WEST;
-        case 4: return BTN_NORTH;
-        case 5: return BTN_TL;
-        case 6: return BTN_TR;
-        case 7: return BTN_TL2;
-        case 8: return BTN_TR2;
-        case 9: return BTN_SELECT;
-        case 10: return BTN_START;
-        case 11: return BTN_THUMBL;
-        case 12: return BTN_THUMBR;
-        case 13: return BTN_MODE;
-        // Standard Gamepad / WebHID / DualSense button offsets for D-Pad
+        case 1: return BTN_SOUTH;     // A
+        case 2: return BTN_EAST;      // B
+        case 3: return BTN_WEST;      // X
+        case 4: return BTN_NORTH;     // Y
+        case 5: return BTN_TL;        // LB
+        case 6: return BTN_TR;        // RB
+        case 7: return BTN_THUMBL;    // LS (Left Stick Click)
+        case 8: return BTN_THUMBR;    // RS (Right Stick Click)
+        case 9: return BTN_SELECT;    // View / Back
+        case 10: return BTN_START;    // Menu / Start
+        case 11: return BTN_MODE;     // Xbox Guide
+        case 12:
+        case 144:
+            return BTN_DPAD_UP;
+        case 13:
+        case 145:
+            return BTN_DPAD_DOWN;
         case 14:
         case 146:
             return BTN_DPAD_LEFT;
@@ -102,11 +105,7 @@ static int hid_usage_to_linux_code(uint32_t usage) {
         case 147:
             return BTN_DPAD_RIGHT;
         case 16:
-        case 144:
-            return BTN_DPAD_UP;
-        case 17:
-        case 145:
-            return BTN_DPAD_DOWN;
+            return BTN_SELECT;        // Share button (Xbox Series)
         default:
             return (int)usage;
     }
