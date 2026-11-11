@@ -44,6 +44,7 @@ export interface Settings {
 	showPressedKeys: boolean
 	showMouseBubbles: boolean
 	counterLeft: boolean
+	counterFormat: string
 	counterLimit: number | null
 	bubbleLifetime: number
 	bubbleColor: string
@@ -78,6 +79,9 @@ export interface CollectionState {
 	accessory: string
 	emotes: string[]
 	count: number
+	totalCount: number
+	dailyCount: number
+	dailyCountDate: string
 	draws: number
 	pity: number
 	history: HistoryEntry[]

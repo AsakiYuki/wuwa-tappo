@@ -38,6 +38,7 @@ export function createInputManager(options: InputManagerOptions) {
 	) {
 		if (!state.settings.inputEnabled) return
 		if (down && pressed.has(key) && !newPhysicalPress) return
+		let countedTap = false
 		if (down) {
 			pressed.add(key)
 			const triggerGroup = gamepadTriggerGroup(key)
@@ -45,6 +46,7 @@ export function createInputManager(options: InputManagerOptions) {
 				triggerGroup !== null &&
 				[...pressed].some(activeKey => activeKey !== key && gamepadTriggerGroup(activeKey) === triggerGroup)
 			if (countTap && !triggerAlreadyPressed) {
+				countedTap = true
 				const emote = core.registerTap(state, items)
 				if (state.count === 0) {
 					save()
@@ -57,6 +59,9 @@ export function createInputManager(options: InputManagerOptions) {
 			down,
 			side,
 			count: state.count,
+			totalCount: state.totalCount,
+			dailyCount: state.dailyCount,
+			countedTap,
 			serial: ++inputSerial,
 		}
 		getPet()?.webContents.send("input", event)
@@ -424,9 +429,7 @@ export function createInputManager(options: InputManagerOptions) {
 		const candidates: string[] = []
 
 		if (process.resourcesPath) {
-			candidates.push(
-				path.join(process.resourcesPath, "app.asar.unpacked", "assets", "bin", "mac-gamepad-watcher"),
-			)
+			candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "assets", "bin", "mac-gamepad-watcher"))
 		}
 		if (appRoot.includes("app.asar")) {
 			candidates.push(

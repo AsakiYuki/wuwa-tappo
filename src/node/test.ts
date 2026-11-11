@@ -178,10 +178,7 @@ test("Keyboard key labels can be overridden from settings", () => {
 	assert.equal(next.keyLabels.Meta, "Super")
 	assert.equal(next.keyLabels.Ctrl, "Control")
 	assert.equal(core.settings({ keyLabels: { ShiftRight: "RShift" } }).keyLabels.ShiftRight, "RShift")
-	assert.equal(
-		core.settings({ keyLabels: { ShiftRight: "  " } as never }).keyLabels.ShiftRight,
-		"RShift",
-	)
+	assert.equal(core.settings({ keyLabels: { ShiftRight: "  " } as never }).keyLabels.ShiftRight, "RShift")
 	const migrated = core.normalize(
 		{
 			...s,
@@ -245,10 +242,26 @@ test("Counter still tracks taps when auto-emote is disabled", () => {
 	)
 	assert.equal(s.count, 0)
 })
+test("Daily tap count is independent and resets when its saved date is stale", () => {
+	const s = core.initial(items)
+	s.count = 998
+	s.dailyCount = 12
+	s.dailyCountDate = "2000-01-01"
+	core.registerTap(s, items, () => 0)
+	assert.equal(s.count, 999)
+	assert.equal(s.dailyCount, 1)
+	assert.equal(s.totalCount, 1)
+	assert.equal(s.dailyCountDate, core.normalize(s, items).dailyCountDate)
+
+	const restored = core.normalize(JSON.parse(JSON.stringify(s)), items)
+	assert.equal(restored.dailyCount, 1)
+	assert.equal(restored.settings.counterFormat, "<CPS> / <DAY_COUNT>")
+})
 test("Reloading a save preserves collection, counter, presets, and draw progress", () => {
 	const s = core.initial(items)
 	core.draw(s, items, 10, () => 0.95)
 	s.count = 456
+	s.totalCount = 1456
 	s.presets.push({
 		id: "p",
 		name: "Daily",

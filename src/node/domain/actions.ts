@@ -91,6 +91,14 @@ function equip(s: CollectionState, items: CatalogItem[], id: string): void {
 	}
 }
 function registerTap(s: CollectionState, items: CatalogItem[], rng: () => number = Math.random): string | null {
+	const date = new Date()
+	const today = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+	if (s.dailyCountDate !== today) {
+		s.dailyCount = 0
+		s.dailyCountDate = today
+	}
+	s.totalCount = Math.min(Number.MAX_SAFE_INTEGER, s.totalCount + 1)
+	s.dailyCount++
 	s.count = s.settings.counterLimit !== null && s.count >= s.settings.counterLimit ? 0 : s.count + 1
 	if (!s.settings.autoEmote || s.count !== 0) return null
 	const selected = items.filter(x => x.type === "emote" && s.owned[x.id] > 0 && s.emotes.includes(x.id))

@@ -33,7 +33,15 @@ const keyboardRows = [
 	["CapsLock|Caps", "A", "S", "D", "F", "G", "H", "J", "K", "L", "Semicolon|;", "Enter|↵"],
 	["Shift|Shift", "Z", "X", "C", "V", "B", "N", "M", "Comma|,", "Period|.", "Slash|/"],
 	isMac
-		? ["Ctrl|Control", "Alt|Option", "Meta|Command", "Space|SPACE", "MetaRight|Command", "AltRight|Option", "CtrlRight|Control"]
+		? [
+				"Ctrl|Control",
+				"Alt|Option",
+				"Meta|Command",
+				"Space|SPACE",
+				"MetaRight|Command",
+				"AltRight|Option",
+				"CtrlRight|Control",
+			]
 		: ["Ctrl|Ctrl", "Meta|Meta", "Alt|Alt", "Space|SPACE", "AltRight|Alt", "ShiftRight|Shift", "CtrlRight|Ctrl"],
 ]
 
@@ -183,11 +191,21 @@ interface DragState {
 	distance: number
 }
 
+type CounterToken = "CPS" | "CPS_ALL" | "LMB_CPS" | "MMB_CPS" | "RMB_CPS" | "DAY_COUNT" | "TOTAL_COUNT"
+const cpsTokens = ["CPS_ALL", "LMB_CPS", "MMB_CPS", "RMB_CPS"] as const
+const counterTokenPattern = /<(CPS|CPS_ALL|LMB_CPS|MMB_CPS|RMB_CPS|DAY_COUNT|TOTAL_COUNT)>/g
+
 function PetApp() {
 	const [state, setState] = useState<PetState | null>(null)
 	const [items, setItems] = useState<CatalogItem[]>([])
 	const [face, setFace] = useState(1)
 	const [action, setAction] = useState(1)
+	const [cps, setCps] = useState<Record<(typeof cpsTokens)[number], number>>({
+		CPS_ALL: 0,
+		LMB_CPS: 0,
+		MMB_CPS: 0,
+		RMB_CPS: 0,
+	})
 	const [activeKeys, setActiveKeys] = useState<Set<string>>(() => new Set())
 	const [serial, setSerial] = useState(0)
 	const [menuOpen, setMenuOpen] = useState(false)
@@ -196,6 +214,13 @@ function PetApp() {
 	const bodyTimer = useRef<number | undefined>(undefined)
 	const menuTimer = useRef<number | undefined>(undefined)
 	const pointerDownAt = useRef(0)
+	const tapTimes = useRef<Record<(typeof cpsTokens)[number], number[]>>({
+		CPS_ALL: [],
+		LMB_CPS: [],
+		MMB_CPS: [],
+		RMB_CPS: [],
+	})
+	const cpsTimer = useRef<number | undefined>(undefined)
 	const lastMouseInputAt = useRef(0)
 	const heldActionKeys = useRef(new Map<string, 2 | 3>())
 	const handAnimation = useRef<PetState["settings"]["handAnimation"]>("adaptive")
@@ -215,9 +240,33 @@ function PetApp() {
 	const itemMap = useMemo(() => new Map(items.map(item => [item.id, item])), [items])
 	const itemMapRef = useRef(itemMap)
 	itemMapRef.current = itemMap
+	const updateCps = () => {
+		const now = Date.now()
+		const nextCps = {} as Record<(typeof cpsTokens)[number], number>
+		let nextExpiry = Number.POSITIVE_INFINITY
+		for (const token of cpsTokens) {
+			const times = tapTimes.current[token].filter(timestamp => timestamp > now - 1000)
+			tapTimes.current[token] = times
+			nextCps[token] = times.length
+			if (times.length) nextExpiry = Math.min(nextExpiry, times[0] + 1000)
+		}
+		setCps(nextCps)
+		window.clearTimeout(cpsTimer.current)
+		if (Number.isFinite(nextExpiry))
+			cpsTimer.current = window.setTimeout(updateCps, Math.max(0, nextExpiry - Date.now()))
+	}
 	keyLabels.current = { ...(state?.settings.keyLabels ?? {}) }
 	const character = state ? itemMap.get(state.character) : undefined
 	const accessory = state ? itemMap.get(state.accessory) : undefined
+	const counterValues: Record<CounterToken, number> = {
+		...cps,
+		CPS: cps.CPS_ALL,
+		DAY_COUNT: state?.dailyCount ?? 0,
+		TOTAL_COUNT: state?.totalCount ?? 0,
+	}
+	const counterText = (state?.settings.counterFormat ?? "<CPS> / <DAY_COUNT>").replace(counterTokenPattern, token =>
+		counterValues[token.slice(1, -1) as CounterToken].toLocaleString(),
+	)
 	const getKeyLabel = useCallback((key: string) => {
 		const trimmed = key.trim()
 		if (!trimmed) return key
@@ -276,8 +325,20 @@ function PetApp() {
 	useEffect(() => {
 		window.petAPI.onState(setState)
 		window.petAPI.onInput((event: InputMessage) => {
+			if (event.countedTap) {
+				const now = Date.now()
+				tapTimes.current.CPS_ALL.push(now)
+				if (event.key === "MouseLeft") tapTimes.current.LMB_CPS.push(now)
+				if (event.key === "MouseMiddle") tapTimes.current.MMB_CPS.push(now)
+				if (event.key === "MouseRight") tapTimes.current.RMB_CPS.push(now)
+				updateCps()
+			}
 			setSerial(event.serial)
-			setState(previous => (previous ? { ...previous, count: event.count } : previous))
+			setState(previous =>
+				previous
+					? { ...previous, count: event.count, totalCount: event.totalCount, dailyCount: event.dailyCount }
+					: previous,
+			)
 			setActiveKeys(previous => {
 				const next = new Set(previous)
 				event.down ? next.add(event.key) : next.delete(event.key)
@@ -332,6 +393,7 @@ function PetApp() {
 			window.clearInterval(blink)
 			window.clearTimeout(bodyTimer.current)
 			window.clearTimeout(menuTimer.current)
+			window.clearTimeout(cpsTimer.current)
 		}
 	}, [playAction])
 
@@ -510,7 +572,7 @@ function PetApp() {
 								})
 							}}
 						>
-							{state.count.toLocaleString()}
+							{counterText}
 						</div>
 					</div>
 					<div className="pet-toolbar">

@@ -170,6 +170,7 @@ function SettingsPanel({
 	})
 	const rangeValuesRef = useRef(rangeValues)
 	const [counterLimitDraft, setCounterLimitDraft] = useState(String(settings.counterLimit ?? 999))
+	const [counterFormatDraft, setCounterFormatDraft] = useState(settings.counterFormat)
 	const updateSetting = (key: SettingKey, value: unknown) => void api.command("settings", { [key]: value })
 
 	useEffect(() => {
@@ -185,6 +186,10 @@ function SettingsPanel({
 	useEffect(() => {
 		setCounterLimitDraft(String(settings.counterLimit ?? 999))
 	}, [settings.counterLimit])
+
+	useEffect(() => {
+		setCounterFormatDraft(settings.counterFormat)
+	}, [settings.counterFormat])
 
 	const renderSwitches = (tab: SettingsTab) =>
 		switches
@@ -270,6 +275,24 @@ function SettingsPanel({
 				{renderSwitches("pet")}
 				{renderRange("opacity")}
 				{renderRange("scale")}
+				<SettingRow
+					title="Counter Format"
+					description="Tokens: <CPS>, <CPS_ALL>, <LMB_CPS>, <MMB_CPS>, <RMB_CPS>, <DAY_COUNT>, <TOTAL_COUNT>."
+				>
+					<input
+						className="setting-counter-format"
+						data-setting="counterFormat"
+						aria-label="Counter Format"
+						type="text"
+						maxLength={128}
+						value={counterFormatDraft}
+						onChange={event => setCounterFormatDraft(event.currentTarget.value)}
+						onBlur={() => updateSetting("counterFormat", counterFormatDraft)}
+						onKeyDown={event => {
+							if (event.key === "Enter") event.currentTarget.blur()
+						}}
+					/>
+				</SettingRow>
 				<SettingRow title="Counter Limit" description="Reset the counter after this value, or keep counting.">
 					<div className="setting-content">
 						<input

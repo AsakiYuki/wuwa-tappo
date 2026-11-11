@@ -405,6 +405,18 @@ h3 {
 		text-align: center;
 	}
 
+	.setting-counter-format {
+		width: 320px;
+		max-width: 45vw;
+		height: 32px;
+		padding: 0 8px;
+		border: 1px solid $color-border;
+		border-radius: 10px;
+		background: $color-paper;
+		color: $color-text;
+		font: inherit;
+	}
+
 	.setting-select {
 		width: 142px;
 		height: 34px;

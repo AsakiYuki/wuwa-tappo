@@ -33,6 +33,7 @@ export interface PetSettings {
 	showPressedKeys: boolean
 	showMouseBubbles: boolean
 	counterLeft: boolean
+	counterFormat: string
 	counterLimit: number | null
 	bubbleLifetime: number
 	bubbleColor: string
@@ -48,6 +49,9 @@ export interface PetState {
 	accessory: string
 	emotes: string[]
 	count: number
+	totalCount: number
+	dailyCount: number
+	dailyCountDate: string
 	draws: number
 	pity: number
 	favorites: string[]
@@ -77,6 +81,9 @@ export interface InputMessage {
 	down: boolean
 	side: "left" | "right"
 	count: number
+	totalCount: number
+	dailyCount: number
+	countedTap: boolean
 	serial: number
 }
 

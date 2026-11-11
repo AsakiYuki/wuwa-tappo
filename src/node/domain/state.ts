@@ -13,8 +13,14 @@ const legacyDefaultKeyLabels: Record<string, string> = {
 	Space: "SPACE",
 }
 
+function localDateKey(): string {
+	const date = new Date()
+	return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
+}
+
 function initial(items: CatalogItem[]): CollectionState {
 	const starters = items.filter(x => x.starter)
+	const today = localDateKey()
 	return {
 		version: 2,
 		owned: Object.fromEntries(starters.map(x => [x.id, 1])),
@@ -27,6 +33,9 @@ function initial(items: CatalogItem[]): CollectionState {
 			.slice(0, 5)
 			.map(x => x.id),
 		count: 0,
+		totalCount: 0,
+		dailyCount: 0,
+		dailyCountDate: today,
 		draws: 0,
 		pity: 0,
 		history: [],
@@ -39,7 +48,15 @@ function normalize(raw: RawCollection | null | undefined, items: CatalogItem[]):
 	if (!raw || ![1, 2].includes(raw.version)) return s
 	for (const [id, n] of Object.entries(raw.owned || {}))
 		if (valid.has(id) && Number.isSafeInteger(n) && n > 0) s.owned[id] = Math.min(n, 1e9)
-	for (const k of ["count", "draws", "pity"]) if (Number.isSafeInteger(raw[k]) && raw[k] >= 0) s[k] = raw[k]
+	for (const k of ["count", "totalCount", "draws", "pity"])
+		if (Number.isSafeInteger(raw[k]) && raw[k] >= 0) s[k] = raw[k]
+	if (!Object.hasOwn(raw, "totalCount")) s.totalCount = s.count
+	if (Number.isSafeInteger(raw.dailyCount) && raw.dailyCount >= 0) s.dailyCount = raw.dailyCount
+	if (typeof raw.dailyCountDate === "string") s.dailyCountDate = raw.dailyCountDate
+	if (s.dailyCountDate !== localDateKey()) {
+		s.dailyCount = 0
+		s.dailyCountDate = localDateKey()
+	}
 	const hasType = (id, type) => s.owned[id] > 0 && items.some(x => x.id === id && x.type === type)
 	if (hasType(raw.character, "character")) s.character = raw.character
 	if (raw.accessory === "" || hasType(raw.accessory, "accessory")) s.accessory = raw.accessory
@@ -80,6 +97,7 @@ function settings(s: Partial<Settings>): Settings {
 		"holdAnimation",
 	])
 		if (typeof s[k] === "boolean") out[k] = s[k]
+	out.counterFormat = typeof s.counterFormat === "string" ? s.counterFormat.slice(0, 128) : DEFAULTS.counterFormat
 	out.scale = Math.max(0.65, Math.min(1.5, Number(s.scale) || 1))
 	out.opacity = Math.max(0.3, Math.min(1, Number(s.opacity) || 1))
 	out.counterLimit =
