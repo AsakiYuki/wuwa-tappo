@@ -1,121 +1,182 @@
 import type { CatalogItem, CollectionState, HistoryEntry, Rarity, SynthesisOptions } from "../types.js"
 import { RARITIES } from "./constants.js"
+import { localDateKey } from "./state.js"
 
-function rarity(rng: () => number, min = 0): Rarity {
-	const n = rng()
-	let i = n < 0.65 ? 0 : n < 0.9 ? 1 : n < 0.99 ? 2 : 3
-	return RARITIES[Math.max(i, min)]
+type Random = () => number
+
+const MAX_HISTORY = 100
+const MAX_EMOTES = 5
+/** A draw is forced to Epic once this many pulls pass without one. */
+const EPIC_PITY = 50
+
+/* -------------------------------- helpers -------------------------------- */
+
+/** Rolls a rarity with 65 / 25 / 9 / 1 % odds, never below `minimumIndex`. */
+function rollRarity(random: Random, minimumIndex = 0): Rarity {
+	const roll = random()
+	const index = roll < 0.65 ? 0 : roll < 0.9 ? 1 : roll < 0.99 ? 2 : 3
+	return RARITIES[Math.max(index, minimumIndex)]
 }
-function choose<T>(pool: T[], rng: () => number): T {
+
+function pickRandom<T>(pool: T[], random: Random): T {
 	if (!pool.length) throw Error("The item pool is empty")
-	return pool[Math.min(pool.length - 1, Math.floor(rng() * pool.length))]
+	return pool[Math.min(pool.length - 1, Math.floor(random() * pool.length))]
 }
-function award(s: CollectionState, item: CatalogItem, source: HistoryEntry["source"]): HistoryEntry {
-	const fresh = !s.owned[item.id]
-	s.owned[item.id] = (s.owned[item.id] || 0) + 1
-	const r = { id: item.id, fresh, source, at: Date.now() }
-	s.history.unshift(r)
-	s.history = s.history.slice(0, 100)
-	return r
+
+const spareCopies = (state: CollectionState, item: CatalogItem) => Math.max(0, (state.owned[item.id] || 0) - 1)
+
+/** Adds one copy of `item` to the collection and records it in the history. */
+function award(state: CollectionState, item: CatalogItem, source: HistoryEntry["source"]): HistoryEntry {
+	const entry: HistoryEntry = { id: item.id, fresh: !state.owned[item.id], source, at: Date.now() }
+	state.owned[item.id] = (state.owned[item.id] || 0) + 1
+	state.history = [entry, ...state.history].slice(0, MAX_HISTORY)
+	return entry
 }
-function draw(s: CollectionState, items: CatalogItem[], n: number, rng: () => number = Math.random): HistoryEntry[] {
-	if (n !== 1 && n !== 10) throw Error("Choose a single draw or a ten-draw pull")
-	const results = []
-	let high = false
-	for (let i = 0; i < n; i++) {
-		s.pity++
-		let level = rarity(rng, n === 10 && i === 9 && !high ? 1 : 0)
-		if (s.pity >= 50) level = "epic"
-		const pool = items.filter(x => x.rarity === level)
-		const item = choose(pool, rng)
-		if (level === "epic") s.pity = 0
-		if (level !== "common") high = true
-		results.push(award(s, item, "draw"))
-		s.draws++
+
+/* --------------------------------- draws --------------------------------- */
+
+/** Opens 1 or 10 chests. A ten-pull guarantees at least one Uncommon; pity guarantees an Epic. */
+function draw(state: CollectionState, items: CatalogItem[], count: number, random: Random = Math.random) {
+	if (count !== 1 && count !== 10) throw Error("Choose a single draw or a ten-draw pull")
+
+	const results: HistoryEntry[] = []
+	let gotUncommonOrBetter = false
+	for (let index = 0; index < count; index++) {
+		state.pity++
+		const isLastOfTen = count === 10 && index === 9
+		let rarity = rollRarity(random, isLastOfTen && !gotUncommonOrBetter ? 1 : 0)
+		if (state.pity >= EPIC_PITY) rarity = "epic"
+		if (rarity === "epic") state.pity = 0
+		if (rarity !== "common") gotUncommonOrBetter = true
+
+		const pool = items.filter(item => item.rarity === rarity)
+		results.push(award(state, pickRandom(pool, random), "draw"))
+		state.draws++
 	}
 	return results
 }
+
+/* ------------------------------- synthesis ------------------------------- */
+
+/**
+ * Consumes spare copies of one type and rarity to create new items.
+ * "same" turns 5 copies into one item of the same rarity, "upgrade" turns 10 into one of the next rarity.
+ * Unowned targets are preferred. The state is only changed if every synthesis succeeds.
+ */
 function synthesize(
-	s: CollectionState,
+	state: CollectionState,
 	items: CatalogItem[],
-	n: number,
-	level: Rarity,
-	rng: () => number = Math.random,
+	count: number,
+	rarity: Rarity,
+	random: Random = Math.random,
 	options: SynthesisOptions = {},
 ): HistoryEntry[] {
-	const type = options.type || "character",
-		mode = options.mode || "upgrade",
-		cost = mode === "same" ? 5 : 10
+	const type = options.type || "character"
+	const mode = options.mode || "upgrade"
+	const cost = mode === "same" ? 5 : 10
 	if (
-		![1, 10].includes(n) ||
-		!RARITIES.includes(level) ||
+		![1, 10].includes(count) ||
+		!RARITIES.includes(rarity) ||
 		!["character", "accessory", "emote"].includes(type) ||
 		!["same", "upgrade"].includes(mode)
 	)
 		throw Error("Invalid synthesis options")
-	if (mode === "upgrade" && level === "epic") throw Error("Epic is the highest rarity; choose same-tier synthesis")
-	const source = items.filter(x => x.rarity === level && x.type === type),
-		count = source.reduce((sum, x) => sum + Math.max(0, (s.owned[x.id] || 0) - 1), 0)
-	if (count < cost * n)
-		throw Error("Not enough duplicate items of this type and rarity; required: " + cost * n + " items")
-	const target = mode === "same" ? level : RARITIES[RARITIES.indexOf(level) + 1],
-		draft = structuredClone(s),
-		results = []
-	for (let i = 0; i < n; i++) {
-		let left = cost
-		for (const it of source) {
-			const take = Math.min(left, Math.max(0, (draft.owned[it.id] || 0) - 1))
-			if (take > 0) draft.owned[it.id] -= take
-			left -= take
-			if (!left) break
+	if (mode === "upgrade" && rarity === "epic") throw Error("Epic is the highest rarity; choose same-tier synthesis")
+
+	const materials = items.filter(item => item.rarity === rarity && item.type === type)
+	const available = materials.reduce((total, item) => total + spareCopies(state, item), 0)
+	if (available < cost * count)
+		throw Error("Not enough duplicate items of this type and rarity; required: " + cost * count + " items")
+
+	const targetRarity = mode === "same" ? rarity : RARITIES[RARITIES.indexOf(rarity) + 1]
+	const targets = items.filter(item => item.rarity === targetRarity && item.type === type)
+	if (!targets.length) throw Error("No target-rarity items exist for this type")
+
+	const draft = structuredClone(state)
+	const results: HistoryEntry[] = []
+	for (let index = 0; index < count; index++) {
+		let remaining = cost
+		for (const item of materials) {
+			const taken = Math.min(remaining, spareCopies(draft, item))
+			if (taken > 0) draft.owned[item.id] -= taken
+			remaining -= taken
+			if (!remaining) break
 		}
-		const pool = items.filter(x => x.rarity === target && x.type === type),
-			unowned = pool.filter(x => !draft.owned[x.id])
-		if (!pool.length) throw Error("No target-rarity items exist for this type")
-		results.push(award(draft, choose(unowned.length ? unowned : pool, rng), "synthesis"))
+		const unowned = targets.filter(item => !draft.owned[item.id])
+		results.push(award(draft, pickRandom(unowned.length ? unowned : targets, random), "synthesis"))
 	}
-	Object.assign(s, draft)
+	Object.assign(state, draft)
 	return results
 }
-function equip(s: CollectionState, items: CatalogItem[], id: string): void {
-	const item = items.find(x => x.id === id)
-	if (!item || !s.owned[id]) throw Error("Obtain this item first")
-	if (item.type === "character") s.character = id
-	else if (item.type === "accessory") s.accessory = s.accessory === id ? "" : id
-	else {
-		if (s.emotes.includes(id)) s.emotes = s.emotes.filter(x => x !== id)
-		else {
-			if (s.emotes.length >= 5) throw Error("Equip up to 5 emotes; remove one first")
-			s.emotes.push(id)
-		}
+
+/* -------------------------------- outfits -------------------------------- */
+
+/** Equips a character, toggles an accessory, or toggles an emote in the five emote slots. */
+function equip(state: CollectionState, items: CatalogItem[], id: string): void {
+	const item = items.find(candidate => candidate.id === id)
+	if (!item || !state.owned[id]) throw Error("Obtain this item first")
+
+	switch (item.type) {
+		case "character":
+			state.character = id
+			return
+		case "accessory":
+			state.accessory = state.accessory === id ? "" : id
+			return
+		case "emote":
+			if (state.emotes.includes(id)) {
+				state.emotes = state.emotes.filter(emote => emote !== id)
+				return
+			}
+			if (state.emotes.length >= MAX_EMOTES) throw Error("Equip up to 5 emotes; remove one first")
+			state.emotes.push(id)
 	}
 }
-function registerTap(s: CollectionState, items: CatalogItem[], rng: () => number = Math.random): string | null {
-	const date = new Date()
-	const today = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`
-	if (s.dailyCountDate !== today) {
-		s.dailyCount = 0
-		s.dailyCountDate = today
+
+/** Puts an emote into `slot`. If it is already equipped elsewhere, the two slots swap. */
+function replaceEmote(state: CollectionState, items: CatalogItem[], id: string, slot: number): void {
+	if (!Number.isInteger(slot) || slot < 0 || slot >= MAX_EMOTES) throw Error("Invalid emote slot")
+	if (!state.owned[id] || !items.some(item => item.id === id && item.type === "emote"))
+		throw Error("Obtain this emote first")
+
+	const emotes = state.emotes
+	const target = Math.min(slot, emotes.length)
+	const current = emotes.indexOf(id)
+	if (current === target) return
+
+	if (current < 0) {
+		emotes[target] = id
+		return
 	}
-	s.totalCount = Math.min(Number.MAX_SAFE_INTEGER, s.totalCount + 1)
-	s.dailyCount++
-	s.count = s.settings.counterLimit !== null && s.count >= s.settings.counterLimit ? 0 : s.count + 1
-	if (!s.settings.autoEmote || s.count !== 0) return null
-	const selected = items.filter(x => x.type === "emote" && s.owned[x.id] > 0 && s.emotes.includes(x.id))
-	return selected.length ? choose(selected, rng).id : null
+	const displaced = emotes[target]
+	emotes[target] = id
+	if (displaced) emotes[current] = displaced
+	else emotes.splice(current, 1)
 }
-function replaceEmote(s: CollectionState, items: CatalogItem[], id: string, slot: number): void {
-	if (!Number.isInteger(slot) || slot < 0 || slot > 4) throw Error("Invalid emote slot")
-	if (!s.owned[id] || !items.some(x => x.id === id && x.type === "emote")) throw Error("Obtain this emote first")
-	slot = Math.min(slot, s.emotes.length)
-	const index = s.emotes.indexOf(id)
-	if (index === slot) return
-	if (index >= 0) {
-		const old = s.emotes[slot]
-		s.emotes[slot] = id
-		if (old) s.emotes[index] = old
-		else s.emotes.splice(index, 1)
-	} else if (slot >= s.emotes.length) s.emotes.push(id)
-	else s.emotes[slot] = id
+
+/* -------------------------------- counter -------------------------------- */
+
+/**
+ * Counts one tap. The counter wraps to 0 after `counterLimit`; when it wraps and auto-emote is on,
+ * a random equipped emote id is returned for the pet to show.
+ */
+function registerTap(state: CollectionState, items: CatalogItem[], random: Random = Math.random): string | null {
+	const today = localDateKey()
+	if (state.dailyCountDate !== today) {
+		state.dailyCount = 0
+		state.dailyCountDate = today
+	}
+	state.totalCount = Math.min(Number.MAX_SAFE_INTEGER, state.totalCount + 1)
+	state.dailyCount++
+
+	const limit = state.settings.counterLimit
+	state.count = limit !== null && state.count >= limit ? 0 : state.count + 1
+	if (!state.settings.autoEmote || state.count !== 0) return null
+
+	const equipped = items.filter(
+		item => item.type === "emote" && state.owned[item.id] > 0 && state.emotes.includes(item.id),
+	)
+	return equipped.length ? pickRandom(equipped, random).id : null
 }
+
 export { draw, synthesize, equip, registerTap, replaceEmote }

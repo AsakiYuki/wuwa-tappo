@@ -1,6 +1,6 @@
 {
 	"name": "wuwa-tappo",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"private": true,
 	"type": "commonjs",
 	"author": {
@@ -16,30 +16,31 @@
 		"start:linux": "node scripts/start.cjs --linux",
 		"start:nix": "nix-shell --run 'bun start'",
 		"node:build": "node scripts/clean-runtime.cjs && node scripts/build-mac-gamepad.cjs && tsc -p tsconfig.node.json",
-		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && tsc --noEmit",
+		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && npm run renderer:typecheck",
 		"test": "npm run node:build && node --test runtime/test.js",
 		"test:ui": "npm run node:build && npm run renderer:build && node scripts/test-ui.cjs",
 		"build:nix": "nix-shell --run 'bun run build'",
 		"build": "node scripts/build.cjs",
 		"build:mac": "node scripts/build.cjs --mac",
 		"build:linux": "node scripts/build.cjs --linux",
-		"postinstall": "node node_modules/electron/install.js"
+		"postinstall": "node node_modules/electron/install.js",
+		"renderer:typecheck": "node scripts/typecheck-renderer.cjs",
+		"format": "prettier --write \"src/**/*.{ts,vue}\" \"scripts/**/*.cjs\" vite.config.mts"
 	},
 	"devDependencies": {
-		"@types/react": "^19.3.0",
-		"@types/react-dom": "^19.3.0",
-		"@vitejs/plugin-react": "^6.1.2",
+		"@vitejs/plugin-vue": "^6.0.11",
 		"electron": "45.0.0",
 		"electron-builder": "26.18.0",
 		"prettier": "^3.9.10",
 		"sass": "^1.107.1",
 		"typescript": "^7.0.2",
-		"vite": "^8.3.5"
+		"typescript-vue": "npm:typescript@^5.9.3",
+		"vite": "^8.3.5",
+		"vue-tsc": "^3.3.14"
 	},
 	"dependencies": {
-		"react": "^19.3.1",
-		"react-dom": "^19.3.1",
-		"uiohook-napi": "1.5.5"
+		"uiohook-napi": "1.5.5",
+		"vue": "^3.5.45"
 	},
 	"overrides": {
 		"minimatch": "^11.0.3"

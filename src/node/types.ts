@@ -8,6 +8,7 @@ export interface CatalogItem {
 	id: string
 	type: ItemType
 	rarity: Rarity
+	assetId: number
 	name: string
 	image: string
 	thumbnail: string
@@ -17,6 +18,16 @@ export interface CatalogItem {
 	offsetX?: number
 	offsetY?: number
 	layers?: Record<string, string>
+}
+
+export interface CatalogFilters {
+	series: Record<string, string>
+	roles: Record<string, string>
+}
+
+export interface Catalog {
+	items: CatalogItem[]
+	filters: CatalogFilters
 }
 
 export interface PetPosition {
@@ -107,4 +118,77 @@ export interface ProfileResult {
 	state: CollectionState
 	warning: string
 	migratedFrom?: string
+}
+
+/* ------------------------------------------------------------------ */
+/* IPC contract shared by the main process, preload and renderers.     */
+/* ------------------------------------------------------------------ */
+
+export type HandSide = "left" | "right"
+export type ResizeEdge = "n" | "s" | "e" | "w" | "ne" | "nw" | "se" | "sw"
+export const RESIZE_EDGES: readonly ResizeEdge[] = ["n", "s", "e", "w", "ne", "nw", "se", "sw"]
+
+export interface InputMessage {
+	key: string
+	down: boolean
+	side: HandSide
+	count: number
+	totalCount: number
+	dailyCount: number
+	countedTap: boolean
+	serial: number
+}
+
+export interface AppStatus {
+	hook: string
+	warning?: string
+}
+
+export interface MonitorInfo {
+	id: number
+	label: string
+}
+
+export interface InitPayload {
+	state: CollectionState
+	items: CatalogItem[]
+	filters: CatalogFilters
+	monitors: MonitorInfo[]
+	status: AppStatus
+}
+
+export interface CommandResult<T = unknown> {
+	ok: boolean
+	result?: T
+	error?: string
+	warning?: string
+}
+
+/** Cursor position relative to the pet window, sent while mouse passthrough hides hover events. */
+export interface CursorMessage {
+	x: number
+	y: number
+}
+
+/** The pet's visible content box, as fractions (0–1) of the pet window's size. */
+export interface HoverArea {
+	left: number
+	top: number
+	right: number
+	bottom: number
+}
+
+export interface PetAPI {
+	platform: string
+	init(): Promise<InitPayload>
+	command<T = unknown>(name: string, argument?: unknown): Promise<CommandResult<T>>
+	onState(callback: (state: CollectionState) => void): void
+	onInput(callback: (event: InputMessage) => void): void
+	onEmote(callback: (id: string) => void): void
+	onStatus(callback: (status: AppStatus) => void): void
+	onPage(callback: (page: string) => void): void
+	onCursor(callback: (cursor: CursorMessage | null) => void): void
+	move(dx: number, dy: number): void
+	setHoverArea(area: HoverArea): void
+	resizeWindow(edge: ResizeEdge, dx: number, dy: number): void
 }

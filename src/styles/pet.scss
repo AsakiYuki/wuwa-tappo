@@ -36,7 +36,8 @@ button {
 	&.hover-fade #petContent {
 		transition: opacity 180ms ease;
 
-		&:hover {
+		&:hover,
+		&.cursor-hovered {
 			opacity: 0.4;
 		}
 	}

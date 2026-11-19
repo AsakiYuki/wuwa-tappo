@@ -29,7 +29,7 @@ This project is based on the original Wuwa Tappo concept, but it is optimized fo
 ## Tech Stack
 
 - Electron
-- React + TypeScript
+- Vue 3 + TypeScript
 - Vite
 - Node.js
 - uiohook-napi

@@ -17,23 +17,73 @@ interface QaOptions {
 export async function runQa({ app, pet, studio, items, getState, dataDir, input }: QaOptions) {
 	const out = process.env.WUWA_QA_OUTPUT || path.join(__dirname, "..", "..", "qa")
 	fs.mkdirSync(out, { recursive: true })
-	const errors = []
-	for (const w of [pet, studio])
-		w.webContents.on("console-message", (_e, level, message) => {
-			const line = _e.message || message,
-				kind = _e.level ?? level
+	const errors: string[] = []
+	for (const window of [pet, studio])
+		window.webContents.on("console-message", (event, level, message) => {
+			const line = event.message || message
+			const kind = event.level ?? level
 			if ((kind === 3 || kind === "error") && !/ERR_BLOCKED_BY_CLIENT/.test(line)) errors.push(line)
 		})
-	const wait = ms => new Promise(r => setTimeout(r, ms)),
-		js = (w, s) => w.webContents.executeJavaScript(s)
-	const results = []
-	async function capture(name, w) {
+	const results: string[] = []
+
+	/* ------------------------------ helpers ------------------------------ */
+
+	const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+	const js = (window: BrowserWindow, script: string) => window.webContents.executeJavaScript(script)
+	const click = (window: BrowserWindow, selector: string) =>
+		js(window, `document.querySelector(${JSON.stringify(selector)}).click()`)
+	const openPage = (page: string) => click(studio, `[data-page=${page}]`)
+	const studioTest = () => js(studio, "window.__studioTest()")
+	const petTest = () => js(pet, "window.__petTest()")
+	const settingsTabCount = () =>
+		js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length')
+
+	/** Drags a settings range input from its thumb towards the far end with real mouse events. */
+	async function dragRange(setting: string) {
+		const range = await js(
+			studio,
+			`(() => {
+				const input = document.querySelector("#settingsRows [data-setting=${setting}]")
+				const bounds = input.getBoundingClientRect()
+				const ratio = (Number(input.value) - Number(input.min)) / (Number(input.max) - Number(input.min))
+				return {
+					x: bounds.x + 8 + ratio * (bounds.width - 16),
+					y: bounds.y + bounds.height / 2,
+					targetX: ratio > 0.5 ? bounds.x + 10 : bounds.x + bounds.width - 10,
+					containerWidth: input.parentElement.getBoundingClientRect().width,
+				}
+			})()`,
+		)
+		const send = (event: Electron.MouseInputEvent) => studio.webContents.sendInputEvent(event)
+		send({ type: "mouseDown", x: range.x, y: range.y, button: "left", clickCount: 1 })
+		send({ type: "mouseMove", x: range.targetX, y: range.y })
+		send({ type: "mouseUp", x: range.targetX, y: range.y, button: "left", clickCount: 1 })
+		await wait(150)
+		return range as { containerWidth: number }
+	}
+
+	/** Computed text and border colour of a key bubble rendered with the current bubble colour. */
+	const keyBubbleColors = (): Promise<{ text: string; border: string }> =>
+		js(
+			pet,
+			`(() => {
+				const bubble = document.createElement("div")
+				bubble.className = "local-key-bubble"
+				document.getElementById("bubble").append(bubble)
+				const style = getComputedStyle(bubble)
+				const colors = { text: style.color, border: style.borderTopColor }
+				bubble.remove()
+				return colors
+			})()`,
+		)
+
+	async function capture(name: string, window: BrowserWindow) {
 		if (!process.argv.includes("--snapshot") && !process.argv.includes("--capture-tests")) return
-		w.webContents.invalidate()
+		window.webContents.invalidate()
 		await wait(350)
-		const png = (await w.webContents.capturePage()).toPNG()
+		const png = (await window.webContents.capturePage()).toPNG()
 		if (!png.length) throw Error("Empty screenshot: " + name)
-		fs.writeFileSync(out + "/" + name + ".png", png)
+		fs.writeFileSync(path.join(out, name + ".png"), png)
 	}
 	try {
 		for (let i = 0; i < 80; i++) {
@@ -49,9 +99,9 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		studio.focus()
 		pet.showInactive()
 		await wait(1800)
-		assert.equal((await js(studio, "window.__studioTest()")).owned, 11)
-		assert((await js(pet, "window.__petTest()")).loaded)
-		assert.equal((await js(pet, "window.__petTest()")).keys, 42)
+		assert.equal((await studioTest()).owned, 11)
+		assert((await petTest()).loaded)
+		assert.equal((await petTest()).keys, 42)
 		assert.equal(
 			await js(
 				studio,
@@ -59,66 +109,28 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			),
 			1,
 		)
-		await js(studio, "document.querySelector('[data-page=settings]').click()")
-		for (let i = 0; i < 20; i++) {
-			if (await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length === 5')) break
-			await wait(25)
-		}
-		assert.equal(await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length'), 5)
-		assert.equal(await js(studio, 'document.querySelector("#settingsRows [data-setting=autoStart]")?.type'), "checkbox")
+		await openPage("settings")
+		for (let attempt = 0; attempt < 20 && (await settingsTabCount()) !== 5; attempt++) await wait(25)
+		assert.equal(await settingsTabCount(), 5)
+		assert.equal(
+			await js(studio, 'document.querySelector("#settingsRows [data-setting=autoStart]")?.type'),
+			"checkbox",
+		)
 		await js(studio, 'document.querySelectorAll("#settingsRows [role=tab]")[1].click()')
 		const previousScale = getState().settings.scale
-		const sliderBounds = await js(
-			studio,
-			'(()=>{const input=document.querySelector("#settingsRows [data-setting=scale]"),bounds=input.getBoundingClientRect(),content=input.parentElement.getBoundingClientRect(),min=Number(input.min),max=Number(input.max),value=Number(input.value),ratio=(value-min)/(max-min);return{x:bounds.x+8+ratio*(bounds.width-16),y:bounds.y+bounds.height/2,targetX:ratio>0.5?bounds.x+10:bounds.x+bounds.width-10,contentWidth:content.width};})()',
-		)
-		studio.webContents.sendInputEvent({
-			type: "mouseDown",
-			x: sliderBounds.x,
-			y: sliderBounds.y,
-			button: "left",
-			clickCount: 1,
-		})
-		studio.webContents.sendInputEvent({ type: "mouseMove", x: sliderBounds.targetX, y: sliderBounds.y })
-		studio.webContents.sendInputEvent({
-			type: "mouseUp",
-			x: sliderBounds.targetX,
-			y: sliderBounds.y,
-			button: "left",
-			clickCount: 1,
-		})
-		await wait(150)
-		assert.equal(await js(studio, 'document.querySelectorAll("#settingsRows .settings-tabs [role=tab]").length'), 5)
-		assert.equal(await js(studio, 'document.querySelector("#settingsRows [data-setting=scale]") !== null'), true)
+		const scaleRange = await dragRange("scale")
+		assert.equal(await settingsTabCount(), 5)
 		assert.notEqual(getState().settings.scale, previousScale)
+		// Dragging must not re-render the row and change its width.
 		assert.equal(
 			await js(
 				studio,
 				'document.querySelector("#settingsRows [data-setting=scale]").parentElement.getBoundingClientRect().width',
 			),
-			sliderBounds.contentWidth,
+			scaleRange.containerWidth,
 		)
 		const previousOpacity = getState().settings.opacity
-		const opacityBounds = await js(
-			studio,
-			'(()=>{const input=document.querySelector("#settingsRows [data-setting=opacity]"),bounds=input.getBoundingClientRect(),min=Number(input.min),max=Number(input.max),value=Number(input.value),ratio=(value-min)/(max-min);return{x:bounds.x+8+ratio*(bounds.width-16),y:bounds.y+bounds.height/2,targetX:ratio>0.5?bounds.x+10:bounds.x+bounds.width-10};})()',
-		)
-		studio.webContents.sendInputEvent({
-			type: "mouseDown",
-			x: opacityBounds.x,
-			y: opacityBounds.y,
-			button: "left",
-			clickCount: 1,
-		})
-		studio.webContents.sendInputEvent({ type: "mouseMove", x: opacityBounds.targetX, y: opacityBounds.y })
-		studio.webContents.sendInputEvent({
-			type: "mouseUp",
-			x: opacityBounds.targetX,
-			y: opacityBounds.y,
-			button: "left",
-			clickCount: 1,
-		})
-		await wait(150)
+		await dragRange("opacity")
 		assert.notEqual(getState().settings.opacity, previousOpacity)
 		assert.equal(
 			await js(pet, 'getComputedStyle(document.getElementById("petRoot")).opacity'),
@@ -134,20 +146,17 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		)
 		await wait(100)
 		assert.equal(getState().settings.bubbleColor, "#123456")
-		assert.equal(await js(pet, 'document.getElementById("bubble").style.getPropertyValue("--bubble-color")'), "#123456")
-		const darkBubbleStyle = await js(
-			pet,
-			`(()=>{const bubble=document.createElement('div');bubble.className='local-key-bubble';document.getElementById('bubble').append(bubble);const style=getComputedStyle(bubble);const result={text:style.color,border:style.borderTopColor};bubble.remove();return result;})()`,
+		assert.equal(
+			await js(pet, 'document.getElementById("bubble").style.getPropertyValue("--bubble-color")'),
+			"#123456",
 		)
+		const darkBubbleStyle = await keyBubbleColors()
 		assert.notEqual(darkBubbleStyle.text, "rgb(83, 45, 18)")
 		assert.equal(darkBubbleStyle.border, darkBubbleStyle.text)
 		await js(studio, "window.petAPI.command('settings',{bubbleColor:'#ffb6c1'})")
 		await wait(100)
 		assert.equal(getState().settings.bubbleColor, "#ffb6c1")
-		const pinkBubbleStyle = await js(
-			pet,
-			`(()=>{const bubble=document.createElement('div');bubble.className='local-key-bubble';document.getElementById('bubble').append(bubble);const style=getComputedStyle(bubble);const result={text:style.color,border:style.borderTopColor};bubble.remove();return result;})()`,
-		)
+		const pinkBubbleStyle = await keyBubbleColors()
 		assert.notEqual(pinkBubbleStyle.text, "rgb(83, 45, 18)")
 		assert.equal(pinkBubbleStyle.border, pinkBubbleStyle.text)
 		await js(studio, "window.petAPI.command('settings',{bubbleColor:'#ffd26f'})")
@@ -164,7 +173,7 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		assert.equal(
 			await js(
 				studio,
-				'(()=>{const button=document.querySelector("#keyboardLabelsRows .keyboard-label-add"),page=document.querySelector("#page-keyboard-labels"),rows=document.querySelector("#keyboardLabelsRows .keyboard-label-rows");return button.getBoundingClientRect().bottom<=page.getBoundingClientRect().bottom&&rows.getBoundingClientRect().height===0;})()',
+				'(()=>{const button=document.querySelector("#keyboardLabelsRows .keyboard-label-add"),page=document.querySelector("#page-keyboard-labels");return button.getBoundingClientRect().bottom<=page.getBoundingClientRect().bottom;})()',
 			),
 			true,
 		)
@@ -174,12 +183,19 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			'document.body.dispatchEvent(new KeyboardEvent("keydown",{key:"a",code:"KeyA",bubbles:true,cancelable:true}))',
 		)
 		await wait(100)
-		assert.equal(await js(studio, 'document.querySelector("#keyboardLabelsRows [data-label-field=key]")?.value'), "A")
+		// The captured key is appended after the default labels.
+		assert.equal(
+			await js(
+				studio,
+				'[...document.querySelectorAll("#keyboardLabelsRows [data-label-field=key]")].at(-1)?.value',
+			),
+			"A",
+		)
 		assert.equal(await js(studio, 'document.activeElement?.getAttribute("data-label-field")'), "value")
-		await js(studio, 'document.querySelector("#keyboardLabelsRows .keyboard-label-remove").click()')
+		await js(studio, '[...document.querySelectorAll("#keyboardLabelsRows .keyboard-label-remove")].at(-1).click()')
 		await wait(150)
 		assert.equal(getState().settings.keyLabels.A, undefined)
-		await js(studio, "document.querySelector('[data-page=collection]').click()")
+		await openPage("collection")
 		results.push("Initial 11 items, layered character images, and 42-key layout")
 		await capture("collection", studio)
 		await capture("pet", pet)
@@ -189,17 +205,20 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			input("Q", true, "left")
 			input("P", true, "right")
 			await wait(100)
-			assert.equal((await js(pet, "window.__petTest()")).action, 4)
+			assert.equal((await petTest()).action, 4)
 			await capture("pet-both-hands", pet)
 			input("P", false)
 			await wait(80)
-			assert.equal((await js(pet, "window.__petTest()")).action, 2)
+			assert.equal((await petTest()).action, 2)
 			input("Q", false)
 			await wait(80)
-			assert.equal((await js(pet, "window.__petTest()")).action, 1)
+			assert.equal((await petTest()).action, 1)
 			await js(studio, "window.petAPI.command('settings',{holdAnimation:false})")
 			await js(studio, "window.petAPI.command('settings',{hoverFade:false})")
-			await js(pet, "document.getElementById('counter').textContent='999';document.getElementById('counter').click()")
+			await js(
+				pet,
+				"document.getElementById('counter').textContent='999';document.getElementById('counter').click()",
+			)
 			await wait(850)
 			await capture("pet-menu", pet)
 			await js(studio, "window.petAPI.command('emote'," + JSON.stringify(getState().emotes[0]) + ")")
@@ -254,17 +273,17 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		const male = items.find(x => x.starter && x.roleId === 1501)
 		await js(studio, `window.petAPI.command('equip',${JSON.stringify(male.id)})`)
 		await wait(400)
-		assert.equal((await js(pet, "window.__petTest()")).character, male.id)
+		assert.equal((await petTest()).character, male.id)
 		await js(studio, "document.querySelector('#miniPresets .preset-item--add').click()")
 		await wait(100)
 		assert.equal(await js(studio, '!!document.querySelector("#presetsRoot #presetName")'), true)
 		assert.equal(await js(studio, '!!document.querySelector("#presetsRoot #presets")'), true)
-		await js(studio, "document.querySelector('[data-page=synthesis]').click()")
+		await openPage("synthesis")
 		await wait(100)
 		assert.equal(await js(studio, 'document.querySelectorAll("#synthesisRoot [data-synth-mode]").length'), 2)
 		assert.equal(await js(studio, 'document.querySelectorAll("#synthesisRoot [data-synth-count]").length'), 2)
 		assert.equal(await js(studio, '!!document.querySelector("#materialPicker #materialGroups")'), true)
-		await js(studio, "document.querySelector('[data-page=collection]').click()")
+		await openPage("collection")
 		results.push("Outfit changes sync to the desktop pet")
 		await js(studio, "document.getElementById('savePreset').click()")
 		await wait(250)
@@ -272,23 +291,23 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		const temporaryPreset = getState().presets[0]
 		await js(studio, `window.petAPI.command('preset-delete',${JSON.stringify(temporaryPreset.id)})`)
 		await wait(100)
-		await js(studio, "document.querySelector('[data-page=synthesis]').click()")
+		await openPage("synthesis")
 		await wait(100)
 		await js(studio, "document.querySelector('#synthesisSlots .synthesis-item').click()")
 		await wait(100)
 		assert.equal(await js(studio, "document.getElementById('materialPicker').open"), true)
 		await js(studio, "document.getElementById('closeMaterials').click()")
 		await wait(100)
-		await js(studio, "document.querySelector('[data-page=collection]').click()")
+		await openPage("collection")
 		const before = getState().count
 		input("A", true, "left")
 		await wait(50)
-		assert.equal((await js(pet, "window.__petTest()")).action, 2)
+		assert.equal((await petTest()).action, 2)
 		assert.equal(await js(pet, 'document.querySelector(\'[data-key="A"]\').classList.contains("active")'), true)
 		input("A", false)
 		await wait(200)
 		assert.equal(getState().count, before + 1)
-		assert.equal((await js(pet, "window.__petTest()")).action, 1)
+		assert.equal((await petTest()).action, 1)
 		assert.equal(await js(pet, 'document.querySelector(\'[data-key="A"]\').classList.contains("active")'), false)
 		results.push("Input events, tap animation, reset, and counter")
 
@@ -296,16 +315,16 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		await wait(80)
 		input("R", true, "left")
 		await wait(250)
-		assert.equal((await js(pet, "window.__petTest()")).action, 2)
+		assert.equal((await petTest()).action, 2)
 		input("F", true, "right")
 		await wait(80)
-		assert.equal((await js(pet, "window.__petTest()")).action, 3)
+		assert.equal((await petTest()).action, 3)
 		input("F", false)
 		await wait(80)
-		assert.equal((await js(pet, "window.__petTest()")).action, 2)
+		assert.equal((await petTest()).action, 2)
 		input("R", false)
 		await wait(80)
-		assert.equal((await js(pet, "window.__petTest()")).action, 1)
+		assert.equal((await petTest()).action, 1)
 		await js(studio, "window.petAPI.command('settings',{holdAnimation:false})")
 		results.push("Latest held input animates and earlier held input resumes on release")
 
@@ -318,13 +337,16 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		input("W", true, "left")
 		await wait(80)
 		assert.equal(getState().count, 0)
-		assert.equal((await js(pet, "window.__petTest()")).count, "0")
+		assert.equal((await petTest()).count, "0")
 		const popped = await js(pet, "[...document.querySelectorAll('.local-emotion-bubble')].map(x=>x.dataset.emote)")
 		assert.equal(popped.length, 1)
 		assert(getState().emotes.includes(popped[0]))
 		input("W", false)
 		assert.equal(JSON.parse(fs.readFileSync(path.join(dataDir, "collection.json"), "utf8")).count, 0)
-		assert.equal(await js(pet, "getComputedStyle(document.querySelector('.local-emotion-bubble__img')).width"), "80px")
+		assert.equal(
+			await js(pet, "getComputedStyle(document.querySelector('.local-emotion-bubble__img')).width"),
+			"80px",
+		)
 		assert.equal(
 			await js(pet, "getComputedStyle(document.querySelector('.local-emotion-bubble')).animationDuration"),
 			"1s",
@@ -334,7 +356,10 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		await js(pet, "document.getElementById('counter').click()")
 		await wait(800)
 		assert.equal(await js(pet, "getComputedStyle(document.querySelector('.emotion-img')).width"), "30px")
-		const sourcePaths = await js(pet, "[...document.querySelectorAll('.emotion-img')].map(x=>x.getAttribute('src'))")
+		const sourcePaths = await js(
+			pet,
+			"[...document.querySelectorAll('.emotion-img')].map(x=>x.getAttribute('src'))",
+		)
 		assert(
 			sourcePaths.every(src =>
 				getState().emotes.some(id => items.find(x => x.id === id).image === src.replace(/^\.\.\//, "")),
@@ -353,7 +378,7 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 
 		await js(studio, `window.petAPI.command('emote',${JSON.stringify(getState().emotes[0])})`)
 		await wait(200)
-		assert((await js(pet, "window.__petTest()")).bubble)
+		assert((await petTest()).bubble)
 		results.push("Emote bubble")
 		await js(studio, "window.petAPI.command('preset-save','Test Outfit')")
 		assert.equal(getState().presets.length, 1)
@@ -371,9 +396,9 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		assert.equal(persisted.draws, 11)
 		assert.equal(persisted.presets.length, 1)
 		results.push("Disk save verified")
-		await js(studio, "document.querySelector('[data-page=atlas]').click()")
+		await openPage("atlas")
 		await wait(300)
-		assert.equal((await js(studio, "window.__studioTest()")).groupCount, 4)
+		assert.equal((await studioTest()).groupCount, 4)
 		await capture("atlas", studio)
 
 		const inventoryBox = await js(
@@ -412,19 +437,20 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		)
 		results.push("Atlas categories are height-constrained and scroll with real wheel input")
 
-		assert(
-			(await js(studio, "window.__studioTest()")).visibleCards <= 50,
-			"Only nearby cards should be mounted, not all 899",
+		assert((await studioTest()).visibleCards <= 50, "Only nearby cards should be mounted, not all 899")
+		await js(
+			studio,
+			"document.getElementById('inventory').scrollTop=document.getElementById('inventory').scrollHeight",
 		)
-		await js(studio, "document.getElementById('inventory').scrollTop=document.getElementById('inventory').scrollHeight")
 		await wait(100)
 		for (
 			let i = 0;
-			i < 30 && !(await js(studio, "document.querySelector('#inventory .atlas-group:last-of-type .item-card')!==null"));
+			i < 30 &&
+			!(await js(studio, "document.querySelector('#inventory .atlas-group:last-of-type .item-card')!==null"));
 			i++
 		)
 			await wait(100)
-		assert((await js(studio, "window.__studioTest()")).visibleCards <= 50)
+		assert((await studioTest()).visibleCards <= 50)
 		assert(
 			await js(studio, "document.querySelector('#inventory .atlas-group:last-of-type .item-card')!==null"),
 			"Scrolling to the end must render the last rarity group",
@@ -434,18 +460,15 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		results.push("The 899-item atlas mounts at most 50 nearby cards and reaches the final group")
 
 		await js(studio, "document.querySelector('[data-type=character]').click()")
-		assert.equal((await js(studio, "window.__studioTest()")).filterCount, 3)
+		assert.equal((await studioTest()).filterCount, 3)
 
-		assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 260)
+		assert.equal((await studioTest()).loadedCards, 260)
 		assert(await js(studio, "!document.getElementById('loadMore')"))
-		assert(
-			(await js(studio, "window.__studioTest()")).visibleCards <= 50,
-			"Virtualized rendering should keep only nearby cards mounted",
-		)
+		assert((await studioTest()).visibleCards <= 50, "Virtualized rendering should keep only nearby cards mounted")
 		await js(studio, "window.petAPI.command('favorite',document.querySelector('#inventory .item-card').dataset.id)")
-		assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 260)
+		assert.equal((await studioTest()).loadedCards, 260)
 		await js(studio, "document.querySelector('[data-type=emote]').click()")
-		assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 504)
+		assert.equal((await studioTest()).loadedCards, 504)
 		assert(
 			await js(
 				studio,
@@ -453,7 +476,7 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			),
 		)
 		await js(studio, "document.querySelector('[data-type=character]').click()")
-		assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 260)
+		assert.equal((await studioTest()).loadedCards, 260)
 		results.push(
 			"Filtering 260 characters or 504 emotes loads the full result; virtualization mounts nearby cards only",
 		)
@@ -506,16 +529,25 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 
 		const nextEmote = items.find(x => x.starter && x.type === "emote" && !getState().emotes.includes(x.id))
 		await js(studio, "document.querySelectorAll('#previewEmotes button')[2].click()")
-		assert.equal((await js(studio, "window.__studioTest()")).replaceSlot, 2)
-		assert.equal((await js(studio, "window.__studioTest()")).type, "emote")
-		assert.equal((await js(studio, "window.__studioTest()")).filterCount, 2)
+		assert.equal((await studioTest()).replaceSlot, 2)
+		assert.equal((await studioTest()).type, "emote")
+		assert.equal((await studioTest()).filterCount, 2)
 		assert(
-			await js(studio, "!document.getElementById('replaceBar').hidden&&!document.getElementById('emotePicker').open"),
+			await js(
+				studio,
+				"!document.getElementById('replaceBar').hidden&&!document.getElementById('emotePicker').open",
+			),
 		)
 		await js(studio, "document.querySelector('[data-filter=role] .select-input').click()")
 		await capture("emote-slot-picker", studio)
-		await js(studio, "document.querySelector('[data-filter=role] [data-value=\"" + nextEmote.roleId + "\"]').click()")
-		await js(studio, "document.querySelector('[data-filter=rarity] [data-value=\"" + nextEmote.rarity + "\"]').click()")
+		await js(
+			studio,
+			"document.querySelector('[data-filter=role] [data-value=\"" + nextEmote.roleId + "\"]').click()",
+		)
+		await js(
+			studio,
+			"document.querySelector('[data-filter=rarity] [data-value=\"" + nextEmote.rarity + "\"]').click()",
+		)
 		assert(
 			await js(
 				studio,
@@ -529,7 +561,7 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 			await js(pet, "document.querySelectorAll('.emotion-img')[2].getAttribute('src')"),
 			"../" + nextEmote.image,
 		)
-		assert.equal((await js(studio, "window.__studioTest()")).replaceSlot, null)
+		assert.equal((await studioTest()).replaceSlot, null)
 		results.push(
 			"Click emote slot 3, filter by character or rarity, select a replacement, and confirm it syncs to the pet",
 		)
@@ -549,18 +581,18 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		await wait(200)
 		await capture("filters", studio)
 		await js(studio, "document.querySelector('[data-filter=series] [data-value=\"1007\"]').click()")
-		assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 10)
+		assert.equal((await studioTest()).loadedCards, 10)
 		await js(studio, "document.querySelector('[data-filter=role] [data-value=\"1107\"]').click()")
-		assert.equal((await js(studio, "window.__studioTest()")).loadedCards, 1)
+		assert.equal((await studioTest()).loadedCards, 1)
 		results.push("Rarity groups, seven series, 55 character indexes, and combined series/character filters")
-		await js(studio, "document.querySelector('[data-page=synthesis]').click()")
+		await openPage("synthesis")
 		await wait(200)
 		assert.equal(await js(studio, 'document.querySelectorAll(".synthesis-item").length'), 10)
 		await capture("synthesis", studio)
 		await js(studio, "document.querySelector('[data-synth-mode=same]').click()")
 		assert.equal(await js(studio, 'document.querySelectorAll(".synthesis-item").length'), 5)
 		results.push("Upgrade uses ten slots; same-tier uses five; single and ten-count buttons")
-		await js(studio, "document.querySelector('[data-page=settings]').click()")
+		await openPage("settings")
 		await wait(200)
 		try {
 			await capture("settings", studio)
@@ -586,7 +618,7 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		console.log("QA_SUCCESS " + JSON.stringify(results))
 	} catch (e) {
 		try {
-			console.log("FAILED_STATE", await js(studio, "window.__studioTest()"))
+			console.log("FAILED_STATE", await studioTest())
 			await capture("failure", studio)
 		} catch {}
 		fs.writeFileSync(out + "/result.json", JSON.stringify({ ok: false, results, error: e.stack, errors }, null, 2))

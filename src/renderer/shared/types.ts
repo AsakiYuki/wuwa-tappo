@@ -1,0 +1,21 @@
+// The renderer shares the main process's domain and IPC types so both sides stay in sync.
+export type {
+	AppStatus,
+	CatalogFilters,
+	CatalogItem,
+	CollectionState,
+	CommandResult,
+	CursorMessage,
+	HandSide,
+	HistoryEntry,
+	HoverArea,
+	InitPayload,
+	InputMessage,
+	ItemType,
+	PetAPI,
+	Preset,
+	Rarity,
+	ResizeEdge,
+	Settings,
+	SynthesisMode,
+} from "../../node/types"

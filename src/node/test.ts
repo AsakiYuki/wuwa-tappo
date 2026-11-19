@@ -6,6 +6,7 @@ import * as core from "./core.js"
 import * as storage from "./storage.js"
 import os from "node:os"
 import { getLinuxAutoStartExecutable, setLinuxAutoStart } from "./autostart.js"
+import { hoverScript } from "./kwin-hover-fade.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
 const items = catalog.items
@@ -491,4 +492,10 @@ test("Queued saves complete in order and do not overwrite newer state", async ()
 		if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-")) throw Error("Unsafe cleanup")
 		fs.rmSync(root, { recursive: true })
 	}
+})
+test("The KWin hover-fade script is valid JavaScript and embeds the hover area", () => {
+	const area = { left: 0.1, top: 0.2, right: 0.9, bottom: 1 }
+	const script = hoverScript(area)
+	assert.doesNotThrow(() => new Function(script))
+	assert.ok(script.includes(JSON.stringify(area)))
 })

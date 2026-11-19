@@ -1,7 +1,7 @@
 import { readFileSync } from "node:fs"
 import { resolve } from "node:path"
 import { fileURLToPath } from "node:url"
-import react from "@vitejs/plugin-react"
+import vue from "@vitejs/plugin-vue"
 import { defineConfig } from "vite"
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url))
@@ -10,10 +10,14 @@ const buildVersion = process.env.BUILD_VERSION || new Date().toISOString().repla
 
 export default defineConfig({
 	base: "./",
-	plugins: [react()],
+	plugins: [vue()],
 	define: {
 		__APP_VERSION__: JSON.stringify(packageMetadata.version),
 		__BUILD_VERSION__: JSON.stringify(buildVersion),
+		// Templates are precompiled, so the runtime needs neither the Options API nor devtools hooks.
+		__VUE_OPTIONS_API__: "false",
+		__VUE_PROD_DEVTOOLS__: "false",
+		__VUE_PROD_HYDRATION_MISMATCH_DETAILS__: "false",
 	},
 	build: {
 		outDir: "renderer-build",
@@ -21,8 +25,8 @@ export default defineConfig({
 		cssCodeSplit: false,
 		rollupOptions: {
 			input: {
-				pet: resolve(projectRoot, "src/renderer/pet.tsx"),
-				studio: resolve(projectRoot, "src/renderer/studio.tsx"),
+				pet: resolve(projectRoot, "src/renderer/pet/main.ts"),
+				studio: resolve(projectRoot, "src/renderer/studio/main.ts"),
 			},
 			output: {
 				entryFileNames: "assets/[name].js",

@@ -2,11 +2,25 @@ import { spawn, type ChildProcess } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
 import type { BrowserWindow } from "electron"
-import type { CatalogItem, CollectionState } from "./types.js"
+import type { CatalogItem, CollectionState, HandSide, InputMessage } from "./types.js"
 import * as core from "./core.js"
+import {
+	LINUX_GAMEPAD_AXES,
+	LINUX_KEYMAP,
+	LINUX_MOUSEMAP,
+	UIOHOOK_MOUSEMAP,
+	emoteHotkeySlot,
+	gamepadButtonName,
+	gamepadSide,
+	gamepadTriggerGroup,
+	keyboardSide,
+	mouseSide,
+	windowKeyName,
+} from "./input-keymaps.js"
 
 interface InputManagerOptions {
-	state: CollectionState
+	/** Read on every event: imports and resets replace the state object. */
+	getState: () => CollectionState
 	items: CatalogItem[]
 	getPet: () => BrowserWindow | null
 	dataDir: string
@@ -16,26 +30,51 @@ interface InputManagerOptions {
 	onStatus: () => void
 }
 
+interface EvdevDevice {
+	fd: number
+	path: string
+	isKeyboard: boolean
+	isGamepad: boolean
+	isTouchpad: boolean
+	name: string
+	axes: Map<number, string>
+	buffer: Buffer
+	leftover: Buffer
+}
+
+const EVDEV_EVENT_SIZE = 24
+const EV_SYN = 0
+const EV_KEY = 1
+const EV_ABS = 3
+const SYN_DROPPED = 3
+const BTN_TOUCH = 330
+
+const STATUS_EVDEV = "Global input connected (evdev)"
+const STATUS_UIOHOOK = "Global input connected (uiohook)"
+const STATUS_IOKIT = "Global input connected (IOKit Gamepad)"
+const STATUS_WAYLAND_PERMISSION = "Wayland: Input permission required (run ./fix-permissions.sh)"
+const STATUS_MAC_PERMISSION =
+	"macOS: Accessibility permission required (System Settings > Privacy & Security > Accessibility)"
+
 export function createInputManager(options: InputManagerOptions) {
-	const { state, items, getPet, dataDir, qa, save, laterSave, onStatus } = options
+	const { getState, items, getPet, dataDir, qa, save, laterSave, onStatus } = options
 	const pressed = new Set<string>()
+	const ignoreHookInput = qa && process.argv.includes("--selftest")
 	let inputSerial = 0
-	let hook: any
+	let hook: { stop(): void } | undefined
 	let hookActive = false
-	let evdevDevices: any[] = []
+	let evdevDevices: EvdevDevice[] = []
 	let evdevTimer: NodeJS.Timeout | null = null
 	let evdevScanTimer: NodeJS.Timeout | null = null
 	let nextGamepadNumber = 0
 	let macGamepadProcess: ChildProcess | null = null
 	let hookStatus = "Connecting keyboard..."
 
-	function input(
-		key: string,
-		down: boolean,
-		side: "left" | "right" = "right",
-		newPhysicalPress = false,
-		countTap = true,
-	) {
+	const logError = (message: string) => fs.appendFileSync(path.join(dataDir, "errors.log"), message + "\n")
+	const sendToPet = (channel: string, payload: unknown) => getPet()?.webContents.send(channel, payload)
+
+	function input(key: string, down: boolean, side: HandSide = "right", newPhysicalPress = false, countTap = true) {
+		const state = getState()
 		if (!state.settings.inputEnabled) return
 		if (down && pressed.has(key) && !newPhysicalPress) return
 		let countedTap = false
@@ -49,12 +88,12 @@ export function createInputManager(options: InputManagerOptions) {
 				countedTap = true
 				const emote = core.registerTap(state, items)
 				if (state.count === 0) {
-					save()
-					if (emote) getPet()?.webContents.send("emote", emote)
+					void save()
+					if (emote) sendToPet("emote", emote)
 				} else laterSave()
 			}
 		} else pressed.delete(key)
-		const event = {
+		const message: InputMessage = {
 			key,
 			down,
 			side,
@@ -64,180 +103,29 @@ export function createInputManager(options: InputManagerOptions) {
 			countedTap,
 			serial: ++inputSerial,
 		}
-		getPet()?.webContents.send("input", event)
+		sendToPet("input", message)
 	}
 
-	const LINUX_KEYMAP = {
-		1: "Escape",
-		2: "1",
-		3: "2",
-		4: "3",
-		5: "4",
-		6: "5",
-		7: "6",
-		8: "7",
-		9: "8",
-		10: "9",
-		11: "0",
-		12: "Minus",
-		13: "Equal",
-		14: "Backspace",
-		15: "Tab",
-		16: "Q",
-		17: "W",
-		18: "E",
-		19: "R",
-		20: "T",
-		21: "Y",
-		22: "U",
-		23: "I",
-		24: "O",
-		25: "P",
-		26: "BracketLeft",
-		27: "BracketRight",
-		28: "Enter",
-		29: "Ctrl",
-		30: "A",
-		31: "S",
-		32: "D",
-		33: "F",
-		34: "G",
-		35: "H",
-		36: "J",
-		37: "K",
-		38: "L",
-		39: "Semicolon",
-		40: "Quote",
-		41: "Backquote",
-		42: "Shift",
-		43: "Backslash",
-		44: "Z",
-		45: "X",
-		46: "C",
-		47: "V",
-		48: "B",
-		49: "N",
-		50: "M",
-		51: "Comma",
-		52: "Period",
-		53: "Slash",
-		54: "ShiftRight",
-		56: "Alt",
-		57: "Space",
-		58: "CapsLock",
-		59: "F1",
-		60: "F2",
-		61: "F3",
-		62: "F4",
-		63: "F5",
-		64: "F6",
-		65: "F7",
-		66: "F8",
-		67: "F9",
-		68: "F10",
-		87: "F11",
-		88: "F12",
-		97: "CtrlRight",
-		100: "AltRight",
-		102: "Home",
-		103: "ArrowUp",
-		104: "PageUp",
-		105: "ArrowLeft",
-		106: "ArrowRight",
-		107: "End",
-		108: "ArrowDown",
-		109: "PageDown",
-		110: "Insert",
-		111: "Delete",
-		125: "Meta",
-		126: "MetaRight",
-	}
-	const LINUX_MOUSEMAP = {
-		272: "MouseLeft",
-		273: "MouseRight",
-		274: "MouseMiddle",
-		275: "MouseBack",
-		276: "MouseForward",
-		277: "MouseForward",
-		278: "MouseBack",
-	}
-	const UIOHOOK_MOUSEMAP: Record<number, string> = {
-		1: "MouseLeft",
-		2: "MouseRight",
-		3: "MouseMiddle",
-		4: "MouseBack",
-		5: "MouseForward",
+	/** Feeds a keyboard key and fires the Ctrl/Meta+Alt+N emote shortcut. */
+	function keyboardInput(key: string, down: boolean, controlOrMeta: boolean, alt: boolean, newPhysicalPress = false) {
+		input(key, down, keyboardSide(key), newPhysicalPress)
+		if (!down) return
+		const slot = emoteHotkeySlot(key, controlOrMeta, alt)
+		const id = slot >= 0 ? getState().emotes[slot] : undefined
+		if (id) sendToPet("emote", id)
 	}
 
-	const LINUX_GAMEPAD_BUTTONS: Record<number, string> = {
-		288: "Trigger",
-		289: "Trigger2",
-		290: "Thumb",
-		291: "Thumb2",
-		292: "Top",
-		293: "Top2",
-		294: "Pinkie",
-		295: "Base",
-		296: "Base2",
-		297: "Base3",
-		298: "Base4",
-		299: "Base5",
-		300: "Base6",
-		304: "South",
-		305: "East",
-		306: "C",
-		307: "North",
-		308: "West",
-		310: "L1",
-		311: "R1",
-		312: "L2",
-		313: "R2",
-		314: "Select",
-		315: "Start",
-		316: "Mode",
-		317: "L3",
-		318: "R3",
-		544: "DPadUp",
-		545: "DPadDown",
-		546: "DPadLeft",
-		547: "DPadRight",
-	}
+	/* ----------------------------- evdev ------------------------------ */
 
-	const LINUX_GAMEPAD_AXES: Record<number, string> = {
-		0: "LeftStickX",
-		1: "LeftStickY",
-		2: "LeftTriggerAxis",
-		3: "RightStickX",
-		4: "RightStickY",
-		5: "RightTriggerAxis",
-		16: "DPadX",
-		17: "DPadY",
-	}
-
-	function gamepadButtonName(device, code: number) {
-		return `${device.name}:${LINUX_GAMEPAD_BUTTONS[code] || `Button${code}`}`
-	}
-
-	function gamepadSide(key: string): "left" | "right" {
-		return /:(DPad|LeftStick|LeftTriggerAxis|L1$|L2$|L3$)/.test(key) ? "left" : "right"
-	}
-
-	function releaseGamepadInputs(device) {
+	function releaseGamepadInputs(device: EvdevDevice) {
 		for (const key of [...pressed]) {
 			if (key.startsWith(`${device.name}:`)) input(key, false, gamepadSide(key))
 		}
 	}
 
-	function gamepadTriggerGroup(key: string): string | null {
-		const match = key.match(/^(Gamepad\d+):(L2|LeftTriggerAxisPositive|R2|RightTriggerAxisPositive)$/)
-		if (!match) return null
-		return `${match[1]}:${match[2] === "L2" || match[2].startsWith("Left") ? "LT" : "RT"}`
-	}
-
-	function readGamepadAxis(device, code: number, value: number) {
+	function readGamepadAxis(device: EvdevDevice, code: number, value: number) {
 		const axis = LINUX_GAMEPAD_AXES[code]
-		if (!axis) return
-		if (axis.includes("Stick")) return
+		if (!axis || axis.includes("Stick")) return
 
 		const name = `${device.name}:${axis}`
 		const threshold = axis.startsWith("DPad") ? 0 : axis.endsWith("TriggerAxis") ? 64 : 8192
@@ -250,63 +138,74 @@ export function createInputManager(options: InputManagerOptions) {
 		device.axes.set(code, direction)
 	}
 
-	function readEvdev(device, chunk) {
-		const buf = Buffer.concat([device.leftover, chunk]),
-			eventSize = 24
+	function readEvdev(device: EvdevDevice, chunk: Buffer) {
+		const buffer = Buffer.concat([device.leftover, chunk])
 		let offset = 0
-		while (offset + eventSize <= buf.length) {
-			const type = buf.readUInt16LE(offset + 16),
-				code = buf.readUInt16LE(offset + 18),
-				value = buf.readInt32LE(offset + 20)
-			offset += eventSize
-			if (type === 0 && code === 3) {
+		while (offset + EVDEV_EVENT_SIZE <= buffer.length) {
+			const type = buffer.readUInt16LE(offset + 16)
+			const code = buffer.readUInt16LE(offset + 18)
+			const value = buffer.readInt32LE(offset + 20)
+			offset += EVDEV_EVENT_SIZE
+			if (type === EV_SYN && code === SYN_DROPPED) {
 				pressed.clear()
 				continue
 			}
-			if (device.isGamepad && type === 3) {
+			if (device.isGamepad && type === EV_ABS) {
 				readGamepadAxis(device, code, value)
 				continue
 			}
-			if (type !== 1) continue
+			if (type !== EV_KEY || (value !== 0 && value !== 1)) continue
+			const down = value === 1
 			if (device.isGamepad) {
-				if (value === 0 || value === 1)
-					input(gamepadButtonName(device, code), value === 1, gamepadSide(gamepadButtonName(device, code)), value === 1)
+				const button = gamepadButtonName(device.name, code)
+				input(button, down, gamepadSide(button), down)
 				continue
 			}
-			const receiveTouchpadInput = device.isTouchpad && state.settings.touchpadInput
-			if (device.isTouchpad && code === 330 && (value === 0 || value === 1)) {
-				if (receiveTouchpadInput) input("Touchpad", value === 1, "left", value === 1)
+			const receiveTouchpadInput = device.isTouchpad && getState().settings.touchpadInput
+			if (device.isTouchpad && code === BTN_TOUCH) {
+				if (receiveTouchpadInput) input("Touchpad", down, "left", down)
 				continue
 			}
 			const mouse = LINUX_MOUSEMAP[code]
-			const key = LINUX_KEYMAP[code] || "Key" + code
-			if (mouse && (value === 1 || value === 0))
-				input(
-					receiveTouchpadInput && mouse === "MouseLeft" ? "Touchpad" : mouse,
-					value === 1,
-					mouse === "MouseLeft" ? "left" : "right",
-				)
-			else if (code < 256 && (value === 0 || value === 1)) {
-				const down = value === 1
-				input(
-					key,
-					down,
-					/^[QWERTASDFGZXCVB12345]$|Left|^Ctrl$|^Shift$|^Alt$|Tab|CapsLock/.test(key) ? "left" : "right",
-					down,
-				)
-				if (
-					down &&
-					(pressed.has("Ctrl") || pressed.has("Meta")) &&
-					pressed.has("Alt") &&
-					["1", "2", "3", "4", "5"].includes(key)
-				) {
-					const id = state.emotes[Number(key) - 1]
-					if (id) getPet()?.webContents.send("emote", id)
-				}
+			if (mouse) {
+				input(receiveTouchpadInput && mouse === "MouseLeft" ? "Touchpad" : mouse, down, mouseSide(mouse))
+			} else if (code < 256) {
+				const key = LINUX_KEYMAP[code] || "Key" + code
+				keyboardInput(key, down, pressed.has("Ctrl") || pressed.has("Meta"), pressed.has("Alt"), down)
 			}
 		}
-		device.leftover = buf.subarray(offset)
+		device.leftover = buffer.subarray(offset)
 	}
+
+	function closeDevice(device: EvdevDevice) {
+		evdevDevices = evdevDevices.filter(entry => entry !== device)
+		if (device.isGamepad) releaseGamepadInputs(device)
+		try {
+			fs.closeSync(device.fd)
+		} catch {}
+		if (device.isKeyboard) pressed.clear()
+	}
+
+	function pollEvdevDevices() {
+		for (const device of [...evdevDevices]) {
+			try {
+				for (;;) {
+					const size = fs.readSync(device.fd, device.buffer, 0, device.buffer.length, null)
+					if (!size) break
+					readEvdev(device, device.buffer.subarray(0, size))
+				}
+			} catch (error) {
+				const code = (error as NodeJS.ErrnoException).code
+				if (code === "EAGAIN" || code === "EWOULDBLOCK") continue
+				closeDevice(device)
+			}
+		}
+		if (!evdevDevices.length && evdevTimer) {
+			clearInterval(evdevTimer)
+			evdevTimer = null
+		}
+	}
+
 	function scanEvdevDevices() {
 		if (process.platform !== "linux") return
 
@@ -327,276 +226,188 @@ export function createInputManager(options: InputManagerOptions) {
 			const isTouchpad = /touchpad|trackpad|synaptics|elan|alps|glidepoint/i.test(deviceName)
 			if (!isGamepad && !isTouchpad && !/\b(?:kbd|mouse\d*)\b/.test(handlers)) continue
 			const eventNumber = block.match(/\bevent(\d+)\b/)?.[1]
-			if (eventNumber)
-				candidates.set(`/dev/input/event${eventNumber}`, {
-					handlers,
-					isGamepad,
-					isTouchpad,
-				})
+			if (eventNumber) candidates.set(`/dev/input/event${eventNumber}`, { handlers, isGamepad, isTouchpad })
 		}
 
 		const previousCount = evdevDevices.length
 		for (const device of [...evdevDevices]) {
-			if (candidates.has(device.path)) continue
-			evdevDevices = evdevDevices.filter(entry => entry !== device)
-			if (device.isGamepad) releaseGamepadInputs(device)
-			try {
-				fs.closeSync(device.fd)
-			} catch {}
-			if (device.isKeyboard) pressed.clear()
+			if (!candidates.has(device.path)) closeDevice(device)
 		}
 
-		for (const [devPath, candidate] of candidates) {
-			if (evdevDevices.some(device => device.path === devPath)) continue
+		for (const [devicePath, candidate] of candidates) {
+			if (evdevDevices.some(device => device.path === devicePath)) continue
 			try {
-				fs.accessSync(devPath, fs.constants.R_OK)
-				const fd = fs.openSync(devPath, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK)
+				fs.accessSync(devicePath, fs.constants.R_OK)
+				const fd = fs.openSync(devicePath, fs.constants.O_RDONLY | fs.constants.O_NONBLOCK)
 				evdevDevices.push({
 					fd,
-					path: devPath,
+					path: devicePath,
 					isKeyboard: /\bkbd\b/.test(candidate.handlers),
 					isGamepad: candidate.isGamepad,
 					isTouchpad: candidate.isTouchpad,
 					name: candidate.isGamepad ? `Gamepad${++nextGamepadNumber}` : "",
-					axes: new Map<number, string>(),
+					axes: new Map(),
 					buffer: Buffer.alloc(4096),
 					leftover: Buffer.alloc(0),
 				})
 			} catch {}
 		}
 
-		if (evdevDevices.length && !evdevTimer) {
-			evdevTimer = setInterval(() => {
-				for (const device of [...evdevDevices]) {
-					try {
-						for (;;) {
-							const size = fs.readSync(device.fd, device.buffer, 0, device.buffer.length, null)
-							if (!size) break
-							readEvdev(device, device.buffer.subarray(0, size))
-						}
-					} catch (error) {
-						const code = (error as NodeJS.ErrnoException).code
-						if (code === "EAGAIN" || code === "EWOULDBLOCK") continue
-						evdevDevices = evdevDevices.filter(entry => entry !== device)
-						if (device.isGamepad) releaseGamepadInputs(device)
-						try {
-							fs.closeSync(device.fd)
-						} catch {}
-						if (device.isKeyboard) pressed.clear()
-					}
-				}
-				if (!evdevDevices.length && evdevTimer) {
-					clearInterval(evdevTimer)
-					evdevTimer = null
-				}
-			}, 8)
-		}
+		if (evdevDevices.length && !evdevTimer) evdevTimer = setInterval(pollEvdevDevices, 8)
 
 		if (evdevDevices.length !== previousCount && !hookStatus.startsWith("Connecting")) {
-			hookStatus = evdevDevices.length
-				? "Global input connected (evdev)"
-				: hookActive
-					? "Global input connected (uiohook)"
-					: "Wayland: Input permission required (run ./fix-permissions.sh)"
+			hookStatus = evdevDevices.length ? STATUS_EVDEV : hookActive ? STATUS_UIOHOOK : STATUS_WAYLAND_PERMISSION
 			onStatus()
 		}
 	}
 
-	function startEvdev() {
-		if (process.platform !== "linux") return false
+	function stopEvdev() {
 		if (evdevTimer) clearInterval(evdevTimer)
 		if (evdevScanTimer) clearInterval(evdevScanTimer)
 		evdevTimer = null
 		evdevScanTimer = null
-		pressed.clear()
 		for (const device of evdevDevices) {
 			try {
 				fs.closeSync(device.fd)
 			} catch {}
 		}
 		evdevDevices = []
+	}
 
+	function startEvdev() {
+		if (process.platform !== "linux") return false
+		stopEvdev()
+		pressed.clear()
 		scanEvdevDevices()
 		evdevScanTimer = setInterval(scanEvdevDevices, 1000)
 		return evdevDevices.length > 0
+	}
+
+	/* -------------------------- macOS gamepad -------------------------- */
+
+	function findMacGamepadWatcher() {
+		const appRoot = path.resolve(__dirname, "..")
+		const candidates: string[] = []
+		if (process.resourcesPath) {
+			candidates.push(
+				path.join(process.resourcesPath, "app.asar.unpacked", "assets", "bin", "mac-gamepad-watcher"),
+			)
+		}
+		const unpackedRoot = appRoot.includes("app.asar") ? appRoot.replace("app.asar", "app.asar.unpacked") : appRoot
+		candidates.push(path.join(unpackedRoot, "assets", "bin", "mac-gamepad-watcher"))
+		return candidates.find(candidate => fs.existsSync(candidate))
+	}
+
+	function handleMacGamepadLine(line: string) {
+		const trimmed = line.trim()
+		if (!trimmed || trimmed.startsWith("STATUS:")) return
+		const parts = trimmed.split("\t")
+		if (parts.length >= 3) {
+			const button = gamepadButtonName(parts[0], Number(parts[1]))
+			const down = parts[2] === "1"
+			input(button, down, gamepadSide(button), down)
+		} else if (parts.length === 2) {
+			const down = parts[1] === "1"
+			input(parts[0], down, gamepadSide(parts[0]), down)
+		}
 	}
 
 	function startMacGamepad() {
 		if (process.platform !== "darwin") return false
 		if (macGamepadProcess) return true
 
-		const appRoot = path.resolve(__dirname, "..")
-		const candidates: string[] = []
-
-		if (process.resourcesPath) {
-			candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "assets", "bin", "mac-gamepad-watcher"))
-		}
-		if (appRoot.includes("app.asar")) {
-			candidates.push(
-				path.join(appRoot.replace("app.asar", "app.asar.unpacked"), "assets", "bin", "mac-gamepad-watcher"),
-			)
-		} else {
-			candidates.push(path.join(appRoot, "assets", "bin", "mac-gamepad-watcher"))
-		}
-
-		const watcherPath = candidates.find(candidate => fs.existsSync(candidate))
+		const watcherPath = findMacGamepadWatcher()
 		if (!watcherPath) return false
 
 		try {
 			try {
 				fs.chmodSync(watcherPath, 0o755)
 			} catch {}
-			const proc = spawn(watcherPath, [], {
-				stdio: ["ignore", "pipe", "ignore"],
-			})
-			macGamepadProcess = proc
+			const watcher = spawn(watcherPath, [], { stdio: ["ignore", "pipe", "ignore"] })
+			macGamepadProcess = watcher
 
 			let leftover = ""
-			proc.stdout?.on("data", (chunk: Buffer) => {
-				const text = leftover + chunk.toString("utf8")
-				const lines = text.split("\n")
+			watcher.stdout?.on("data", (chunk: Buffer) => {
+				const lines = (leftover + chunk.toString("utf8")).split("\n")
 				leftover = lines.pop() || ""
-
-				for (const line of lines) {
-					const trimmed = line.trim()
-					if (!trimmed) continue
-					if (trimmed.startsWith("STATUS:")) {
-						continue
-					}
-					const parts = trimmed.split("\t")
-					if (parts.length >= 3) {
-						const deviceName = parts[0]
-						const code = Number(parts[1])
-						const down = parts[2] === "1"
-						const buttonName = gamepadButtonName({ name: deviceName }, code)
-						input(buttonName, down, gamepadSide(buttonName), down)
-					} else if (parts.length >= 2) {
-						const key = parts[0]
-						const down = parts[1] === "1"
-						input(key, down, gamepadSide(key), down)
-					}
-				}
+				lines.forEach(handleMacGamepadLine)
 			})
-
-			proc.on("error", error => {
-				fs.appendFileSync(path.join(dataDir, "errors.log"), `mac-gamepad: ${String(error)}\n`)
-				if (macGamepadProcess === proc) {
-					macGamepadProcess = null
-				}
+			const forget = () => {
+				if (macGamepadProcess === watcher) macGamepadProcess = null
+			}
+			watcher.on("error", error => {
+				logError(`mac-gamepad: ${String(error)}`)
+				forget()
 			})
-
-			proc.on("exit", () => {
-				if (macGamepadProcess === proc) {
-					macGamepadProcess = null
-				}
-			})
-
+			watcher.on("exit", forget)
 			return true
 		} catch (error) {
-			fs.appendFileSync(path.join(dataDir, "errors.log"), `mac-gamepad: ${String(error)}\n`)
+			logError(`mac-gamepad: ${String(error)}`)
 			return false
 		}
 	}
 
-	function attachWindowInput(w) {
-		if (!w || w.isDestroyed()) return
-		w.webContents.on("before-input-event", (_event, ev) => {
+	/* ---------------------------- uiohook ----------------------------- */
+
+	function startUiohook() {
+		if (process.env.WAYLAND_DISPLAY) return false
+		try {
+			const { uIOhook, UiohookKey } = require("uiohook-napi")
+			const names = new Map<number, string>()
+			for (const [name, code] of Object.entries(UiohookKey) as Array<[string, number]>)
+				if (!names.has(code)) names.set(code, name)
+			const keyName = (keycode: number) => names.get(keycode) || "Other"
+
+			uIOhook.on("keydown", event => {
+				if (!ignoreHookInput)
+					keyboardInput(keyName(event.keycode), true, event.ctrlKey || event.metaKey, event.altKey)
+			})
+			uIOhook.on("keyup", event => {
+				if (!ignoreHookInput) input(keyName(event.keycode), false)
+			})
+			uIOhook.on("mousedown", event => {
+				const key = UIOHOOK_MOUSEMAP[Number(event.button)]
+				if (!ignoreHookInput && key) input(key, true, mouseSide(key))
+			})
+			uIOhook.on("mouseup", event => {
+				const key = UIOHOOK_MOUSEMAP[Number(event.button)]
+				if (!ignoreHookInput && key) input(key, false)
+			})
+			uIOhook.start()
+			hook = uIOhook
+			hookActive = true
+			return true
+		} catch (error) {
+			logError(String(error))
+			return false
+		}
+	}
+
+	/* ------------------------- window fallback ------------------------- */
+
+	/** Uses in-window key events when no global hook can see the keyboard. */
+	function attachWindowInput(window: BrowserWindow) {
+		if (!window || window.isDestroyed()) return
+		window.webContents.on("before-input-event", (_event, event) => {
 			if (hookActive || evdevDevices.some(device => device.isKeyboard)) return
-			if (ev.type === "keyDown" || ev.type === "keyUp") {
-				const down = ev.type === "keyDown"
-				let k = ev.key.length === 1 ? ev.key.toUpperCase() : ev.key
-				if (k === " ") k = "Space"
-				else if (k === "Control") k = "Ctrl"
-				else if (k === "Shift") k = "Shift"
-				else if (k === "Alt") k = "Alt"
-				else if (k === "CapsLock") k = "CapsLock"
-				else if (k === "Backspace") k = "Backspace"
-				else if (k === "Enter") k = "Enter"
-				else if (k === "Tab") k = "Tab"
-				else if (k === "Meta") k = "Meta"
-				else if (k === ";") k = "Semicolon"
-				else if (k === ",") k = "Comma"
-				else if (k === ".") k = "Period"
-				else if (k === "/") k = "Slash"
-				input(k, down, /^[QWERTASDFGZXCVB12345]$|Left|^Ctrl$|^Shift$|^Alt$|Tab|CapsLock/.test(k) ? "left" : "right")
-				if (down && (ev.control || ev.meta) && ev.alt && ["1", "2", "3", "4", "5"].includes(k)) {
-					const id = state.emotes[Number(k) - 1]
-					if (id) getPet()?.webContents.send("emote", id)
-				}
-			}
+			if (event.type !== "keyDown" && event.type !== "keyUp") return
+			keyboardInput(windowKeyName(event.key), event.type === "keyDown", event.control || event.meta, event.alt)
 		})
 	}
 
-	function startHook() {
+	function start() {
 		const evdevOk = startEvdev()
 		const macGamepadOk = startMacGamepad()
-		let uiohookOk = false
-		if (!process.env.WAYLAND_DISPLAY) {
-			try {
-				const { uIOhook, UiohookKey } = require("uiohook-napi")
-				hook = uIOhook
-				const names = new Map()
-				for (const [k, v] of Object.entries(UiohookKey)) if (!names.has(v)) names.set(v, k)
-				hook.on("keydown", e => {
-					if (qa && process.argv.includes("--selftest")) return
-					const key = names.get(e.keycode) || "Other"
-					input(
-						key,
-						true,
-						/^[QWERTASDFGZXCVB12345]$|Left|^Ctrl$|^Shift$|^Alt$|Tab|CapsLock/.test(key) ? "left" : "right",
-					)
-					if ((e.ctrlKey || e.metaKey) && e.altKey && ["1", "2", "3", "4", "5"].includes(key)) {
-						const id = state.emotes[Number(key) - 1]
-						if (id) getPet()?.webContents.send("emote", id)
-					}
-				})
-				hook.on("keyup", e => {
-					if (qa && process.argv.includes("--selftest")) return
-					input(names.get(e.keycode) || "Other", false)
-				})
-				hook.on("mousedown", e => {
-					if (qa && process.argv.includes("--selftest")) return
-					const key = UIOHOOK_MOUSEMAP[Number(e.button)]
-					if (key) input(key, true, key === "MouseLeft" ? "left" : "right")
-				})
-				hook.on("mouseup", e => {
-					if (qa && process.argv.includes("--selftest")) return
-					const key = UIOHOOK_MOUSEMAP[Number(e.button)]
-					if (key) input(key, false)
-				})
-				hook.start()
-				hookActive = true
-				uiohookOk = true
-			} catch (e) {
-				fs.appendFileSync(path.join(dataDir, "errors.log"), String(e) + "\n")
-			}
-		}
-		if (evdevOk) hookStatus = "Global input connected (evdev)"
-		else if (uiohookOk) hookStatus = "Global input connected (uiohook)"
-		else if (macGamepadOk) hookStatus = "Global input connected (IOKit Gamepad)"
-		else
-			hookStatus =
-				process.platform === "darwin"
-					? "macOS: Accessibility permission required (System Settings > Privacy & Security > Accessibility)"
-					: "Wayland: Input permission required (run ./fix-permissions.sh)"
+		const uiohookOk = startUiohook()
+		if (evdevOk) hookStatus = STATUS_EVDEV
+		else if (uiohookOk) hookStatus = STATUS_UIOHOOK
+		else if (macGamepadOk) hookStatus = STATUS_IOKIT
+		else hookStatus = process.platform === "darwin" ? STATUS_MAC_PERMISSION : STATUS_WAYLAND_PERMISSION
 		onStatus()
 	}
 
-	function clearPressed() {
-		pressed.clear()
-	}
-
 	function stop() {
-		if (evdevTimer) clearInterval(evdevTimer)
-		if (evdevScanTimer) clearInterval(evdevScanTimer)
-		evdevTimer = null
-		evdevScanTimer = null
-		for (const device of evdevDevices) {
-			try {
-				fs.closeSync(device.fd)
-			} catch {}
-		}
-		evdevDevices = []
+		stopEvdev()
 		try {
 			hook?.stop()
 		} catch {}
@@ -611,9 +422,12 @@ export function createInputManager(options: InputManagerOptions) {
 	return {
 		input,
 		attachWindowInput,
-		start: startHook,
-		clearPressed,
+		start,
+		clearPressed: () => pressed.clear(),
 		stop,
+		get connected() {
+			return hookStatus.includes("connected")
+		},
 		get status() {
 			return hookStatus
 		},

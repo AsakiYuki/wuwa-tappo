@@ -1,14 +1,26 @@
-import { contextBridge, ipcRenderer } from "electron";
-contextBridge.exposeInMainWorld("petAPI", {
-  platform: process.platform,
-  init: () => ipcRenderer.invoke("init"),
-  command: (name, args) => ipcRenderer.invoke("command", name, args),
-  onPage: (cb) => ipcRenderer.on("page", (_, p) => cb(p)),
-  onState: (cb) => ipcRenderer.on("state", (_, data) => cb(data)),
-  onInput: (cb) => ipcRenderer.on("input", (_, data) => cb(data)),
-  onEmote: (cb) => ipcRenderer.on("emote", (_, id) => cb(id)),
-  onStatus: (cb) => ipcRenderer.on("status", (_, s) => cb(s)),
-  resizeWindow: (edge, dx, dy) =>
-    ipcRenderer.send("resize-studio", edge, dx, dy),
-  move: (dx, dy) => ipcRenderer.send("move", dx, dy),
-});
+import { contextBridge, ipcRenderer } from "electron"
+import type { PetAPI } from "./types.js"
+
+// Sandboxed preloads may only require "electron", so this file must stay free of runtime imports.
+const listen =
+	<T>(channel: string) =>
+	(callback: (payload: T) => void) => {
+		ipcRenderer.on(channel, (_event, payload: T) => callback(payload))
+	}
+
+const api: PetAPI = {
+	platform: process.platform,
+	init: () => ipcRenderer.invoke("init"),
+	command: (name, argument) => ipcRenderer.invoke("command", name, argument),
+	onPage: listen("page"),
+	onState: listen("state"),
+	onInput: listen("input"),
+	onEmote: listen("emote"),
+	onStatus: listen("status"),
+	onCursor: listen("cursor"),
+	resizeWindow: (edge, dx, dy) => ipcRenderer.send("resize-studio", edge, dx, dy),
+	move: (dx, dy) => ipcRenderer.send("move", dx, dy),
+	setHoverArea: area => ipcRenderer.send("hover-area", area),
+}
+
+contextBridge.exposeInMainWorld("petAPI", api)

@@ -1,18 +1,18 @@
-const fs = require("node:fs");
-const path = require("node:path");
+const fs = require("node:fs")
+const path = require("node:path")
 
-const outputDirectory = path.resolve(__dirname, "../renderer-build");
+const outputDirectory = path.resolve(__dirname, "../renderer-build")
 const securityPolicy = [
-  "default-src 'self'",
-  "img-src 'self' data:",
-  "style-src 'self' 'unsafe-inline'",
-  "script-src 'self'",
-  "connect-src 'none'",
-].join("; ");
+	"default-src 'self'",
+	"img-src 'self' data:",
+	"style-src 'self' 'unsafe-inline'",
+	"script-src 'self'",
+	"connect-src 'none'",
+].join("; ")
 
 for (const page of ["pet", "studio"]) {
-  const title = page === "pet" ? "Desktop Pet" : "Studio & Collection";
-  const document = `<!doctype html>
+	const title = page === "pet" ? "Desktop Pet" : "Studio & Collection"
+	const document = `<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8">
@@ -26,6 +26,6 @@ for (const page of ["pet", "studio"]) {
     <script type="module" src="./assets/${page}.js"></script>
   </body>
 </html>
-`;
-  fs.writeFileSync(path.join(outputDirectory, `${page}.html`), document);
+`
+	fs.writeFileSync(path.join(outputDirectory, `${page}.html`), document)
 }
