@@ -47,4 +47,7 @@ the tray offers a shortcut while it is missing); restart the app after granting 
 development the permission belongs to the terminal that runs `bun start`. The .app bundle carries
 `mac-gamepad-watcher` next to the executable (`tauri.macos.conf.json`).
 
-Installers for all three OSes: the `Tauri prototype` GitHub Actions workflow.
+Releases: push a `v<version>` tag matching package.json and the `Release` workflow builds Windows
+(NSIS), Linux (deb, rpm, AppImage) and macOS arm64/x64 (dmg, zip) packages onto one GitHub release.
+The macOS app is only ad-hoc signed, so a downloaded copy needs `xattr -cr "/Applications/Wuwa Tappo.app"`
+(or right-click > Open) on first launch.

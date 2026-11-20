@@ -1,0 +1,13 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"bundle": {
+		"linux": {
+			"deb": {
+				"depends": ["libgtk-layer-shell0", "libxtst6", "libxi6"]
+			},
+			"rpm": {
+				"depends": ["gtk-layer-shell", "libXtst", "libXi"]
+			}
+		}
+	}
+}

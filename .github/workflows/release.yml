@@ -1,7 +1,8 @@
 name: Release
 
+# Builds the Tauri app (src-tauri/) on every OS, then puts all packages on one GitHub release.
 # Push a tag matching package.json's version (e.g. `git tag v1.0.8 && git push origin v1.0.8`),
-# or run it by hand from the Actions tab. Every OS is built, then all packages land on one release.
+# or run it by hand from the Actions tab.
 on:
   push:
     tags: ["v*"]
@@ -26,32 +27,11 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - name: windows-x64
-            os: windows-latest
-            args: --win --x64
-            files: |
-              dist/*-setup.exe
-              dist/*-portable.exe
-          - name: linux-x64
-            os: ubuntu-24.04
-            args: --linux --x64
-            files: |
-              dist/*.deb
-              dist/*.rpm
-              dist/*.AppImage
-              dist/*.tar.gz
-          - name: macos-arm64
-            os: macos-latest
-            args: --mac --arm64
-            files: |
-              dist/*.dmg
-              dist/*.zip
-          - name: macos-x64
-            os: macos-latest
-            args: --mac --x64
-            files: |
-              dist/*.dmg
-              dist/*.zip
+          - { name: windows-x64, os: windows-latest, target: x86_64-pc-windows-msvc, arch: x64, bundles: nsis }
+          - { name: linux-x64, os: ubuntu-24.04, target: x86_64-unknown-linux-gnu, arch: x64, bundles: "deb,rpm,appimage" }
+          - { name: macos-arm64, os: macos-latest, target: aarch64-apple-darwin, arch: arm64, bundles: "app,dmg" }
+          # Cross-compiled on the Apple Silicon runner.
+          - { name: macos-x64, os: macos-latest, target: x86_64-apple-darwin, arch: x64, bundles: "app,dmg" }
     steps:
       - uses: actions/checkout@v4
 
@@ -60,23 +40,50 @@ jobs:
           node-version: 24
           cache: npm
 
-      - name: Install Linux packaging dependencies
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+          key: ${{ matrix.target }}
+
+      - name: Install Linux dependencies
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install --yes libcrypt1 rpm
+          sudo apt-get install --yes libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
+            libx11-dev libxtst-dev libxi-dev libgtk-layer-shell-dev patchelf
 
       - run: npm ci
+      # The shared game logic (src/node/domain), which the Tauri app runs in QuickJS.
       - run: npm test
-      - run: npm run build -- ${{ matrix.args }}
-        env:
-          # No signing certificates are configured; don't let electron-builder look for any.
-          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      # beforeBuildCommand (scripts/tauri-prepare.cjs) builds the renderer and stages src-tauri/frontend.
+      - run: npx --yes @tauri-apps/cli@2 build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+
+      # Tauri names packages "Wuwa Tappo_1.0.8_x64-setup.exe" etc.; keep the old wuwa-tappo-<version>-<arch> names.
+      - name: Collect packages
+        shell: bash
+        run: |
+          version="$(node -p "require('./package.json').version")"
+          base="wuwa-tappo-${version}-${{ matrix.arch }}"
+          bundle="src-tauri/target/${{ matrix.target }}/release/bundle"
+          mkdir packages
+          shopt -s nullglob
+          for file in "$bundle"/nsis/*-setup.exe; do cp "$file" "packages/${base}-setup.exe"; done
+          for file in "$bundle"/deb/*.deb; do cp "$file" "packages/${base}.deb"; done
+          for file in "$bundle"/rpm/*.rpm; do cp "$file" "packages/${base}.rpm"; done
+          for file in "$bundle"/appimage/*.AppImage; do cp "$file" "packages/${base}.AppImage"; done
+          for file in "$bundle"/dmg/*.dmg; do cp "$file" "packages/${base}.dmg"; done
+          for app in "$bundle"/macos/*.app; do ditto -c -k --keepParent "$app" "packages/${base}.zip"; done
+          ls -lh packages
 
       - uses: actions/upload-artifact@v4
         with:
           name: wuwa-tappo-${{ matrix.name }}
-          path: ${{ matrix.files }}
+          path: packages/*
           retention-days: 1
           if-no-files-found: error
 

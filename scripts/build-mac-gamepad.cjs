@@ -19,6 +19,15 @@ if (!fs.existsSync(srcFile)) {
 
 fs.mkdirSync(outDir, { recursive: true })
 
+/** Ad-hoc signs the watcher: codesign refuses to sign an app bundle holding unsigned code. */
+function sign() {
+	try {
+		execFileSync("codesign", ["--force", "--sign", "-", outFile], { stdio: "inherit" })
+	} catch (error) {
+		console.warn("Could not sign mac-gamepad-watcher:", error.message)
+	}
+}
+
 try {
 	console.log("Compiling mac-gamepad-watcher universal binary (arm64 + x86_64)...")
 	execFileSync(
@@ -42,6 +51,7 @@ try {
 		},
 	)
 	fs.chmodSync(outFile, 0o755)
+	sign()
 	console.log("mac-gamepad-watcher compiled successfully at:", outFile)
 } catch (error) {
 	console.warn("Failed to compile universal binary, trying host arch only...", error.message)
@@ -50,6 +60,7 @@ try {
 			stdio: "inherit",
 		})
 		fs.chmodSync(outFile, 0o755)
+		sign()
 		console.log("mac-gamepad-watcher compiled for host arch at:", outFile)
 	} catch (err) {
 		console.error("Could not compile mac-gamepad-watcher:", err)

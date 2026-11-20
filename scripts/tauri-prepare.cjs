@@ -4,7 +4,7 @@ const path = require("node:path")
 const npmRun = require("./npm-run.cjs")
 
 /*
- * Stages the frontend the Tauri prototype embeds (src-tauri/frontend):
+ * Stages the frontend the Tauri app embeds (src-tauri/frontend):
  *   web/     the Vite build (renderer-build), whose pages load images from ../assets/
  *   assets/  the catalog's images, so those relative paths resolve
  *   backend.js  the shared game logic (src/backend), embedded into the Rust binary

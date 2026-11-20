@@ -3,6 +3,7 @@
 	"bundle": {
 		"macOS": {
 			"minimumSystemVersion": "10.15",
+			"signingIdentity": "-",
 			"files": {
 				"MacOS/mac-gamepad-watcher": "../assets/bin/mac-gamepad-watcher"
 			}
