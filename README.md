@@ -52,23 +52,10 @@ npm install
 
 ## Development
 
-Start on your current platform:
+Start the app (the platform is detected automatically):
 
 ```bash
 npm start
-```
-
-Or target a specific platform:
-
-```bash
-# macOS
-npm run start:mac
-
-# Linux
-npm run start:linux
-
-# Windows
-npm run start:win
 ```
 
 ## Build

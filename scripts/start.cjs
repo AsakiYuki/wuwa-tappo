@@ -3,26 +3,18 @@ const path = require("node:path")
 const npmRun = require("./npm-run.cjs")
 
 const projectRoot = path.resolve(__dirname, "..")
+const platform = process.platform // "win32" | "darwin" | "linux" | ...
 
-const rawArgs = process.argv.slice(2)
-let targetPlatform = { darwin: "mac", win32: "win" }[process.platform] || "linux"
-const extraArgs = []
+// Platform flags from the old start:mac/linux/win scripts are meaningless here (the app can only run
+// on the host OS), so ignore them; every other argument is forwarded to Electron.
+const legacyFlags = new Set(["--mac", "--darwin", "--linux", "--win", "--windows"])
+const extraArgs = process.argv.slice(2).filter((arg) => !legacyFlags.has(arg))
 
-for (const arg of rawArgs) {
-	if (arg === "--mac" || arg === "--darwin") {
-		targetPlatform = "mac"
-	} else if (arg === "--linux") {
-		targetPlatform = "linux"
-	} else if (arg === "--win" || arg === "--windows") {
-		targetPlatform = "win"
-	} else {
-		extraArgs.push(arg)
-	}
-}
+console.log(`Starting on ${{ win32: "Windows", darwin: "macOS", linux: "Linux" }[platform] || platform}`)
 
-if (targetPlatform === "linux" && process.platform === "linux") {
+if (platform === "linux") {
 	try {
-		execFileSync("node", ["scripts/register-dev-desktop.cjs"], {
+		execFileSync(process.execPath, [path.join(__dirname, "register-dev-desktop.cjs")], {
 			cwd: projectRoot,
 			stdio: "inherit",
 		})
@@ -35,10 +27,7 @@ npmRun("node:build", projectRoot)
 npmRun("renderer:build", projectRoot)
 
 const electron = require("electron")
-const args = targetPlatform === "linux" && process.platform === "linux" ? ["--ozone-platform=x11", "."] : ["."]
-if (extraArgs.length > 0) {
-	args.push(...extraArgs)
-}
+const args = [...(platform === "linux" ? ["--ozone-platform=x11"] : []), ".", ...extraArgs]
 
 const env = { ...process.env }
 delete env.ELECTRON_RUN_AS_NODE
