@@ -421,6 +421,7 @@ test("Upgrading migrates and backs up the portable save; later installs reuse it
 		const s = core.initial(items)
 		core.draw(s, items, 10, () => 0.95)
 		s.count = 521
+		s.settings.autoStart = true
 		fs.writeFileSync(path.join(legacy, "data/collection.json"), JSON.stringify(s))
 		const first = storage.initProfile({ dataDir, portableDir: legacy, items })
 		assert.deepEqual(first.state, s)
@@ -461,6 +462,7 @@ test("A fresh install finds the old Downloads save and preserves draws, favorite
 				emotes: s.emotes,
 			},
 		]
+		s.settings.autoStart = true
 		fs.writeFileSync(path.join(legacy, "collection.json"), JSON.stringify(s))
 		const migrated = storage.initProfile({
 			dataDir: path.join(root, "profile"),
@@ -468,7 +470,8 @@ test("A fresh install finds the old Downloads save and preserves draws, favorite
 			searchRoots: [downloads],
 			items,
 		})
-		assert.deepEqual(migrated.state, s)
+		// A save found by searching Downloads is not trusted to register a login item.
+		assert.deepEqual(migrated.state, { ...s, settings: { ...s.settings, autoStart: false } })
 	} finally {
 		if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-")) throw Error("Unsafe cleanup")
 		fs.rmSync(root, { recursive: true })
@@ -498,4 +501,13 @@ test("The KWin hover-fade script is valid JavaScript and embeds the hover area",
 	const script = hoverScript(area)
 	assert.doesNotThrow(() => new Function(script))
 	assert.ok(script.includes(JSON.stringify(area)))
+})
+
+test("Custom key labels are bounded in count and length", () => {
+	const many = Object.fromEntries(Array.from({ length: 1000 }, (_, index) => [`Key${index}`, "x".repeat(500)]))
+	const labels = core.settings({ keyLabels: { ...many, ["k".repeat(100)]: "long" } }).keyLabels
+	const custom = Object.keys(labels).filter(key => key.startsWith("Key"))
+	assert.equal(custom.length, 256)
+	assert.equal(labels.Key0.length, 32)
+	assert.equal(labels["k".repeat(100)], undefined)
 })

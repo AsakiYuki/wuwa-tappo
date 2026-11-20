@@ -108,8 +108,11 @@ function initProfile({
 	const legacy = findLegacy(portableDir, searchRoots)
 	if (!legacy) return { state: initial(items), warning: "" }
 	backUpMigration(dataDir, legacy)
+	const state = normalize(legacy.raw, items)
+	// Saves found by searching (e.g. an archive unpacked in Downloads) are not trusted to enable auto-start.
+	if (path.dirname(path.dirname(legacy.file)) !== path.resolve(portableDir)) state.settings.autoStart = false
 	return {
-		state: normalize(legacy.raw, items),
+		state,
 		warning: "Migrated collection and settings from the previous version",
 		migratedFrom: legacy.file,
 	}

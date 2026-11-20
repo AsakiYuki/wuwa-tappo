@@ -162,8 +162,8 @@ const stateCommands: Record<string, Handler> = {
 		if (!saved) throw new Error("This file is not a valid Wuwa Tappo save")
 
 		const state = core.normalize(saved.raw, context.items)
-		// A dev build would register the dev launcher; leave auto-start to the packaged app.
-		if (!context.app.isPackaged) state.settings.autoStart = false
+		// A save file must never register a login item on its own; keep the current choice.
+		state.settings.autoStart = context.getState().settings.autoStart
 		replaceState(state, context)
 		context.placePet()
 		return "imported"

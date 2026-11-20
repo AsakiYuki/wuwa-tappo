@@ -1,6 +1,7 @@
 import { app, dialog, globalShortcut, ipcMain, Menu, nativeImage, screen, session, shell, Tray } from "electron"
-import { exec } from "node:child_process"
+import { execFile } from "node:child_process"
 import fs from "node:fs"
+import os from "node:os"
 import path from "node:path"
 import { setAutoStart } from "./autostart.js"
 import { executeCommand, type CommandContext } from "./commands.js"
@@ -15,6 +16,8 @@ const APP_ROOT = path.resolve(__dirname, "..")
 const DEFERRED_SAVE_MS = 3000
 const KEEP_ON_TOP_INTERVAL_MS = 3000
 const PASSTHROUGH_POLL_MS = 80
+/** The pet window only needs these; everything else (import, export, reset, settings) is studio-only. */
+const PET_COMMANDS = new Set(["tap", "emote", "open"])
 
 /** Command-line switches. `--qa` uses a throwaway profile; `--selftest` alone also runs headless. */
 const launch = {
@@ -234,10 +237,16 @@ class WuwaTappoApplication {
 
 	private registerIpcHandlers() {
 		ipcMain.handle("init", () => this.initPayload())
-		ipcMain.handle("command", (_event, name: string, argument: unknown) =>
-			executeCommand(name, argument, this.commandContext()),
-		)
-		ipcMain.on("move", (_event, dx: number, dy: number) => this.windows.movePet(dx, dy))
+		ipcMain.handle("command", (event, name: string, argument: unknown) => {
+			const fromStudio = event.sender === this.windows.studio?.webContents
+			const fromPet = event.sender === this.windows.pet?.webContents
+			if (!fromStudio && !(fromPet && PET_COMMANDS.has(name)))
+				return { ok: false, error: "Command not allowed from this window" }
+			return executeCommand(name, argument, this.commandContext())
+		})
+		ipcMain.on("move", (event, dx: number, dy: number) => {
+			if (event.sender === this.windows.pet?.webContents) this.windows.movePet(dx, dy)
+		})
 		ipcMain.on("hover-area", (event, area: HoverArea) => {
 			if (event.sender === this.windows.pet?.webContents) this.windows.setHoverArea(area)
 		})
@@ -285,11 +294,7 @@ class WuwaTappoApplication {
 		if (process.platform === "linux")
 			return {
 				label: "⚡ Fix Input Permissions (Linux)",
-				click: () =>
-					exec("pkexec setfacl -m u:$USER:r /dev/input/event*", () => {
-						this.input.start()
-						this.windows.applySettings()
-					}),
+				click: () => void this.grantLinuxInputAccess(),
 			}
 		if (process.platform === "darwin")
 			return {
@@ -300,6 +305,44 @@ class WuwaTappoApplication {
 					),
 			}
 		return null
+	}
+
+	/**
+	 * Grants this user read access to /dev/input after an explicit warning: any program the user runs
+	 * can then read raw keystrokes, so it must never happen silently. No shell is involved, and the
+	 * user name comes from the OS rather than the (spoofable) $USER variable.
+	 */
+	private async grantLinuxInputAccess() {
+		const { response } = await dialog.showMessageBox({
+			type: "warning",
+			buttons: ["Cancel", "Grant Access"],
+			defaultId: 0,
+			cancelId: 0,
+			title: "Grant Input Access",
+			message: "Allow reading keyboard and mouse devices?",
+			detail:
+				"Wuwa Tappo needs read access to /dev/input to see global key presses on Wayland. " +
+				"This access applies to every program running as your user, not only Wuwa Tappo, " +
+				"and lasts until the devices are re-created (usually until reboot).",
+		})
+		if (response !== 1) return
+
+		let devices: string[]
+		try {
+			devices = fs
+				.readdirSync("/dev/input")
+				.filter(name => /^event\d+$/.test(name))
+				.map(name => path.join("/dev/input", name))
+		} catch {
+			devices = []
+		}
+		if (!devices.length) return
+
+		const user = os.userInfo().username
+		execFile("pkexec", ["setfacl", "-m", `u:${user}:r`, ...devices], () => {
+			this.input.start()
+			this.windows.applySettings()
+		})
 	}
 
 	private createTray() {

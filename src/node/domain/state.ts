@@ -9,6 +9,10 @@ const MAX_OWNED = 1e9
 const STARTER_CHARACTER_ROLE = 1502
 /** Saves from before the configurable counter limit always wrapped at 1000. */
 const LEGACY_COUNTER_WRAP = 1000
+/** Bounds on custom key labels, so an imported save cannot bloat the profile. */
+const MAX_KEY_LABELS = 256
+const MAX_KEY_NAME = 64
+const MAX_KEY_LABEL = 32
 
 /** Labels that older versions stored as defaults; they are dropped so the keyboard's own labels show. */
 const LEGACY_DEFAULT_KEY_LABELS: Record<string, string> = {
@@ -168,11 +172,17 @@ export function settings(input: Partial<Settings>): Settings {
 
 /** Custom labels are layered over the defaults; blank and legacy-default labels are ignored. */
 function normalizeKeyLabels(input: unknown): Record<string, string> {
-	const labels = { ...DEFAULTS.keyLabels }
+	const labels: Record<string, string> = { ...DEFAULTS.keyLabels }
 	if (!input || typeof input !== "object") return labels
+	let custom = 0
 	for (const [key, value] of Object.entries(input)) {
-		const label = typeof value === "string" ? value.trim() : ""
-		if (label && LEGACY_DEFAULT_KEY_LABELS[key] !== label) labels[key] = label
+		if (custom >= MAX_KEY_LABELS) break
+		if (!key || key.length > MAX_KEY_NAME || key === "__proto__") continue
+		const label = typeof value === "string" ? value.trim().slice(0, MAX_KEY_LABEL) : ""
+		if (label && LEGACY_DEFAULT_KEY_LABELS[key] !== label) {
+			labels[key] = label
+			custom++
+		}
 	}
 	return labels
 }
