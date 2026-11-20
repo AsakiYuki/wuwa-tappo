@@ -9,6 +9,8 @@ interface WindowManagerOptions {
 	studioPagePath: string
 	/** Where generated helper scripts (KWin hover-fade) are written. */
 	scriptDirectory: string
+	/** App icon for taskbar buttons; without it, an unpackaged run shows Electron's own icon. */
+	iconPath: string
 	/** Self-tests render offscreen so no window ever appears. */
 	selfTest: boolean
 	getState(): CollectionState
@@ -80,6 +82,7 @@ export function createWindowManager(options: WindowManagerOptions) {
 			alwaysOnTop: settings().alwaysOnTop,
 			type: PET_WINDOW_TYPE,
 			title: PET_WINDOW_TITLE,
+			icon: options.iconPath,
 			webPreferences: webPreferences({ backgroundThrottling: false }),
 		})
 		pet = window
@@ -320,6 +323,7 @@ export function createWindowManager(options: WindowManagerOptions) {
 			transparent: true,
 			show: false,
 			title: "Wuwa Tappo · Studio & Collection",
+			icon: options.iconPath,
 			backgroundColor: "#00000000",
 			autoHideMenuBar: true,
 			webPreferences: webPreferences(),

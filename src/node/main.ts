@@ -119,6 +119,7 @@ class WuwaTappoApplication {
 			petPagePath: path.join(APP_ROOT, "renderer-build", "pet.html"),
 			studioPagePath: path.join(APP_ROOT, "renderer-build", "studio.html"),
 			scriptDirectory: path.join(this.dataDirectory, "runtime"),
+			iconPath: trayIconPath(),
 			selfTest: launch.headless,
 			getState: () => this.state,
 			getTray: () => this.tray,
