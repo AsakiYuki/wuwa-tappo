@@ -5,9 +5,12 @@
 //! transparent, frameless, always-on-top window that stays off the taskbar, mouse click-through with
 //! cursor forwarding for hover-fade, dragging, a tray icon and a global keyboard/mouse hook.
 //!
+//! Controllers work on Windows through the same XInput watcher as Electron (`gamepad.rs`).
+//!
 //! Out of scope: the studio window, saving (the collection is read-only here, so the Electron app's
-//! data is never touched), gacha/emote logic, controllers and autostart.
+//! data is never touched), gacha/emote logic and autostart.
 
+mod gamepad;
 mod keys;
 
 use serde::Deserialize;
@@ -331,6 +334,13 @@ pub fn run() {
 			create_pet_window(&handle, &state)?;
 			create_tray(&handle, &shared)?;
 			start_input_hook(handle.clone(), shared.clone());
+			{
+				let (app, shared) = (handle.clone(), shared.clone());
+				gamepad::start(move |key, down| {
+					let side = gamepad::side(&key);
+					handle_input(&app, &shared, key, down, side);
+				});
+			}
 			std::thread::spawn(move || poll_cursor(handle, shared));
 			Ok(())
 		})
