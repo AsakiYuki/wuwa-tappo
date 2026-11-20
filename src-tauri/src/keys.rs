@@ -3,6 +3,8 @@
 
 use rdev::{Button, Key};
 
+/// macOS has its own keycode table (`macos_input.rs`).
+#[cfg_attr(target_os = "macos", allow(dead_code))]
 pub fn key_name(key: Key) -> String {
 	use Key::*;
 	let name = match key {

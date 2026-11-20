@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define MAX_DEVICES 16
 
@@ -246,9 +247,19 @@ static void on_sigint(int sig) {
     CFRunLoopStop(CFRunLoopGetCurrent());
 }
 
-int main(void) {
+// The app whose PID was passed as argv[1]; the watcher exits once it is gone, even after a crash.
+static pid_t g_parent = 0;
+
+static void check_parent(CFRunLoopTimerRef timer, void *info) {
+    (void)timer;
+    (void)info;
+    if (getppid() != g_parent) CFRunLoopStop(CFRunLoopGetCurrent());
+}
+
+int main(int argc, char **argv) {
     signal(SIGINT, on_sigint);
     signal(SIGTERM, on_sigint);
+    if (argc > 1) g_parent = (pid_t)atoi(argv[1]);
 
     IOHIDManagerRef manager = IOHIDManagerCreate(kCFAllocatorDefault, kIOHIDOptionsTypeNone);
     if (!manager) {
@@ -289,6 +300,12 @@ int main(void) {
         fprintf(stderr, "IOHIDManagerOpen failed: 0x%08x\n", ret);
         CFRelease(manager);
         return 1;
+    }
+
+    if (g_parent > 0) {
+        CFRunLoopTimerRef timer = CFRunLoopTimerCreate(kCFAllocatorDefault, CFAbsoluteTimeGetCurrent() + 1.0, 1.0, 0, 0, check_parent, NULL);
+        CFRunLoopAddTimer(CFRunLoopGetCurrent(), timer, kCFRunLoopDefaultMode);
+        CFRelease(timer);
     }
 
     printf("STATUS:READY\n");

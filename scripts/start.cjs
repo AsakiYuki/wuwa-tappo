@@ -6,8 +6,7 @@ const npmRun = require("./npm-run.cjs")
 
 /*
  * `npm start` / `bun start`: builds and launches the app for the host OS.
- *   Windows, Linux   Tauri (src-tauri), unless --electron is passed
- *   macOS            Electron, until the Tauri port reaches it
+ *   Windows, Linux, macOS   Tauri (src-tauri), unless --electron is passed
  * On NixOS, it re-runs itself inside shell.nix (Rust toolchain, WebKitGTK, Electron) when not already
  * in a nix shell, so plain `bun start` works as well as `bun start:nix`.
  * On Linux, Tauri runs natively on Wayland when the session has it; pass --x11 to use XWayland.
@@ -22,8 +21,7 @@ const platform = process.platform
 const ignoredFlags = new Set(["--mac", "--darwin", "--linux", "--win", "--windows", "--electron", "--tauri", "--x11"])
 const rawArgs = process.argv.slice(2)
 const extraArgs = rawArgs.filter(arg => !ignoredFlags.has(arg))
-const tauriByDefault = platform === "win32" || platform === "linux"
-const useTauri = rawArgs.includes("--tauri") || (tauriByDefault && !rawArgs.includes("--electron"))
+const useTauri = !rawArgs.includes("--electron")
 
 const platformName = { win32: "Windows", darwin: "macOS", linux: "Linux" }[platform] || platform
 

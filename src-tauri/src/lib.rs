@@ -6,8 +6,9 @@
 //! owns windows, input, the tray and saving. The save is the Electron app's collection.json, so both
 //! apps share one collection (run only one of them at a time).
 //!
-//! Input: rdev (keyboard/mouse hook), evdev on Linux (also works on Wayland, and reads controllers),
-//! and the XInput watcher on Windows (`gamepad.rs`).
+//! Input: rdev (keyboard/mouse hook) on Windows and Linux, a CGEventTap on macOS (`macos_input.rs`),
+//! evdev on Linux (also works on Wayland, and reads controllers), and the controller watchers on
+//! Windows (XInput) and macOS (IOKit) (`gamepad.rs`).
 //!
 //! Linux runs natively on Wayland when available: the pet is then a layer-shell surface
 //! (`wayland.rs`), since Wayland windows cannot place themselves or stay on top.
@@ -24,6 +25,8 @@ mod keys;
 mod kwin_cursor;
 #[cfg(target_os = "linux")]
 mod linux_tray;
+#[cfg(target_os = "macos")]
+mod macos_input;
 mod storage;
 #[cfg(target_os = "linux")]
 mod wayland;
@@ -181,6 +184,7 @@ fn hook_status(shared: &Shared) -> String {
 	}
 	match &shared.pet.lock().unwrap().hook_error {
 		Some(error) => error.clone(),
+		None if cfg!(target_os = "macos") => "Global input connected (macOS)".into(),
 		None => "Global input connected (rdev)".into(),
 	}
 }
@@ -279,6 +283,9 @@ fn create_pet_window(app: &AppHandle, shared: &Shared) -> tauri::Result<WebviewW
 		.always_on_top(setting_bool(&settings, "alwaysOnTop", true))
 		.visible_on_all_workspaces(true)
 		.focused(false)
+		// macOS: the first click on the (never focused) pet reaches the page instead of only
+		// activating the window, so it can be dragged and tapped right away.
+		.accept_first_mouse(true)
 		// On Wayland it must stay unmapped until it has become a layer surface. Elsewhere it is shown
 		// at once: a window created hidden keeps a stale position in Tauri on X11.
 		.visible(!wayland_session())
@@ -490,6 +497,7 @@ fn show_studio(app: &AppHandle, shared: &Shared, page: Option<String>) {
 		.decorations(false)
 		.transparent(true)
 		.resizable(true)
+		.accept_first_mouse(true)
 		// Shown right away: it is transparent, so nothing shows before the page paints. A window
 		// created hidden keeps a stale 1×1 size and position in Tauri on Linux/X11, which breaks
 		// maximize/restore and the zoom buttons.
@@ -865,7 +873,47 @@ fn handle_input(app: &AppHandle, shared: &Shared, key: String, down: bool, side:
 	}
 }
 
-/// Global keyboard and mouse hook. rdev needs Accessibility permission on macOS and X11 on Linux.
+/// Global keyboard and mouse hook on macOS. Without Input Monitoring the status says so (and the tray
+/// offers the settings page); the hook starts once the permission is there.
+#[cfg(target_os = "macos")]
+fn start_input_hook(app: AppHandle, shared: Shared) {
+	const PERMISSION_POLL: Duration = Duration::from_secs(2);
+	const TAP_RETRY: Duration = Duration::from_secs(10);
+	let set_error = |app: &AppHandle, shared: &Shared, error: Option<String>| {
+		let changed = {
+			let mut pet = shared.pet.lock().unwrap();
+			std::mem::replace(&mut pet.hook_error, error.clone()) != error
+		};
+		if changed {
+			if let Some(error) = &error {
+				eprintln!("{error}");
+			}
+			input_status_changed(app, shared);
+		}
+	};
+	std::thread::spawn(move || loop {
+		if macos_input::has_permission(false) {
+			set_error(&app, &shared, None);
+		}
+		let (hook_app, hook_shared) = (app.clone(), shared.clone());
+		let result = macos_input::listen(move |key, down, side| handle_input(&hook_app, &hook_shared, key, down, side));
+		match result {
+			Err(macos_input::ListenError::Permission) => {
+				set_error(&app, &shared, Some(macos_input::PERMISSION_STATUS.into()));
+				while !macos_input::has_permission(false) {
+					std::thread::sleep(PERMISSION_POLL);
+				}
+			}
+			_ => {
+				set_error(&app, &shared, Some("Global input hook failed: could not create the event tap".into()));
+				std::thread::sleep(TAP_RETRY);
+			}
+		}
+	});
+}
+
+/// Global keyboard and mouse hook. rdev needs X11 on Linux (evdev covers Wayland).
+#[cfg(not(target_os = "macos"))]
 fn start_input_hook(app: AppHandle, shared: Shared) {
 	let devices = shared.devices.clone();
 	std::thread::spawn(move || {
@@ -962,6 +1010,9 @@ pub fn tray_items(shared: &Shared) -> Vec<TrayItem> {
 	if cfg!(target_os = "linux") && !shared.devices.keyboard.load(Ordering::Relaxed) {
 		items.push(item(TrayAction::FixInput, "⚡ Fix Input Permissions (Linux)", None, false));
 	}
+	if cfg!(target_os = "macos") && shared.pet.lock().unwrap().hook_error.is_some() {
+		items.push(item(TrayAction::FixInput, "⚡ Open Input Monitoring Settings (macOS)", None, false));
+	}
 	items.push(item(TrayAction::Quit, "Exit Wuwa Tappo", None, true));
 	items
 }
@@ -974,7 +1025,11 @@ pub fn tray_action(app: &AppHandle, shared: &Shared, action: TrayAction) {
 		TrayAction::Input => toggle_setting(app, shared, "inputEnabled"),
 		#[cfg(target_os = "linux")]
 		TrayAction::FixInput => linux_input_access::grant(app.clone()),
-		#[cfg(not(target_os = "linux"))]
+		#[cfg(target_os = "macos")]
+		TrayAction::FixInput => {
+			let _ = std::process::Command::new("open").arg(macos_input::INPUT_MONITORING_SETTINGS).spawn();
+		}
+		#[cfg(windows)]
 		TrayAction::FixInput => {}
 		TrayAction::Quit => app.exit(0),
 	}
@@ -1150,6 +1205,10 @@ pub fn run() {
 		.setup(|app| {
 			#[cfg(target_os = "linux")]
 			wayland::detect();
+			// macOS: a menu-bar app, like the pet's skip_taskbar elsewhere: no Dock icon and no app
+			// menu; the tray opens the studio.
+			#[cfg(target_os = "macos")]
+			app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 			let backend = Backend::new(CATALOG_JSON)?;
 			let store = Store::new().ok_or("no config directory")?;
 			let warning = store.load(&backend);

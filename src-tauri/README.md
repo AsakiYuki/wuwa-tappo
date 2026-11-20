@@ -17,15 +17,15 @@ forwarding (hover-fade), dragging (position is saved), the studio window (framel
 edges, maximize, zoom, hide), import/export dialogs, the Electron tray menu (collection, show/reset
 pet, mouse passthrough, input on/off, Linux input-permission fix, exit; a click on the icon opens the
 studio, on Linux through a StatusNotifierItem), global keyboard/mouse input (rdev; on Linux also
-evdev, which works on Wayland), Ctrl/Meta+Alt+1…5 emote shortcuts, and controllers (XInput watcher on
-Windows, evdev on Linux).
+evdev, which works on Wayland; on macOS a CGEventTap), Ctrl/Meta+Alt+1…5 emote shortcuts, and
+controllers (XInput watcher on Windows, evdev on Linux, IOKit watcher on macOS).
 
-Not covered: launch at startup (the setting is saved but registers nothing), KWin hover-fade,
-controllers on macOS.
+Not covered: launch at startup (the setting is saved but registers nothing), KWin hover-fade.
 
 ## Run
 
-On Windows and Linux, `bun start` (or `npm start`) builds and runs it; on macOS, `bun start -- --tauri`.
+`bun start` (or `npm start`) builds and runs it on Windows, Linux and macOS; `bun start -- --electron`
+runs the Electron app instead.
 
 Windows needs either the MSVC C++ build tools, or the GNU toolchain with MinGW
 (`rustup toolchain install stable-x86_64-pc-windows-gnu` and `scoop install mingw`); `start.cjs`
@@ -41,6 +41,10 @@ Hover-fade with mouse passthrough needs the global cursor position, which Waylan
 on KDE Plasma a small KWin script sends it over D-Bus; other Wayland compositors have no fade while
 passthrough is on. NixOS needs nothing installed:
 `bun start` / `bun start:nix` enter `shell.nix`, which has the Rust toolchain and these libraries.
-macOS: grant Accessibility permission for the global input hook.
+macOS (10.15+) needs only the Xcode command line tools. Global input needs the **Input Monitoring**
+permission (System Settings > Privacy & Security > Input Monitoring; macOS asks on first launch, and
+the tray offers a shortcut while it is missing); restart the app after granting it. During
+development the permission belongs to the terminal that runs `bun start`. The .app bundle carries
+`mac-gamepad-watcher` next to the executable (`tauri.macos.conf.json`).
 
 Installers for all three OSes: the `Tauri prototype` GitHub Actions workflow.

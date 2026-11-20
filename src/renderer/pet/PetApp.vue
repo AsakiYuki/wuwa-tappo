@@ -105,6 +105,9 @@ function handleCursor(cursor: CursorMessage | null) {
 let menuTimer: number | undefined
 function openMenu() {
 	window.clearTimeout(menuTimer)
+	// The pet cannot be clicked through passthrough, so the menu would only get in the way. macOS
+	// still sends pointerenter to a window that ignores the mouse.
+	if (settings.value?.passthrough) return
 	menuOpen.value = true
 }
 function scheduleMenuClose() {
@@ -199,7 +202,7 @@ window.__petTest = () => ({
 			<EmoteMenu
 				:emote-ids="state.emotes"
 				:item-map="itemMap"
-				:open="menuOpen"
+				:open="menuOpen && !settings.passthrough"
 				@play="id => api.command('emote', id)"
 			/>
 			<section class="desk">

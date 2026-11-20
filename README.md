@@ -41,7 +41,7 @@ This project is based on the original Wuwa Tappo concept, but it is optimized fo
 - Node.js 18+
 - npm
 - On Linux: X11 or Wayland (Wayland sessions run the app through XWayland); global input on Wayland needs read access to `/dev/input` (see [Linux](#linux))
-- On macOS: Accessibility permission for global input tracking (System Settings > Privacy & Security > Accessibility)
+- On macOS: Input Monitoring permission for global input tracking (System Settings > Privacy & Security > Input Monitoring); the Electron app asks for Accessibility instead
 - On Windows: no extra permission is needed; Xbox-compatible (XInput) controllers are supported
 
 ## Linux
@@ -113,8 +113,8 @@ Start the app (the platform is detected automatically):
 npm start
 ```
 
-On Windows and Linux this runs the Tauri port (`src-tauri/`, needs [Rust](https://rustup.rs));
-use `npm run start:electron` for the Electron app. macOS still starts Electron.
+On Windows, Linux and macOS this runs the Tauri port (`src-tauri/`, needs [Rust](https://rustup.rs));
+use `npm run start:electron` for the Electron app.
 
 On NixOS, `bun start` and `bun start:nix` both work: outside a nix shell, `start.cjs` re-runs itself
 inside `shell.nix`, which provides Rust, WebKitGTK and Electron. No rustup toolchain is needed.

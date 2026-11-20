@@ -1,6 +1,7 @@
-//! Controller input on Windows through the XInput watcher (src/native/win-gamepad-watcher.c),
-//! the same helper the Electron app runs (src/node/input-manager.ts). Linux controllers are read
-//! through evdev instead (`evdev.rs`), which shares the button names below.
+//! Controller input through the watchers the Electron app also runs (src/node/input-manager.ts):
+//! XInput on Windows (src/native/win-gamepad-watcher.c) and IOKit HID on macOS
+//! (src/native/mac-gamepad-watcher.c). Linux controllers are read through evdev instead
+//! (`evdev.rs`), which shares the button names below.
 //!
 //! Watcher lines are `GamepadN \t evdev-code \t 0|1`; `STATUS:` lines are informational. It exits on
 //! its own once the process whose PID it was given is gone, even after a crash.
@@ -9,7 +10,7 @@ use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-const WATCHER: &str = "win-gamepad-watcher.exe";
+const WATCHER: &str = if cfg!(windows) { "win-gamepad-watcher.exe" } else { "mac-gamepad-watcher" };
 
 /// Linux evdev button codes the watcher reports (LINUX_GAMEPAD_BUTTONS in src/node/input-keymaps.ts).
 pub fn button_name(code: u32) -> String {
@@ -86,7 +87,8 @@ fn parse_line(line: &str) -> Option<(String, bool)> {
 	}
 }
 
-/// Next to the executable once bundled; the repo's assets/bin during development.
+/// Next to the executable once bundled (on macOS in Contents/MacOS); the repo's assets/bin during
+/// development.
 fn find_watcher() -> Option<PathBuf> {
 	let exe_dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
 	let dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..").join("assets").join("bin");
@@ -94,9 +96,9 @@ fn find_watcher() -> Option<PathBuf> {
 }
 
 /// Starts the watcher and calls `on_input(key, down)` for every button change. Returns false if it
-/// could not start (not on Windows, binary missing, spawn failed).
+/// could not start (not on Windows or macOS, binary missing, spawn failed).
 pub fn start(on_input: impl Fn(String, bool) + Send + 'static) -> bool {
-	if !cfg!(windows) {
+	if !cfg!(any(windows, target_os = "macos")) {
 		return false;
 	}
 	let Some(path) = find_watcher() else {

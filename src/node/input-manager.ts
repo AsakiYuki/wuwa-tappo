@@ -341,8 +341,8 @@ export function createInputManager(options: InputManagerOptions) {
 					fs.chmodSync(watcherPath, 0o755)
 				} catch {}
 			}
-			// The Windows watcher exits on its own once this process is gone, even after a crash.
-			const args = process.platform === "win32" ? [String(process.pid)] : []
+			// The watcher exits on its own once this process is gone, even after a crash.
+			const args = [String(process.pid)]
 			const watcher = spawn(watcherPath, args, { stdio: ["ignore", "pipe", "ignore"], windowsHide: true })
 			gamepadWatcher = watcher
 
