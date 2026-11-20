@@ -1,0 +1,123 @@
+name: Release
+
+# Push a tag matching package.json's version (e.g. `git tag v1.0.8 && git push origin v1.0.8`),
+# or run it by hand from the Actions tab. Every OS is built, then all packages land on one release.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Release tag (defaults to v<package.json version>)"
+        required: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    name: build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x64
+            os: windows-latest
+            args: --win --x64
+            files: |
+              dist/*-setup.exe
+              dist/*-portable.exe
+          - name: linux-x64
+            os: ubuntu-24.04
+            args: --linux --x64
+            files: |
+              dist/*.deb
+              dist/*.rpm
+              dist/*.AppImage
+              dist/*.tar.gz
+          - name: macos-arm64
+            os: macos-latest
+            args: --mac --arm64
+            files: |
+              dist/*.dmg
+              dist/*.zip
+          - name: macos-x64
+            os: macos-latest
+            args: --mac --x64
+            files: |
+              dist/*.dmg
+              dist/*.zip
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install Linux packaging dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes libcrypt1 rpm
+
+      - run: npm ci
+      - run: npm test
+      - run: npm run build -- ${{ matrix.args }}
+        env:
+          # No signing certificates are configured; don't let electron-builder look for any.
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-${{ matrix.name }}
+          path: ${{ matrix.files }}
+          retention-days: 1
+          if-no-files-found: error
+
+  release:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve tag
+        id: tag
+        shell: bash
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            tag="${GITHUB_REF_NAME}"
+          else
+            tag="${INPUT_TAG:-$version}"
+          fi
+          if [ "$tag" != "$version" ]; then
+            echo "::error::Tag $tag does not match package.json version $version"
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: packages
+          merge-multiple: true
+
+      - run: ls -lh packages
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.tag.outputs.tag }}
+          name: Wuwa Tappo ${{ steps.tag.outputs.tag }}
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: packages/*
