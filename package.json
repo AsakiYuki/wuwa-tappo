@@ -12,6 +12,7 @@
 	"main": "runtime/main.js",
 	"scripts": {
 		"start": "node scripts/start.cjs",
+		"start:electron": "node scripts/start.cjs --electron",
 		"start:nix": "nix-shell --run 'bun start'",
 		"node:build": "node scripts/clean-runtime.cjs && node scripts/build-mac-gamepad.cjs && node scripts/build-win-gamepad.cjs && tsc -p tsconfig.node.json",
 		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && node scripts/npm-run.cjs renderer:typecheck",

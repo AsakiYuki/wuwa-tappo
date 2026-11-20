@@ -11,14 +11,11 @@ The prototype reads the Electron app's `collection.json` **read-only**; run the 
 
 ## Run
 
-```bash
-node scripts/tauri-prepare.cjs        # builds the renderer and stages src-tauri/frontend
-cd src-tauri && cargo run             # or: cargo run --release
-```
+On Windows, `bun start` (or `npm start`) builds and runs it. Elsewhere, `bun start -- --tauri`.
 
-Windows needs either the MSVC C++ build tools, or the GNU toolchain with MinGW:
-`rustup toolchain install stable-x86_64-pc-windows-gnu`, `scoop install mingw`, then
-`cargo +stable-x86_64-pc-windows-gnu run`.
+Windows needs either the MSVC C++ build tools, or the GNU toolchain with MinGW
+(`rustup toolchain install stable-x86_64-pc-windows-gnu` and `scoop install mingw`); `start.cjs`
+picks whichever is installed.
 
 Linux needs `libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libx11-dev libxtst-dev libxi-dev`.
 macOS: grant Accessibility permission for the global input hook.
