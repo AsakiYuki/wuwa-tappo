@@ -15,7 +15,7 @@ export interface SynthesisGroup {
 	candidates: CatalogItem[]
 }
 
-export const ITEM_TYPES: ItemType[] = ["character", "accessory", "emote"]
+const ITEM_TYPES: ItemType[] = ["character", "accessory", "emote"]
 
 export const emptyFilters = (): InventoryFilters => ({ series: "all", role: "all", rarity: "all" })
 

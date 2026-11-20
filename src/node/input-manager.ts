@@ -139,7 +139,7 @@ export function createInputManager(options: InputManagerOptions) {
 
 	function readGamepadAxis(device: EvdevDevice, code: number, value: number) {
 		const axis = LINUX_GAMEPAD_AXES[code]
-		if (!axis || axis.includes("Stick")) return
+		if (!axis) return
 
 		const name = `${device.name}:${axis}`
 		const threshold = axis.startsWith("DPad") ? 0 : axis.endsWith("TriggerAxis") ? 64 : 8192

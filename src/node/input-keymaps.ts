@@ -105,7 +105,7 @@ export const UIOHOOK_MOUSEMAP: Record<number, string> = {
 	5: "MouseForward",
 }
 
-export const LINUX_GAMEPAD_BUTTONS: Record<number, string> = {
+const LINUX_GAMEPAD_BUTTONS: Record<number, string> = {
 	288: "Trigger",
 	289: "Trigger2",
 	290: "Thumb",
@@ -139,12 +139,9 @@ export const LINUX_GAMEPAD_BUTTONS: Record<number, string> = {
 	547: "DPadRight",
 }
 
+/** Gamepad axes that count as presses; analog sticks are deliberately not listed (they never tap). */
 export const LINUX_GAMEPAD_AXES: Record<number, string> = {
-	0: "LeftStickX",
-	1: "LeftStickY",
 	2: "LeftTriggerAxis",
-	3: "RightStickX",
-	4: "RightStickY",
 	5: "RightTriggerAxis",
 	16: "DPadX",
 	17: "DPadY",
@@ -177,7 +174,7 @@ export function mouseSide(key: string): HandSide {
 }
 
 export function gamepadSide(key: string): HandSide {
-	return /:(DPad|LeftStick|LeftTriggerAxis|L1$|L2$|L3$)/.test(key) ? "left" : "right"
+	return /:(DPad|LeftTriggerAxis|L1$|L2$|L3$)/.test(key) ? "left" : "right"
 }
 
 export function gamepadButtonName(deviceName: string, code: number): string {

@@ -52,7 +52,6 @@
 			"runtime/**/*",
 			"renderer-build/**/*",
 			"assets/**/*",
-			"asset-manifest.json",
 			"package.json"
 		],
 		"asarUnpack": [

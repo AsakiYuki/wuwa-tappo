@@ -39,7 +39,7 @@ export interface SwitchSpec {
 	description?: string
 }
 
-export const SWITCHES: SwitchSpec[] = [
+const SWITCHES: SwitchSpec[] = [
 	{ key: "autoStart", title: "Launch at Startup", tab: "general" },
 	{ key: "lockDrag", title: "Lock Pet Position", tab: "pet", description: "Prevents moving the pet by dragging." },
 	{

@@ -140,4 +140,4 @@ function createWriter(file: string) {
 	}
 }
 
-export { readSave, findLegacy, initProfile, createWriter }
+export { readSave, initProfile, createWriter }

@@ -29,7 +29,6 @@ let
     fileset = fs.unions [
       ../package.json
       ../package-lock.json
-      ../asset-manifest.json
       ../assets
       ../src
       ../scripts
@@ -86,7 +85,7 @@ buildNpmPackage {
 
     app=$out/share/wuwa-tappo
     mkdir -p $app/node_modules
-    cp -r runtime renderer-build assets asset-manifest.json package.json $app/
+    cp -r runtime renderer-build assets package.json $app/
     # Vue is bundled into renderer-build by Vite; the main process only loads uiohook-napi.
     cp -r node_modules/{uiohook-napi,node-gyp-build} $app/node_modules/
 

@@ -12,3 +12,4 @@ qa-data-*/
 !build/**
 result
 result-*
+.DS_Store
