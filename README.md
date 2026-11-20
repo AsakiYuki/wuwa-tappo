@@ -60,24 +60,18 @@ npm start
 
 ## Build
 
-Build packages for your current operating system:
+Build packages for your current operating system (output in `dist/`):
 
 ```bash
 npm run build
 ```
 
-Or target a specific platform:
+- Windows: `wuwa-tappo-<version>-x64-setup.exe` (installer) and `wuwa-tappo-<version>-x64-portable.exe`
+- macOS: `.dmg` and `.zip`
+- Linux: `.deb`, `.rpm`, `.AppImage` and `.tar.gz`
 
-```bash
-# macOS (.dmg and .zip)
-npm run build:mac
-
-# Linux (deb, rpm, AppImage, tar.gz)
-npm run build:linux
-
-# Windows (NSIS installer and portable .exe)
-npm run build:win
-```
+Flags: `--x64`, `--arm64`, `--all` pick the architecture; `--win` / `--linux` cross-build another OS
+(e.g. `npm run build -- --arm64`). macOS packages can only be built on macOS.
 
 Windows packages are best built on Windows. The controller watcher
 (`assets/bin/win-gamepad-watcher.exe`) is committed prebuilt; to rebuild it, run

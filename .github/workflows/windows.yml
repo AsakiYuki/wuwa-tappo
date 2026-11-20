@@ -20,7 +20,7 @@ jobs:
       # Uses the committed XInput watcher; the runner's MinGW gcc recompiles it if the C source is newer.
       - run: npm ci
       - run: npm test
-      - run: npm run build:win
+      - run: npm run build
 
       - uses: actions/upload-artifact@v4
         with:

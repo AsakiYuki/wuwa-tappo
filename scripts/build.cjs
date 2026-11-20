@@ -2,98 +2,59 @@ const { execFileSync } = require("node:child_process")
 const path = require("node:path")
 const npmRun = require("./npm-run.cjs")
 
-const projectRoot = path.resolve(__dirname, "..")
-const buildScripts = ["node:build", "renderer:build"]
+/*
+ * Packages the app with electron-builder for the host OS. Output goes to dist/; the package
+ * formats per OS are set in package.json → build.{mac,linux,win}.target.
+ *
+ *   npm run build                   current OS, current/default arch
+ *   npm run build -- --win          cross-build another OS (--mac, --linux, --win)
+ *   npm run build -- --arm64        pick arch(es): --x64, --arm64, --universal (mac), --all
+ *
+ * Any other argument is passed through to electron-builder.
+ */
 
-const rawArgs = process.argv.slice(2)
-let targetPlatform = null
+const projectRoot = path.resolve(__dirname, "..")
+const HOST = { darwin: "mac", linux: "linux", win32: "win" }[process.platform]
+const PLATFORM_FLAGS = { "--mac": "mac", "--darwin": "mac", "--linux": "linux", "--win": "win", "--windows": "win" }
+const ARCH_FLAGS = new Set(["--x64", "--arm64", "--universal"])
+
+let target = HOST
 let archs = []
 const extraArgs = []
-
-for (const arg of rawArgs) {
-	if (arg === "--mac" || arg === "--darwin") {
-		targetPlatform = "mac"
-	} else if (arg === "--linux") {
-		targetPlatform = "linux"
-	} else if (arg === "--win" || arg === "--windows") {
-		targetPlatform = "win"
-	} else if (arg === "--arm64") {
-		archs.push("--arm64")
-	} else if (arg === "--x64") {
-		archs.push("--x64")
-	} else if (arg === "--universal") {
-		archs.push("--universal")
-	} else if (arg === "--all") {
-		archs = ["--arm64", "--x64"]
-	} else {
-		extraArgs.push(arg)
-	}
+for (const arg of process.argv.slice(2)) {
+	if (PLATFORM_FLAGS[arg]) target = PLATFORM_FLAGS[arg]
+	else if (ARCH_FLAGS.has(arg)) archs.push(arg)
+	else if (arg === "--all") archs = ["--x64", "--arm64"]
+	else extraArgs.push(arg)
 }
 
-if (!targetPlatform) {
-	if (process.platform === "darwin") {
-		targetPlatform = "mac"
-	} else if (process.platform === "linux") {
-		targetPlatform = "linux"
-	} else if (process.platform === "win32") {
-		targetPlatform = "win"
-	} else {
-		throw new Error(`Unsupported host platform: ${process.platform}. Wuwa Tappo supports Windows, macOS and Linux.`)
-	}
-}
-
-if (targetPlatform === "mac" && process.platform !== "darwin") {
-	throw new Error("macOS packages can only be built on macOS.")
-}
-
-if (targetPlatform === "linux" && process.platform !== "linux") {
+if (!target) throw new Error(`Unsupported host platform: ${process.platform}. Wuwa Tappo supports Windows, macOS and Linux.`)
+if (target === "mac" && HOST !== "mac") throw new Error("macOS packages can only be built on macOS.")
+if (target !== HOST) {
 	console.warn(
-		"Warning: Building Linux packages on a non-Linux platform may have limitations with AppImage/deb/rpm packaging.",
+		target === "win"
+			? "Warning: cross-building Windows packages needs Wine, and a MinGW-w64 compiler for controller support."
+			: "Warning: building Linux packages on a non-Linux host may have limitations with AppImage/deb/rpm.",
 	)
 }
+if (archs.length === 0) archs = [target === "mac" && process.arch === "arm64" ? "--arm64" : "--x64"]
 
-if (targetPlatform === "win" && process.platform !== "win32") {
-	console.warn(
-		"Warning: cross-building Windows packages needs Wine, and a MinGW-w64 compiler for controller support.",
-	)
-}
+console.log(`Building for ${target} (${archs.join(" ")})...`)
 
-console.log(`Starting build for ${targetPlatform}...`)
-
-if (targetPlatform === "win") {
-	// Cross-compiles the XInput watcher when building Windows packages on another OS.
+// node:build compiles the XInput watcher on Windows hosts; cross-builds have to force it.
+if (target === "win" && HOST !== "win") {
 	execFileSync(process.execPath, [path.join(__dirname, "build-win-gamepad.cjs"), "--force"], {
 		cwd: projectRoot,
 		stdio: "inherit",
 	})
 }
 
-for (const script of buildScripts) npmRun(script, projectRoot)
+npmRun("node:build", projectRoot)
+npmRun("renderer:build", projectRoot)
 
-const electronBuilder = path.join(projectRoot, "node_modules", "electron-builder", "cli.js")
-
-let builderArgs = []
-
-if (targetPlatform === "mac") {
-	if (archs.length === 0) {
-		archs = [process.arch === "arm64" ? "--arm64" : "--x64"]
-	}
-	builderArgs = ["--mac", "dmg", "zip", ...archs, "--publish", "never", ...extraArgs]
-} else if (targetPlatform === "linux") {
-	if (archs.length === 0) {
-		archs = ["--x64"]
-	}
-	builderArgs = ["--linux", "deb", "rpm", "AppImage", "tar.gz", ...archs, "--publish", "never", ...extraArgs]
-} else if (targetPlatform === "win") {
-	if (archs.length === 0) {
-		archs = ["--x64"]
-	}
-	builderArgs = ["--win", "nsis", "portable", ...archs, "--publish", "never", ...extraArgs]
-}
-
-console.log(`Running electron-builder with arguments: ${builderArgs.join(" ")}`)
-
-execFileSync(process.execPath, [electronBuilder, ...builderArgs], {
+const builderArgs = [`--${target}`, ...archs, "--publish", "never", ...extraArgs]
+console.log(`electron-builder ${builderArgs.join(" ")}`)
+execFileSync(process.execPath, [path.join(projectRoot, "node_modules", "electron-builder", "cli.js"), ...builderArgs], {
 	cwd: projectRoot,
 	stdio: "inherit",
 })

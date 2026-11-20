@@ -19,9 +19,6 @@
 		"test:ui": "node scripts/npm-run.cjs node:build renderer:build && node scripts/test-ui.cjs",
 		"build:nix": "nix-shell --run 'bun run build'",
 		"build": "node scripts/build.cjs",
-		"build:mac": "node scripts/build.cjs --mac",
-		"build:linux": "node scripts/build.cjs --linux",
-		"build:win": "node scripts/build.cjs --win",
 		"postinstall": "node node_modules/electron/install.js",
 		"renderer:typecheck": "node scripts/typecheck-renderer.cjs",
 		"format": "prettier --write \"src/**/*.{ts,vue}\" \"scripts/**/*.cjs\" vite.config.mts"
@@ -129,7 +126,7 @@
 				"nsis",
 				"portable"
 			],
-			"icon": "assets/appicon.png",
+			"icon": "assets/appicon.ico",
 			"executableName": "wuwa-tappo",
 			"extraFiles": [
 				{
