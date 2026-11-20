@@ -201,11 +201,16 @@ export async function runQa({ app, pet, studio, items, getState, dataDir, input 
 		await capture("pet", pet)
 
 		if (process.argv.includes("--snapshot")) {
+			// Snapshots show the pet as people see it: opaque (an earlier step dragged the opacity down)
+			// and with its keyboard. Toggling the keyboard reloads the pet page.
+			await js(studio, "window.petAPI.command('settings',{opacity:1,showKeyboard:true})")
+			await wait(2000)
 			await js(studio, "window.petAPI.command('settings',{holdAnimation:true})")
 			input("Q", true, "left")
 			input("P", true, "right")
 			await wait(100)
-			assert.equal((await petTest()).action, 4)
+			// The most recent key that is held decides the hand.
+			assert.equal((await petTest()).action, 3)
 			await capture("pet-both-hands", pet)
 			input("P", false)
 			await wait(80)

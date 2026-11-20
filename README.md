@@ -1,66 +1,104 @@
-# Wuwa Tappo
+<div align="center">
 
-Wuwa Tappo is a desktop companion app inspired by the Wuthering Waves desktop pet experience, built for Windows, Linux and macOS with smooth desktop integration and a complete collection-management workflow.
+<img src="assets/appicon.png" width="128" alt="Wuwa Tappo icon" />
 
-## Overview
+# 🐾 Wuwa Tappo
 
-This application brings together a floating desktop pet with a compact studio panel for managing characters, accessories, emotes, and outfit setups. It is designed for players who want a polished companion on their desktop without sacrificing collection and customization features.
+**A desktop companion that taps along with every key you press.**
 
-## Highlights
+Inspired by the Wuthering Waves desktop pet: a floating pet, a keyboard that lights up as you type,
+chests to open, outfits to collect.
 
-- Floating desktop pet experience
-- Character, accessory, and emote collection tracking
-- Outfit preview and quick outfit switching
-- Chest draws with pity tracking and pull history
-- Synthesis and item management workflows
-- Settings for startup, input, passthrough, and auto-emote behavior
-- Linux-focused window and tray integration, plus native Windows and macOS support
-- Keyboard, mouse and controller input on every platform (evdev / IOKit / XInput)
+[![Release](https://img.shields.io/github/v/release/AsakiYuki/wuwa-tappo?style=for-the-badge&color=ffd26f&logo=github)](https://github.com/AsakiYuki/wuwa-tappo/releases/latest)
+[![License: MIT](https://img.shields.io/badge/license-MIT-a78bfa?style=for-the-badge)](LICENSE)
 
-## Why this version is different
+![Windows](https://img.shields.io/badge/Windows-0078D6?style=flat-square&logo=windows&logoColor=white)
+![macOS](https://img.shields.io/badge/macOS-000000?style=flat-square&logo=apple&logoColor=white)
+![Linux](https://img.shields.io/badge/Linux-FCC624?style=flat-square&logo=linux&logoColor=black)
+![NixOS](https://img.shields.io/badge/NixOS-5277C3?style=flat-square&logo=nixos&logoColor=white)
+![Tauri](https://img.shields.io/badge/Tauri_2-24C8DB?style=flat-square&logo=tauri&logoColor=white)
+![Rust](https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white)
+![Vue](https://img.shields.io/badge/Vue_3-4FC08D?style=flat-square&logo=vuedotjs&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white)
 
-This project is based on the original Wuwa Tappo concept, but it is optimized for Linux users and improved in several ways:
+<img src="docs/images/preview/typing.png" width="420" alt="The pet tapping along while Q and P are pressed" />
 
-- better desktop and window behavior on Linux
-- cleaner project structure and maintainability
-- more configurable runtime settings
-- focused collection and studio experience
-- improved stability for desktop use
+</div>
 
-## Tech Stack
+---
 
-- Electron
-- Vue 3 + TypeScript
-- Vite
-- Node.js
-- uiohook-napi
+## 📸 Preview
 
-## Requirements
+<table>
+  <tr>
+    <td align="center" width="50%"><img src="docs/images/preview/collection.png" alt="Studio: the bag, current outfit and presets" /><br /><sub>🎒 <b>Bag</b>: outfit, emote slots and presets</sub></td>
+    <td align="center" width="50%"><img src="docs/images/preview/chests.png" alt="Studio: the results of a ten-chest draw" /><br /><sub>🎁 <b>Chests</b>: ten draws at once</sub></td>
+  </tr>
+  <tr>
+    <td align="center"><img src="docs/images/preview/atlas.png" alt="Studio: the atlas of every item by rarity" /><br /><sub>📖 <b>Atlas</b>: every item, by rarity</sub></td>
+    <td align="center"><img src="docs/images/preview/pet.png" alt="The pet playing an emote" /><br /><sub>😆 <b>Emotes</b>: hover the pet, pick one</sub></td>
+  </tr>
+</table>
 
-- Windows 10/11, Linux or macOS
-- Node.js 18+
-- npm
-- On Linux: X11 or Wayland (Wayland sessions run the app through XWayland); global input on Wayland needs read access to `/dev/input` (see [Linux](#linux))
-- On macOS: Input Monitoring permission for global input tracking (System Settings > Privacy & Security > Input Monitoring); the Electron app asks for Accessibility instead
-- On Windows: no extra permission is needed; Xbox-compatible (XInput) controllers are supported
+## ✨ Features
 
-## Linux
+| | |
+| --- | --- |
+| 🐱 **Floating pet** | Transparent, always on top, draggable, remembers where you left it |
+| ⌨️ **Live keyboard** | Every key, mouse click and controller button taps the pet and lights up its keyboard |
+| 🎁 **Chest draws** | Unlimited chests with pity tracking and pull history |
+| 👗 **Collection** | Characters, accessories and emotes; preview outfits and save presets |
+| ⚗️ **Synthesis** | Trade 5 duplicates for a new item, or 10 for one of the next rarity |
+| 😆 **Emotes** | Pick from the emote menu, or press `Ctrl`+`Alt`+`1`…`5` (`Control`+`Option` on macOS) |
+| 👻 **Mouse passthrough** | Click straight through the pet; it fades when the cursor is over it |
+| 🎮 **Controllers** | XInput on Windows, IOKit on macOS, evdev on Linux |
+| 🖥️ **Multi-monitor** | Cycle the pet between screens |
 
-Any distribution works: use the AppImage / deb / rpm / tar.gz packages, or the Nix flake below.
+## 📥 Download
 
-**Global input on Wayland.** Wayland does not let apps see key presses for other windows, so the
-pet reads `/dev/input/event*` directly. Grant access with the tray menu's
-**Fix Input Permissions** (until reboot) or `./fix-permissions.sh`, which can also install
-[`packaging/linux/70-wuwa-tappo-input.rules`](packaging/linux/70-wuwa-tappo-input.rules) permanently.
-Either way, every program you run can then read raw keystrokes. Weigh that before enabling it.
+Grab the package for your system from the **[latest release](https://github.com/AsakiYuki/wuwa-tappo/releases/latest)**:
 
-**Desktop notes.**
-- KDE Plasma 5/6: the pet gets a KWin window rule, and hover-fade uses KWin scripting
-  (`qdbus`, `qdbus6` or `qdbus-qt6`, whichever is installed).
-- GNOME: the tray icon needs the *AppIndicator and KStatusNotifierItem Support* extension.
-- X11: install `wmctrl` (or `xprop`) so the pet stays off the taskbar on every window manager.
+| OS | Package |
+| --- | --- |
+| 🪟 Windows 10/11 | `wuwa-tappo-<version>-x64-setup.exe` |
+| 🍎 macOS 10.15+ | `wuwa-tappo-<version>-arm64.dmg` (Apple Silicon) · `-x64.dmg` (Intel) |
+| 🐧 Linux | `.AppImage` · `.deb` · `.rpm` |
+| ❄️ NixOS | `nix run github:AsakiYuki/wuwa-tappo` (see [NixOS](#nixos)) |
 
-### NixOS / Nix
+> [!NOTE]
+> **macOS:** the app is not notarized. The first time, right-click it and choose **Open**, or run
+> `xattr -cr "/Applications/Wuwa Tappo.app"`.
+
+## 🔐 Permissions
+
+The pet reacts to keys typed into *any* window, so it needs to see global input:
+
+- 🪟 **Windows:** nothing to set up.
+- 🍎 **macOS:** allow **Input Monitoring** (System Settings → Privacy & Security → Input Monitoring).
+  macOS asks on first launch; while it's missing, the tray menu has a shortcut to that page.
+  Restart the app after granting it.
+- 🐧 **Linux (X11):** nothing to set up.
+- 🐧 **Linux (Wayland):** Wayland hides other windows' key presses, so the pet reads
+  `/dev/input/event*` directly. Use the tray's **⚡ Fix Input Permissions** (until reboot) or
+  `./fix-permissions.sh`, which can also install
+  [`70-wuwa-tappo-input.rules`](packaging/linux/70-wuwa-tappo-input.rules) permanently.
+
+> [!WARNING]
+> On Linux, read access to `/dev/input` lets **every** program you run read raw keystrokes, not
+> only Wuwa Tappo. Weigh that before enabling it.
+
+## 🐧 Linux notes
+
+- 🪟 **Native Wayland:** where the compositor supports wlr-layer-shell (KDE Plasma, Hyprland,
+  Sway, …) the pet stays above windows and out of the taskbar. On GNOME it is a normal window.
+- 🔷 **KDE Plasma 5/6:** hover-fade with passthrough works through a small KWin script
+  (needs `qdbus`, `qdbus6` or `qdbus-qt6`).
+- 👣 **GNOME:** the tray icon needs the *AppIndicator and KStatusNotifierItem Support* extension.
+- 🧱 **X11:** install `wmctrl` (or `xprop`) so the pet stays off the taskbar on every window manager.
+
+<a id="nixos"></a>
+
+## ❄️ NixOS / Nix
 
 Run it without installing:
 
@@ -68,7 +106,7 @@ Run it without installing:
 nix run github:AsakiYuki/wuwa-tappo
 ```
 
-Install it system-wide with the NixOS module:
+Or install it system-wide with the NixOS module:
 
 ```nix
 # flake.nix
@@ -81,7 +119,7 @@ Install it system-wide with the NixOS module:
         wuwa-tappo.nixosModules.default
         {
           programs.wuwa-tappo.enable = true;
-          # Global input on Wayland (see the security note above):
+          # Global input on Wayland (see the warning above):
           programs.wuwa-tappo.inputAccess = true;
         }
       ];
@@ -92,79 +130,73 @@ Install it system-wide with the NixOS module:
 
 For Home Manager or a plain profile, add `wuwa-tappo.overlays.default` and install
 `pkgs.wuwa-tappo`, or use `wuwa-tappo.packages.${system}.default` directly.
-Launch-at-startup points at the profile path (for example `/run/current-system/sw/bin/wuwa-tappo`),
-so it keeps working after upgrades and garbage collection.
 
-For development, `nix develop` (or `nix-shell`) provides Electron and the native libraries.
-After changing `package-lock.json`, update `npmDepsHash` in [`nix/package.nix`](nix/package.nix):
-set it to `lib.fakeHash`, run `nix build`, and copy the hash from the error.
+> [!NOTE]
+> The Nix package is still the Electron build.
 
-## Installation
+## 🛠️ Development
+
+**You need:** [Node.js](https://nodejs.org) 18+ (or [Bun](https://bun.sh)) and
+[Rust](https://rustup.rs).
+
+<details>
+<summary>📦 Per-OS build dependencies</summary>
+
+- 🪟 **Windows:** the MSVC C++ build tools, or the GNU toolchain with MinGW
+  (`rustup toolchain install stable-x86_64-pc-windows-gnu` and `scoop install mingw`);
+  `bun start` picks whichever is installed.
+- 🍎 **macOS:** the Xcode command line tools (`xcode-select --install`).
+- 🐧 **Linux:** `libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev libx11-dev libxtst-dev libxi-dev libgtk-layer-shell-dev`
+- ❄️ **NixOS:** nothing. `bun start` enters `shell.nix` on its own, which has Rust and every library.
+
+</details>
 
 ```bash
 npm install
+npm start          # or: bun start
 ```
 
-## Development
+`npm start` builds the renderer and runs the Tauri app on every OS.
 
-Start the app (the platform is detected automatically):
+| Command | What it does |
+| --- | --- |
+| `npm start` | ▶️ Run the Tauri app |
+| `npm start -- --x11` | 🐧 Run through XWayland instead of native Wayland |
+| `npm run start:electron` | ⚡ Run the older Electron app |
+| `npm test` | 🧪 Test the shared game logic |
+| `npm run test:ui` | 🖼️ UI checks (Electron) |
+| `npx @tauri-apps/cli@2 build` | 📦 Package the Tauri app for this OS |
+
+> [!TIP]
+> During development, macOS asks for Input Monitoring for your **terminal**, not for the app.
+
+### 🚀 Releasing
+
+Bump `version` in `package.json`, then push a matching tag:
 
 ```bash
-npm start
+git tag v1.0.9 && git push origin v1.0.9
 ```
 
-On Windows, Linux and macOS this runs the Tauri port (`src-tauri/`, needs [Rust](https://rustup.rs));
-use `npm run start:electron` for the Electron app.
+The **Release** workflow builds Windows, Linux and macOS (arm64 + x64) and puts every package on one
+GitHub release.
 
-On NixOS, `bun start` and `bun start:nix` both work: outside a nix shell, `start.cjs` re-runs itself
-inside `shell.nix`, which provides Rust, WebKitGTK and Electron. No rustup toolchain is needed.
-
-## Build
-
-Build packages for your current operating system (output in `dist/`):
-
-```bash
-npm run build
-```
-
-- Windows: `wuwa-tappo-<version>-x64-setup.exe` (installer) and `wuwa-tappo-<version>-x64-portable.exe`
-- macOS: `.dmg` and `.zip`
-- Linux: `.deb`, `.rpm`, `.AppImage` and `.tar.gz`
-
-Flags: `--x64`, `--arm64`, `--all` pick the architecture; `--win` / `--linux` cross-build another OS
-(e.g. `npm run build -- --arm64`). macOS packages can only be built on macOS.
-
-Windows packages are best built on Windows. The controller watcher
-(`assets/bin/win-gamepad-watcher.exe`) is committed prebuilt; to rebuild it, run
-`node scripts/build-win-gamepad.cjs --force` with MinGW gcc, clang or MSVC on `PATH`
-(on Linux, `x86_64-w64-mingw32-gcc` cross-compiles it).
-
-## Testing
-
-```bash
-npm test
-```
-
-UI validation:
-
-```bash
-npm run test:ui
-```
-
-## Project Structure
+## 🧩 How it fits together
 
 ```text
-.
-├── assets/
-├── runtime/
-├── scripts/
-├── src/
-├── renderer-build/
-├── package.json
-├── LICENSE
-├── README.md
+src/
+├── renderer/     🎨 Vue 3 pages: the pet and the studio (shared by both apps)
+├── node/domain/  🎲 Game logic: draws, pity, synthesis, presets (shared by both apps)
+├── node/         ⚡ Electron main process
+└── native/       🎮 Controller watchers (XInput, IOKit)
+src-tauri/        🦀 Tauri app: windows, input, tray, saving
+assets/           🖼️ Characters, accessories, emotes, catalog
 ```
 
-## License
+The Tauri app runs the **same** TypeScript game logic as Electron (bundled into QuickJS) and reads and
+writes the same `collection.json`, so your collection carries over between the two. Run only one
+at a time. More in [src-tauri/README.md](src-tauri/README.md).
 
-This project is licensed under the terms in the [LICENSE](LICENSE) file.
+## 📜 License
+
+[MIT](LICENSE) 💛
