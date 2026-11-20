@@ -36,10 +36,13 @@ button {
 	&.hover-fade #petContent {
 		transition: opacity 180ms ease;
 
-		&:hover,
 		&.cursor-hovered {
 			opacity: 0.4;
 		}
+	}
+
+	&.hover-fade:not(.passthrough) #petContent:hover {
+		opacity: 0.4;
 	}
 }
 

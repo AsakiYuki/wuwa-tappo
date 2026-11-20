@@ -19,6 +19,21 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 rdev = "0.5"
 dirs = "6"
+tauri-plugin-dialog = "2"
+# One running app: both apps share collection.json, and a second launch shows the studio instead.
+tauri-plugin-single-instance = "2"
+# Runs the shared TypeScript game logic (src/backend) so Electron and Tauri behave identically.
+rquickjs = { version = "0.9", features = ["parallel"] }
+
+[target.'cfg(target_os = "linux")'.dependencies]
+# StatusNotifierItem tray: unlike libappindicator (Tauri's tray), it reports clicks on the icon.
+ksni = { version = "0.3", features = ["blocking"] }
+# Wayland: the pet is a layer-shell surface (anchored, always above, off the taskbar), since
+# Wayland windows cannot place themselves or stay on top. Same gtk as Tauri's.
+gtk = "0.18"
+gtk-layer-shell = { version = "0.8", features = ["v0_6"] }
+# Hover-fade on KDE Wayland: KWin sends the cursor position over D-Bus. Same zbus as ksni.
+zbus = { version = "5", default-features = false, features = ["tokio"] }
 
 [profile.release]
 codegen-units = 1

@@ -5,6 +5,7 @@ import type { CatalogItem, CollectionState, CommandResult, HandSide, Settings } 
 import * as core from "./core.js"
 import * as storage from "./storage.js"
 import { setAutoStart } from "./autostart.js"
+import { STATE_COMMANDS, canPlayEmote, importedState, patchSettings } from "./domain/commands.js"
 
 export interface CommandContext {
 	app: App
@@ -30,8 +31,6 @@ export interface CommandContext {
 
 type Handler = (argument: any, context: CommandContext) => unknown
 
-const MAX_PRESETS = 12
-const MAX_PRESET_NAME = 24
 const JSON_FILTER = [{ name: "JSON", extensions: ["json"] }]
 /** Delay before navigating a studio window that is still loading its page. */
 const NAVIGATE_AFTER_LOAD_MS = 300
@@ -58,9 +57,7 @@ const actionCommands: Record<string, Handler> = {
 	window: (action: string, context) => context.resizeStudio(action),
 
 	emote(id: string, context) {
-		const state = context.getState()
-		const isEmote = context.items.some(item => item.id === id && item.type === "emote")
-		if (!(state.owned[id] > 0) || !isEmote) throw new Error("Emote not owned")
+		if (!canPlayEmote(context.getState(), context.items, id)) throw new Error("Emote not owned")
 		context.getPet()?.webContents.send("emote", id)
 	},
 
@@ -99,55 +96,13 @@ const actionCommands: Record<string, Handler> = {
 /* ------------------------------------------------------------------------- */
 
 const stateCommands: Record<string, Handler> = {
-	draw: (count: number, context) => core.draw(context.getState(), context.items, count),
-
-	synthesize: (options, context) =>
-		core.synthesize(context.getState(), context.items, options.n, options.rarity, Math.random, options),
-
-	equip: (id: string, context) => core.equip(context.getState(), context.items, id),
-
-	"emote-replace": ({ id, slot }, context) => core.replaceEmote(context.getState(), context.items, id, slot),
-
-	favorite(id: string, context) {
-		const state = context.getState()
-		if (!context.items.some(item => item.id === id)) throw new Error("Item does not exist")
-		state.favorites = state.favorites.includes(id)
-			? state.favorites.filter(favorite => favorite !== id)
-			: [...state.favorites, id]
-	},
-
-	"preset-save"(name: unknown, context) {
-		const state = context.getState()
-		if (state.presets.length >= MAX_PRESETS) throw new Error("Maximum 12 presets allowed")
-		state.presets.push({
-			id: Date.now().toString(36),
-			name: String(name || "My Outfit")
-				.trim()
-				.slice(0, MAX_PRESET_NAME),
-			character: state.character,
-			accessory: state.accessory,
-			emotes: [...state.emotes],
-		})
-	},
-
-	"preset-load"(id: string, context) {
-		const state = context.getState()
-		const preset = state.presets.find(candidate => candidate.id === id)
-		if (!preset) throw new Error("Preset does not exist")
-		state.character = preset.character
-		state.accessory = preset.accessory
-		state.emotes = [...preset.emotes]
-	},
-
-	"preset-delete"(id: string, context) {
-		const state = context.getState()
-		state.presets = state.presets.filter(preset => preset.id !== id)
-	},
-
-	"unlock-all"(_argument, context) {
-		const { owned } = context.getState()
-		for (const item of context.items) owned[item.id] = Math.max(1, owned[item.id] || 0)
-	},
+	// Pure collection commands, shared with the Tauri port.
+	...Object.fromEntries(
+		Object.entries(STATE_COMMANDS).map(([name, run]): [string, Handler] => [
+			name,
+			(argument, context) => run(context.getState(), context.items, argument),
+		]),
+	),
 
 	settings: (patch: Partial<Settings>, context) => updateSettings(patch, context),
 
@@ -160,11 +115,7 @@ const stateCommands: Record<string, Handler> = {
 		if (canceled || !filePaths.length) return "cancelled"
 		const saved = storage.readSave(filePaths[0])
 		if (!saved) throw new Error("This file is not a valid Wuwa Tappo save")
-
-		const state = core.normalize(saved.raw, context.items)
-		// A save file must never register a login item on its own; keep the current choice.
-		state.settings.autoStart = context.getState().settings.autoStart
-		replaceState(state, context)
+		replaceState(importedState(saved.raw, context.items, context.getState()), context)
 		context.placePet()
 		return "imported"
 	},
@@ -185,18 +136,17 @@ function replaceState(state: CollectionState, context: CommandContext) {
 
 function updateSettings(patch: Partial<Settings>, context: CommandContext) {
 	const state = context.getState()
-	const previous = state.settings
-	const next = core.settings({ ...previous, ...patch })
 	context.clearPressedKeys()
 
-	if (next.autoStart !== previous.autoStart) {
-		if (next.autoStart && !context.app.isPackaged && process.platform !== "linux")
+	const wanted = core.settings({ ...state.settings, ...patch })
+	if (wanted.autoStart !== state.settings.autoStart) {
+		if (wanted.autoStart && !context.app.isPackaged && process.platform !== "linux")
 			throw new Error("Please enable auto-start from packaged build")
-		setAutoStart(next.autoStart, context.app)
+		setAutoStart(wanted.autoStart, context.app)
 	}
 
-	state.settings = next
-	if (next.counterLimit !== null && state.count > next.counterLimit) state.count = next.counterLimit
+	const previous = patchSettings(state, patch)
+	const next = state.settings
 	context.applySettings()
 
 	if (next.showKeyboard !== previous.showKeyboard) reloadPet(context)

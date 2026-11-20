@@ -1,7 +1,7 @@
 {
 	"$schema": "../gen/schemas/desktop-schema.json",
 	"identifier": "default",
-	"description": "The pet window may listen to backend events and call the app's own commands.",
-	"windows": ["pet"],
-	"permissions": ["core:default"]
+	"description": "The app's windows may listen to backend events, call the app's own commands and start moving or resizing (the frameless studio's title bar and edges).",
+	"windows": ["pet", "studio"],
+	"permissions": ["core:default", "core:window:allow-start-dragging", "core:window:allow-start-resize-dragging"]
 }

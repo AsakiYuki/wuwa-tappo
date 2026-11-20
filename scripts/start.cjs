@@ -6,8 +6,11 @@ const npmRun = require("./npm-run.cjs")
 
 /*
  * `npm start` / `bun start`: builds and launches the app for the host OS.
- *   Windows        Tauri (src-tauri), unless --electron is passed
- *   macOS, Linux   Electron, until the Tauri port reaches them
+ *   Windows, Linux   Tauri (src-tauri), unless --electron is passed
+ *   macOS            Electron, until the Tauri port reaches it
+ * On NixOS, it re-runs itself inside shell.nix (Rust toolchain, WebKitGTK, Electron) when not already
+ * in a nix shell, so plain `bun start` works as well as `bun start:nix`.
+ * On Linux, Tauri runs natively on Wayland when the session has it; pass --x11 to use XWayland.
  * Other arguments go to the app.
  */
 
@@ -16,16 +19,33 @@ const platform = process.platform
 
 // Platform flags from the old start:mac/linux/win scripts are meaningless here (the app can only run
 // on the host OS), so ignore them.
-const ignoredFlags = new Set(["--mac", "--darwin", "--linux", "--win", "--windows", "--electron", "--tauri"])
+const ignoredFlags = new Set(["--mac", "--darwin", "--linux", "--win", "--windows", "--electron", "--tauri", "--x11"])
 const rawArgs = process.argv.slice(2)
 const extraArgs = rawArgs.filter(arg => !ignoredFlags.has(arg))
-const useTauri = rawArgs.includes("--tauri") || (platform === "win32" && !rawArgs.includes("--electron"))
+const tauriByDefault = platform === "win32" || platform === "linux"
+const useTauri = rawArgs.includes("--tauri") || (tauriByDefault && !rawArgs.includes("--electron"))
 
 const platformName = { win32: "Windows", darwin: "macOS", linux: "Linux" }[platform] || platform
-console.log(`Starting on ${platformName} (${useTauri ? "Tauri" : "Electron"})`)
 
-if (useTauri) startTauri()
-else startElectron()
+// On NixOS outside a nix shell, the app is started again inside one; runAndExit forwards its exit code.
+if (!reenterNixShell()) {
+	console.log(`Starting on ${platformName} (${useTauri ? "Tauri" : "Electron"})`)
+	if (useTauri) startTauri()
+	else startElectron()
+}
+
+/**
+ * NixOS has no global libraries, so the app needs shell.nix. Re-running there keeps the original
+ * arguments; IN_NIX_SHELL (set by nix-shell and nix develop) prevents a loop.
+ */
+function reenterNixShell() {
+	if (platform !== "linux" || process.env.IN_NIX_SHELL || !fs.existsSync("/etc/NIXOS")) return false
+	const quote = value => `'${value.replace(/'/g, "'\\''")}'`
+	const command = ["node", __filename, ...rawArgs].map(quote).join(" ")
+	console.log("NixOS: entering shell.nix")
+	runAndExit("nix-shell", [path.join(projectRoot, "shell.nix"), "--run", command])
+	return true
+}
 
 /** Runs a child to completion and exits with its code; Ctrl+C reaches it through the shared console. */
 function runAndExit(command, args, options) {
@@ -45,17 +65,29 @@ function runAndExit(command, args, options) {
 function startTauri() {
 	const cargo = findCargo()
 	if (!cargo) {
-		console.error("Rust is not installed. Install it with `scoop install rustup` (or https://rustup.rs), then retry.")
+		console.error(
+			platform === "win32"
+				? "Rust is not installed. Install it with `scoop install rustup` (or https://rustup.rs), then retry."
+				: "Rust is not installed. Install it from https://rustup.rs (or use `bun start:nix` on Nix), then retry.",
+		)
 		process.exit(1)
 	}
 
 	execFileSync(process.execPath, [path.join(__dirname, "tauri-prepare.cjs")], { cwd: projectRoot, stdio: "inherit" })
 
-	// Scoop keeps rustup's data beside .cargo instead of in ~/.rustup; a terminal opened before the
-	// install lacks the variables pointing there.
-	const env = { ...process.env, CARGO_HOME: process.env.CARGO_HOME || path.dirname(path.dirname(cargo)) }
-	const siblingRustup = path.join(path.dirname(env.CARGO_HOME), ".rustup")
-	if (!env.RUSTUP_HOME && fs.existsSync(siblingRustup)) env.RUSTUP_HOME = siblingRustup
+	const env = { ...process.env }
+	if (platform === "win32") {
+		// Scoop keeps rustup's data beside .cargo instead of in ~/.rustup; a terminal opened before the
+		// install lacks the variables pointing there.
+		env.CARGO_HOME ||= path.dirname(path.dirname(cargo))
+		const siblingRustup = path.join(path.dirname(env.CARGO_HOME), ".rustup")
+		if (!env.RUSTUP_HOME && fs.existsSync(siblingRustup)) env.RUSTUP_HOME = siblingRustup
+	}
+	if (platform === "linux" && rawArgs.includes("--x11")) {
+		// Native Wayland is the default (the pet becomes a layer-shell surface); --x11 runs through
+		// XWayland instead, like the Electron build.
+		env.GDK_BACKEND = "x11"
+	}
 	const toolchainArgs = []
 	if (platform === "win32" && !hasMsvcBuildTools()) {
 		// Without Visual Studio's C++ tools, link with the GNU toolchain and MinGW instead.
@@ -105,7 +137,14 @@ function hasMsvcBuildTools() {
 	try {
 		const found = execFileSync(
 			vswhere,
-			["-products", "*", "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64", "-property", "installationPath"],
+			[
+				"-products",
+				"*",
+				"-requires",
+				"Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+				"-property",
+				"installationPath",
+			],
 			{ encoding: "utf8" },
 		)
 		return found.trim().length > 0

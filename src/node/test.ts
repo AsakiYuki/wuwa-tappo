@@ -12,6 +12,7 @@ import {
 	stableLauncherPath,
 } from "./autostart.js"
 import { findExecutable } from "./linux-tools.js"
+import { STATE_COMMANDS, canPlayEmote, importedState, isKnownSave, patchSettings } from "./domain/commands.js"
 import { hoverScript } from "./kwin-hover-fade.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
@@ -589,4 +590,33 @@ test("Custom key labels are bounded in count and length", () => {
 	assert.equal(custom.length, 256)
 	assert.equal(labels.Key0.length, 32)
 	assert.equal(labels["k".repeat(100)], undefined)
+})
+
+test("Shared collection commands: presets, favorites, settings patches, imports and emote checks", () => {
+	const s = core.initial(items)
+	STATE_COMMANDS["preset-save"](s, items, "  A very long outfit name that will be cut  ")
+	assert.equal(s.presets.length, 1)
+	assert.equal(s.presets[0].name.length, 24)
+	STATE_COMMANDS.favorite(s, items, s.character)
+	assert.deepEqual(s.favorites, [s.character])
+	STATE_COMMANDS.favorite(s, items, s.character)
+	assert.deepEqual(s.favorites, [])
+	assert.throws(() => STATE_COMMANDS.favorite(s, items, "missing"))
+
+	s.count = 500
+	const previous = patchSettings(s, { counterLimit: 99, scale: 1.2 })
+	assert.equal(previous.scale, 1)
+	assert.equal(s.settings.scale, 1.2)
+	assert.equal(s.count, 99)
+
+	assert.equal(isKnownSave({ version: 2, owned: {} }), true)
+	assert.equal(isKnownSave({ version: 3, owned: {} }), false)
+	assert.equal(isKnownSave(null), false)
+	s.settings.autoStart = false
+	const imported = importedState({ version: 2, owned: {}, settings: { autoStart: true } }, items, s)
+	assert.equal(imported.settings.autoStart, false, "an imported save never enables auto-start")
+	assert.throws(() => importedState({ version: 9 }, items, s))
+
+	assert.equal(canPlayEmote(s, items, s.emotes[0]), true)
+	assert.equal(canPlayEmote(s, items, s.character), false, "a character is not an emote")
 })

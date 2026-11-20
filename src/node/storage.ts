@@ -2,7 +2,8 @@ import fs from "node:fs"
 import path from "node:path"
 import crypto from "node:crypto"
 import { initial, normalize } from "./core.js"
-import type { CatalogItem, CollectionState, ProfileResult, RawCollection, SavedState } from "./types.js"
+import { isKnownSave } from "./domain/commands.js"
+import type { CatalogItem, CollectionState, ProfileResult, SavedState } from "./types.js"
 
 const SAVE_FILE = "collection.json"
 const SAVE_NAMES = [SAVE_FILE, SAVE_FILE + ".bak"]
@@ -13,8 +14,8 @@ const LEGACY_SEARCH_DEPTH = 2
 /** Reads a save file, returning null if it is missing, unparsable or not a known save version. */
 function readSave(file: string): SavedState | null {
 	try {
-		const raw = JSON.parse(fs.readFileSync(file, "utf8").replace(/^﻿/, "")) as RawCollection
-		if (!raw || ![1, 2].includes(raw.version) || !raw.owned || typeof raw.owned !== "object") return null
+		const raw: unknown = JSON.parse(fs.readFileSync(file, "utf8").replace(/^﻿/, ""))
+		if (!isKnownSave(raw)) return null
 		return { raw, file, mtime: fs.statSync(file).mtimeMs }
 	} catch {
 		return null

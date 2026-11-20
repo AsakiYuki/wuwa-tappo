@@ -113,8 +113,11 @@ Start the app (the platform is detected automatically):
 npm start
 ```
 
-On Windows this runs the Tauri port (`src-tauri/`, needs [Rust](https://rustup.rs)); use
-`npm run start:electron` for the Electron app. macOS and Linux still start Electron.
+On Windows and Linux this runs the Tauri port (`src-tauri/`, needs [Rust](https://rustup.rs));
+use `npm run start:electron` for the Electron app. macOS still starts Electron.
+
+On NixOS, `bun start` and `bun start:nix` both work: outside a nix shell, `start.cjs` re-runs itself
+inside `shell.nix`, which provides Rust, WebKitGTK and Electron. No rustup toolchain is needed.
 
 ## Build
 

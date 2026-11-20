@@ -52,6 +52,9 @@ const bodyImage = computed(() => character.value?.layers?.[`body${hand.action.va
 
 const rootClass = computed(() => ({
 	"hover-fade": settings.value.hoverFade,
+	// With passthrough the page gets no pointer events, so `:hover` could stick (no leave event
+	// arrives); the cursor position fed from the app decides instead.
+	passthrough: settings.value.passthrough,
 	"hide-keyboard": !settings.value.showKeyboard,
 	"counter-left": settings.value.counterLeft,
 }))

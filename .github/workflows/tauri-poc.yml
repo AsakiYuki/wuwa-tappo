@@ -41,7 +41,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install --yes libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev \
-            libx11-dev libxtst-dev libxi-dev patchelf
+            libx11-dev libxtst-dev libxi-dev libgtk-layer-shell-dev patchelf
 
       - run: npm ci
       # beforeBuildCommand (tauri-prepare.cjs) builds the renderer and stages src-tauri/frontend.

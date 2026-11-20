@@ -1,3 +1,4 @@
+const { execFileSync } = require("node:child_process")
 const fs = require("node:fs")
 const path = require("node:path")
 const npmRun = require("./npm-run.cjs")
@@ -6,6 +7,7 @@ const npmRun = require("./npm-run.cjs")
  * Stages the frontend the Tauri prototype embeds (src-tauri/frontend):
  *   web/     the Vite build (renderer-build), whose pages load images from ../assets/
  *   assets/  the catalog's images, so those relative paths resolve
+ *   backend.js  the shared game logic (src/backend), embedded into the Rust binary
  * Pass --skip-build to reuse an existing renderer-build.
  */
 
@@ -29,5 +31,22 @@ for (const page of ["pet.html", "studio.html"]) {
 	const html = fs.readFileSync(file, "utf8").replace("connect-src 'none'", `connect-src ${IPC_ORIGINS}`)
 	fs.writeFileSync(file, html)
 }
+
+// The shared game logic, which the Rust side embeds and runs in QuickJS (src-tauri/src/backend.rs).
+execFileSync(
+	process.execPath,
+	[
+		path.join(projectRoot, "node_modules", "vite", "bin", "vite.js"),
+		"build",
+		"--config",
+		"vite.backend.mts",
+		"--logLevel",
+		"warn",
+	],
+	{
+		cwd: projectRoot,
+		stdio: "inherit",
+	},
+)
 
 console.log("Tauri frontend staged in", path.relative(projectRoot, out))

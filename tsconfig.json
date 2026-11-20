@@ -16,6 +16,7 @@
   "include": [
     "src/renderer/**/*.ts",
     "src/renderer/**/*.vue",
+    "src/backend/**/*.ts",
     "vite.config.mts"
   ]
 }
