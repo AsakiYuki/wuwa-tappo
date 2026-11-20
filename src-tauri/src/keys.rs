@@ -77,11 +77,23 @@ pub fn keyboard_side(key: &str) -> &'static str {
 	if left { "left" } else { "right" }
 }
 
+/// Side buttons arrive as `Button::Unknown`, numbered per OS: XBUTTON1/2 on Windows, X11 buttons 8/9,
+/// and macOS's "other" mouse buttons 3/4.
+const SIDE_BUTTONS: (u8, u8) = if cfg!(windows) {
+	(1, 2)
+} else if cfg!(target_os = "macos") {
+	(3, 4)
+} else {
+	(8, 9)
+};
+
 pub fn mouse_name(button: Button) -> Option<&'static str> {
 	match button {
 		Button::Left => Some("MouseLeft"),
 		Button::Right => Some("MouseRight"),
 		Button::Middle => Some("MouseMiddle"),
+		Button::Unknown(code) if code == SIDE_BUTTONS.0 => Some("MouseBack"),
+		Button::Unknown(code) if code == SIDE_BUTTONS.1 => Some("MouseForward"),
 		_ => None,
 	}
 }
