@@ -31,6 +31,8 @@ const inputSerial = ref(0)
 const menuOpen = ref(false)
 const menuPinned = ref(false)
 const cursorHovered = ref(false)
+/** Whether the app is sending the cursor position (then it, not `:hover`, drives hover-fade). */
+const cursorFed = ref(false)
 const inputStatusTitle = ref("")
 const content = useTemplateRef<HTMLElement>("content")
 useHoverArea(content, area => api.setHoverArea(area))
@@ -53,8 +55,9 @@ const bodyImage = computed(() => character.value?.layers?.[`body${hand.action.va
 const rootClass = computed(() => ({
 	"hover-fade": settings.value.hoverFade,
 	// With passthrough the page gets no pointer events, so `:hover` could stick (no leave event
-	// arrives); the cursor position fed from the app decides instead.
-	passthrough: settings.value.passthrough,
+	// arrives); the cursor position fed from the app decides instead. The app may also feed it
+	// without passthrough (KDE Wayland), where it is more reliable than `:hover`.
+	"cursor-fed": settings.value.passthrough || cursorFed.value,
 	"hide-keyboard": !settings.value.showKeyboard,
 	"counter-left": settings.value.counterLeft,
 }))
@@ -87,6 +90,7 @@ function handleInput(event: InputMessage) {
 }
 
 function handleCursor(cursor: CursorMessage | null) {
+	cursorFed.value = cursor !== null
 	const rect = content.value?.getBoundingClientRect()
 	cursorHovered.value = Boolean(
 		cursor &&

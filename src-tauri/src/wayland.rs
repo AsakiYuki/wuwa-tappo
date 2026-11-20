@@ -30,6 +30,8 @@ static WAYLAND: AtomicBool = AtomicBool::new(false);
 static LAYER_SHELL: AtomicBool = AtomicBool::new(false);
 /// The pet's distance from the right and bottom edges of its screen, in logical pixels.
 static MARGINS: Mutex<(f64, f64)> = Mutex::new(CORNER_MARGIN);
+/// The pet's current top-left in global logical pixels (KWin's coordinates), once placed.
+static ORIGIN: Mutex<Option<(f64, f64)>> = Mutex::new(None);
 
 thread_local! {
 	/// The layer-surface window holding the pet's WebView (main thread only).
@@ -71,7 +73,12 @@ pub fn init_pet(window: &WebviewWindow, (width, height): (f64, f64)) -> bool {
 	layer.set_decorated(false);
 	layer.set_title("Wuwa Tappo");
 	layer.init_layer_shell();
-	layer.set_namespace("wuwa-tappo");
+	// KWin derives a layer surface's window type from its namespace and treats unknown ones as normal
+	// windows, which window effects (e.g. "Geometry Change") then animate on every drag step, leaving
+	// a trail. As a dock it is left alone (and stays up on "Show Desktop"). Elsewhere the namespace
+	// names the app, for compositor rules (Hyprland's layerrule, …).
+	let kde = std::env::var("XDG_CURRENT_DESKTOP").is_ok_and(|desktop| desktop.to_uppercase().contains("KDE"));
+	layer.set_namespace(if kde { "dock" } else { "wuwa-tappo" });
 	layer.set_keyboard_mode(KeyboardMode::None);
 	layer.set_anchor(Edge::Right, true);
 	layer.set_anchor(Edge::Bottom, true);
@@ -132,7 +139,14 @@ pub fn margins_for(position: Option<(f64, f64)>, monitor: &Monitor, size: (f64, 
 pub fn saved_position(monitor: &Monitor, (width, height): (f64, f64)) -> (f64, f64) {
 	let (right, bottom) = *MARGINS.lock().unwrap();
 	let (screen_x, screen_y, screen_width, screen_height) = logical_bounds(monitor);
-	(screen_x + screen_width - right - width, screen_y + screen_height - bottom - height)
+	let origin = (screen_x + screen_width - right - width, screen_y + screen_height - bottom - height);
+	*ORIGIN.lock().unwrap() = Some(origin);
+	origin
+}
+
+/// The pet's top-left as last placed or dragged (any thread, no GTK call).
+pub fn origin() -> Option<(f64, f64)> {
+	*ORIGIN.lock().unwrap()
 }
 
 fn apply_margins(layer: &gtk::Window, (right, bottom): (f64, f64)) {
@@ -147,6 +161,14 @@ pub fn drag(app: &AppHandle, monitor: &Monitor, size: (f64, f64), dx: f64, dy: f
 		*margins = clamp_margins((margins.0 - dx, margins.1 - dy), monitor, size);
 		*margins
 	};
+	with_layer(app, move |layer| apply_margins(layer, margins));
+	saved_position(monitor, size)
+}
+
+/// Moves the pet so its top-left is at `origin` (kept on its screen); returns where it ended up.
+pub fn move_to(app: &AppHandle, monitor: &Monitor, size: (f64, f64), origin: (f64, f64)) -> (f64, f64) {
+	let margins = margins_for(Some(origin), monitor, size);
+	*MARGINS.lock().unwrap() = margins;
 	with_layer(app, move |layer| apply_margins(layer, margins));
 	saved_position(monitor, size)
 }

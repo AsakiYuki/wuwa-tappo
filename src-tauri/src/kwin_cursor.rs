@@ -1,17 +1,21 @@
-//! Hover-fade with mouse passthrough on KDE Plasma (Wayland).
+//! The global cursor position on KDE Plasma (Wayland), for hover-fade and for dragging the pet.
 //!
-//! Wayland gives apps no global cursor position, and a click-through pet gets no pointer events, so
-//! the page cannot tell when the cursor is over it. KWin always knows: while hover-fade is needed, a
-//! small KWin script sends the cursor position to this app over D-Bus (`io.github.WuwaTappo`), and
-//! it is forwarded to the pet page as the same `cursor` event the X11 build polls for.
+//! Wayland gives apps no global cursor position. KWin always knows it: while it is needed, a small
+//! KWin script sends it to this app over D-Bus (`io.github.WuwaTappo`).
+//!
+//! - Hover-fade: it is forwarded to the pet page as the same `cursor` event the X11 build polls for
+//!   (a click-through pet gets no pointer events, and WebKitGTK's `:hover` can stick).
+//! - Dragging: the page only sees positions relative to the pet's own surface, which moves with the
+//!   drag, so its deltas fall short and the pet trails the cursor. While dragging, the pet is put at
+//!   its start position plus how far the cursor has moved since.
 //!
 //! Everything runs on Tauri's (Tokio) async runtime; nothing here blocks.
 
-use crate::{settings, Shared, PET_LABEL};
+use crate::{Shared, PET_LABEL};
 use serde_json::json;
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::OnceLock;
-use tauri::{AppHandle, Emitter};
+use std::sync::{Mutex, OnceLock};
+use tauri::{AppHandle, Emitter, Monitor};
 use zbus::Connection;
 
 const SERVICE: &str = "io.github.WuwaTappo";
@@ -22,6 +26,14 @@ const SCRIPT_NAME: &str = "wuwa-tappo-cursor";
 static CONNECTION: OnceLock<Connection> = OnceLock::new();
 /// Whether the KWin script should be (and, once the call went out, is) loaded.
 static ACTIVE: AtomicBool = AtomicBool::new(false);
+static DRAG: Mutex<Option<Drag>> = Mutex::new(None);
+
+struct Drag {
+	monitor: Monitor,
+	size: (f64, f64),
+	/// The cursor and the pet's top-left when the first cursor position of the drag arrived.
+	anchor: Option<((f64, f64), (f64, f64))>,
+}
 
 /// Sends the cursor at most once per frame (KWin reports every pointer motion). KWin only runs the
 /// reply callback on success, so if the app was killed without unloading the script, the script
@@ -64,11 +76,17 @@ impl Cursor {
 		else {
 			return true;
 		};
-		// The pet's top-left in the same logical coordinates (kept current by `place_pet`).
-		let settings = settings(&self.shared);
-		let Some((left, top)) = settings["petPosition"]["x"].as_f64().zip(settings["petPosition"]["y"].as_f64()) else {
-			return true;
-		};
+		if let Some(drag) = DRAG.lock().unwrap().as_mut() {
+			match drag.anchor {
+				None => drag.anchor = crate::wayland::origin().map(|origin| ((x, y), origin)),
+				Some(((press_x, press_y), (left, top))) => {
+					let target = (left + x - press_x, top + y - press_y);
+					crate::wayland::move_to(&self.app, &drag.monitor, drag.size, target);
+				}
+			}
+		}
+		// The pet's top-left in the same logical coordinates, kept current while it is dragged.
+		let Some((left, top)) = crate::wayland::origin() else { return true };
 		self.shared.pet.lock().unwrap().tracking_cursor = true;
 		let _ = self.app.emit_to(PET_LABEL, "cursor", json!({ "x": x - left, "y": y - top }));
 		// The reply tells the script the app is still alive.
@@ -133,7 +151,32 @@ async fn unload_script(connection: &Connection) -> zbus::Result<()> {
 	Ok(())
 }
 
-/// Loads or unloads the script when hover-fade starts or stops being needed. Cheap to call often.
+/// Starts following the cursor for a drag; until its first position arrives, the caller moves the
+/// pet itself. Returns true once the cursor drives the drag (the caller then ignores its deltas).
+pub fn drag(monitor: Monitor, size: (f64, f64)) -> bool {
+	if CONNECTION.get().is_none() {
+		return false;
+	}
+	let mut drag = DRAG.lock().unwrap();
+	if let Some(drag) = drag.as_ref() {
+		return drag.anchor.is_some();
+	}
+	*drag = Some(Drag { monitor, size, anchor: None });
+	drop(drag);
+	set_active(true);
+	false
+}
+
+/// Ends a drag; true if one was running.
+pub fn end_drag() -> bool {
+	DRAG.lock().unwrap().take().is_some()
+}
+
+pub fn dragging() -> bool {
+	DRAG.lock().unwrap().is_some()
+}
+
+/// Loads or unloads the script when it starts or stops being needed. Cheap to call often.
 pub fn set_active(active: bool) {
 	if ACTIVE.swap(active, Ordering::Relaxed) == active {
 		return;

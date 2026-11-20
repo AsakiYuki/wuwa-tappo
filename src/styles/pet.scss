@@ -41,7 +41,7 @@ button {
 		}
 	}
 
-	&.hover-fade:not(.passthrough) #petContent:hover {
+	&.hover-fade:not(.cursor-fed) #petContent:hover {
 		opacity: 0.4;
 	}
 }

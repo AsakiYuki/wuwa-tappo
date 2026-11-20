@@ -65,6 +65,9 @@
 		sw: "SouthWest",
 	}
 	if (window.__WUWA_WAYLAND__) {
+		// On KDE the app drags the pet by the real cursor and needs to know when the drag ends.
+		for (const type of ["pointerup", "pointercancel"])
+			window.addEventListener(type, () => void invoke("end_pet_drag"), true)
 		window.addEventListener(
 			"pointerdown",
 			event => {

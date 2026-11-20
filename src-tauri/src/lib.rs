@@ -387,12 +387,15 @@ fn poll_cursor(app: AppHandle, shared: Shared) {
 		// No lock is held while asking the window: on Linux that waits for the main thread, which may
 		// itself be waiting for the lock.
 		let settings = settings(&shared);
-		let wanted = setting_bool(&settings, "passthrough", false) && setting_bool(&settings, "hoverFade", true);
-		// Wayland gives apps no global cursor position: on KDE, KWin sends it (kwin_cursor), and only
-		// for the layer-surface pet, whose position the app knows.
+		let hover_fade = setting_bool(&settings, "hoverFade", true);
+		let wanted = setting_bool(&settings, "passthrough", false) && hover_fade;
+		// Wayland gives apps no global cursor position: on KDE, KWin sends it (kwin_cursor), for the
+		// layer-surface pet, whose position the app knows. It is used even without passthrough, since
+		// WebKitGTK sometimes misses the pointer leaving a layer surface and `:hover` sticks.
 		#[cfg(target_os = "linux")]
 		if wayland_session() {
-			kwin_cursor::set_active(wanted && layer_pet());
+			let wanted = hover_fade && layer_pet();
+			kwin_cursor::set_active(wanted || kwin_cursor::dragging());
 			if !wanted && std::mem::take(&mut shared.pet.lock().unwrap().tracking_cursor) {
 				let _ = app.emit_to(PET_LABEL, "cursor", Value::Null);
 			}
@@ -718,6 +721,19 @@ async fn command(
 	Ok(finish_state_command(&app, &shared, &name, &reply))
 }
 
+/// The pointer was released (Wayland): ends a cursor-driven drag and remembers where the pet is.
+#[tauri::command]
+fn end_pet_drag(app: AppHandle, shared: tauri::State<Shared>) {
+	#[cfg(target_os = "linux")]
+	if kwin_cursor::end_drag() {
+		if let Some((x, y)) = wayland::origin() {
+			shared.backend.lock().unwrap().set_pet_position(x, y);
+			save_later(&app, &shared);
+		}
+	}
+	let _ = (&app, &shared);
+}
+
 /// Drag delta from the renderer, in CSS pixels; the new spot is remembered.
 #[tauri::command]
 fn move_pet(app: AppHandle, shared: tauri::State<Shared>, dx: f64, dy: f64) {
@@ -729,6 +745,10 @@ fn move_pet(app: AppHandle, shared: tauri::State<Shared>, dx: f64, dy: f64) {
 	#[cfg(target_os = "linux")]
 	if layer_pet() {
 		let Some(monitor) = active_monitor(&app, &settings) else { return };
+		// On KDE the real cursor drives the drag (kwin_cursor); these deltas fall short on Wayland.
+		if kwin_cursor::drag(monitor.clone(), pet_size(&settings)) {
+			return;
+		}
 		let (x, y) = wayland::drag(&app, &monitor, pet_size(&settings), dx, dy);
 		shared.backend.lock().unwrap().set_pet_position(x, y);
 		save_later(&app, &shared);
@@ -1126,7 +1146,7 @@ pub fn run() {
 			}
 		}))
 		.plugin(tauri_plugin_dialog::init())
-		.invoke_handler(tauri::generate_handler![init, command, move_pet, set_hover_area, resize_studio_edge])
+		.invoke_handler(tauri::generate_handler![init, command, move_pet, end_pet_drag, set_hover_area, resize_studio_edge])
 		.setup(|app| {
 			#[cfg(target_os = "linux")]
 			wayland::detect();
