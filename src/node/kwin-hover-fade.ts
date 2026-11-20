@@ -1,6 +1,7 @@
 import { execFile, execFileSync } from "node:child_process"
 import fs from "node:fs"
 import path from "node:path"
+import { qdbusCommand } from "./linux-tools.js"
 import { PET_WINDOW_TITLE } from "./linux-window.js"
 import type { HoverArea } from "./types.js"
 
@@ -87,8 +88,10 @@ function qdbusArgs(method: string, ...args: string[]) {
 function kwinScriptingAvailable() {
 	if (process.platform !== "linux" || process.env.XDG_SESSION_TYPE !== "wayland") return false
 	if (!/KDE/i.test(process.env.XDG_CURRENT_DESKTOP ?? "")) return false
+	const qdbus = qdbusCommand()
+	if (!qdbus) return false
 	try {
-		execFileSync("qdbus", qdbusArgs("isScriptLoaded", SCRIPT_NAME), { timeout: QDBUS_TIMEOUT_MS, stdio: "ignore" })
+		execFileSync(qdbus, qdbusArgs("isScriptLoaded", SCRIPT_NAME), { timeout: QDBUS_TIMEOUT_MS, stdio: "ignore" })
 		return true
 	} catch {
 		return false
@@ -107,7 +110,9 @@ export function createKwinHoverFade(scriptDirectory: string) {
 
 	const qdbus = (...args: string[]) =>
 		new Promise<string>(resolve =>
-			execFile("qdbus", args, { timeout: QDBUS_TIMEOUT_MS }, (_error, stdout) => resolve(String(stdout).trim())),
+			execFile(qdbusCommand() ?? "qdbus", args, { timeout: QDBUS_TIMEOUT_MS }, (_error, stdout) =>
+				resolve(String(stdout).trim()),
+			),
 		)
 
 	async function runScript(file: string, name: string) {
@@ -144,7 +149,7 @@ export function createKwinHoverFade(scriptDirectory: string) {
 		if (!available || !loadedArea) return
 		loadedArea = null
 		try {
-			execFileSync("qdbus", qdbusArgs("unloadScript", SCRIPT_NAME), {
+			execFileSync(qdbusCommand() ?? "qdbus", qdbusArgs("unloadScript", SCRIPT_NAME), {
 				timeout: QDBUS_TIMEOUT_MS,
 				stdio: "ignore",
 			})

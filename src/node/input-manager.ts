@@ -53,7 +53,7 @@ const STATUS_EVDEV = "Global input connected (evdev)"
 const STATUS_UIOHOOK = "Global input connected (uiohook)"
 const STATUS_IOKIT = "Global input connected (IOKit Gamepad)"
 const STATUS_XINPUT = "Global input connected (XInput Gamepad)"
-const STATUS_WAYLAND_PERMISSION = "Wayland: Input permission required (run ./fix-permissions.sh)"
+const STATUS_WAYLAND_PERMISSION = "Wayland: Input permission required (tray menu → Fix Input Permissions)"
 const STATUS_MAC_PERMISSION =
 	"macOS: Accessibility permission required (System Settings > Privacy & Security > Accessibility)"
 const STATUS_WINDOWS_FAILED = "Windows: Global input hook failed to start (see errors.log)"
@@ -153,6 +153,8 @@ export function createInputManager(options: InputManagerOptions) {
 	}
 
 	function readEvdev(device: EvdevDevice, chunk: Buffer) {
+		// Self-tests drive input themselves; real key presses during a run would skew their counters.
+		if (ignoreHookInput) return
 		const buffer = Buffer.concat([device.leftover, chunk])
 		let offset = 0
 		while (offset + EVDEV_EVENT_SIZE <= buffer.length) {
@@ -313,7 +315,7 @@ export function createInputManager(options: InputManagerOptions) {
 	/** Watcher lines are `GamepadN \t evdev-code \t 0|1` (or `name \t 0|1`); `STATUS:` lines are informational. */
 	function handleGamepadLine(line: string) {
 		const trimmed = line.trim()
-		if (!trimmed || trimmed.startsWith("STATUS:")) return
+		if (ignoreHookInput || !trimmed || trimmed.startsWith("STATUS:")) return
 		const parts = trimmed.split("\t")
 		if (parts.length >= 3) {
 			const button = gamepadButtonName(parts[0], Number(parts[1]))

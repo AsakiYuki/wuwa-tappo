@@ -1,15 +1,16 @@
 import type { BrowserWindow } from "electron"
-import { execFile, execSync } from "node:child_process"
+import { execFile } from "node:child_process"
 import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
+import { qdbusCommand } from "./linux-tools.js"
 
 /*
  * Linux window managers ignore Electron's skip-taskbar and always-on-top hints in various ways.
  * Everything here is best effort: missing tools or unsupported desktops are silently skipped.
  */
 
-const KWIN_RULES_FILE = path.join(os.homedir(), ".config/kwinrulesrc")
+const KWIN_RULES_FILE = path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"), "kwinrulesrc")
 const KWIN_RULE_GROUP = "wuwa-tappo-pet"
 export const PET_WINDOW_TITLE = "Wuwa Tappo · Desktop Pet"
 const TOOL_TIMEOUT_MS = 1500
@@ -35,11 +36,9 @@ function kwinRule(alwaysOnTop: boolean) {
 }
 
 function reconfigureKWin() {
-	try {
-		execSync("qdbus org.kde.KWin /KWin reconfigure")
-	} catch {
-		// qdbus is optional; KWin picks the rule up on its own eventually.
-	}
+	// qdbus is optional; KWin picks the rule up on its own eventually.
+	const qdbus = qdbusCommand()
+	if (qdbus) execFile(qdbus, ["org.kde.KWin", "/KWin", "reconfigure"], { timeout: TOOL_TIMEOUT_MS }, () => {})
 }
 
 /** Keeps a KDE window rule for the pet (no border, no taskbar entry, optional keep-above) in sync. */

@@ -5,7 +5,13 @@ import path from "node:path"
 import * as core from "./core.js"
 import * as storage from "./storage.js"
 import os from "node:os"
-import { getLinuxAutoStartExecutable, getLoginItemExecutable, setLinuxAutoStart } from "./autostart.js"
+import {
+	getLinuxAutoStartExecutable,
+	getLoginItemExecutable,
+	setLinuxAutoStart,
+	stableLauncherPath,
+} from "./autostart.js"
+import { findExecutable } from "./linux-tools.js"
 import { hoverScript } from "./kwin-hover-fade.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
@@ -70,6 +76,45 @@ test("Linux auto-start uses the AppImage file or the development launcher", () =
 		}),
 		path.join(dataHome, "wuwa-tappo-dev", "launch.sh"),
 	)
+})
+test("Linux auto-start prefers a distribution launcher, through its stable profile path", () => {
+	const common = {
+		isPackaged: false,
+		executablePath: "/nix/store/aaa-electron/bin/electron",
+		dataHome: "/home/test/.local/share",
+	}
+	const launcher = "/nix/store/bbb-wuwa-tappo-1.0.8/bin/wuwa-tappo"
+	assert.equal(getLinuxAutoStartExecutable({ ...common, launcher }), launcher)
+	assert.equal(
+		getLinuxAutoStartExecutable({ ...common, launcher, stableLauncher: "/run/current-system/sw/bin/wuwa-tappo" }),
+		"/run/current-system/sw/bin/wuwa-tappo",
+	)
+})
+test("A Nix store launcher resolves to the profile symlink that points at it", () => {
+	if (process.platform === "win32") return
+	const root = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-launcher-"))
+	try {
+		const store = path.join(root, "store-bin")
+		const profile = path.join(root, "profile-bin")
+		const other = path.join(root, "other-bin")
+		for (const directory of [store, profile, other]) fs.mkdirSync(directory)
+		const real = path.join(store, "wuwa-tappo")
+		fs.writeFileSync(real, "#!/bin/sh\n", { mode: 0o755 })
+		fs.symlinkSync(real, path.join(profile, "wuwa-tappo"))
+		fs.writeFileSync(path.join(other, "wuwa-tappo"), "#!/bin/sh\n", { mode: 0o755 })
+
+		assert.equal(
+			findExecutable("wuwa-tappo", [other, profile].join(path.delimiter)),
+			path.join(other, "wuwa-tappo"),
+		)
+		// Only store paths are swapped, and only for a PATH entry that is this very launcher.
+		assert.equal(stableLauncherPath(real, profile), null)
+		const storeLauncher = "/nix/store/" + path.relative("/", real)
+		assert.equal(stableLauncherPath(storeLauncher, other), null)
+		assert.equal(findExecutable("missing-tool", profile), null)
+	} finally {
+		fs.rmSync(root, { recursive: true, force: true })
+	}
 })
 test("Linux launch-at-startup creates and removes an XDG autostart entry", () => {
 	const configDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-autostart-"))

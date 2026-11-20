@@ -1,0 +1,10 @@
+# Wuwa Tappo: lets the user of the active local session read keyboards, mice, touchpads and
+# controllers (/dev/input/event*), which global key tracking needs on Wayland.
+#
+# SECURITY: every program run by that user can then read raw keystrokes, including passwords.
+# systemd-logind grants the access only to the active seat's user and revokes it on logout.
+#
+# Install:  sudo install -m 644 70-wuwa-tappo-input.rules /etc/udev/rules.d/
+#           sudo udevadm control --reload && sudo udevadm trigger --subsystem-match=input
+# NixOS:    programs.wuwa-tappo.inputAccess = true;   (flake NixOS module)
+SUBSYSTEM=="input", KERNEL=="event*", TAG+="uaccess"

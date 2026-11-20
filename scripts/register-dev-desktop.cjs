@@ -37,11 +37,24 @@ const sourceIcon = path.join(projectRoot, "assets", "appicon.png")
 const icon = fs.readFileSync(sourceIcon)
 if (!fs.existsSync(iconPath) || !fs.readFileSync(iconPath).equals(icon)) fs.writeFileSync(iconPath, icon)
 
-writeIfChanged(
-	launcherPath,
-	`#!/bin/sh\nset -eu\ncd ${quoteShell(projectRoot)}\nexec nix-shell ${quoteShell(path.join(projectRoot, "shell.nix"))} --run 'bun start'\n`,
-	{ mode: 0o755 },
-)
+function commandExists(command) {
+	return (process.env.PATH || "")
+		.split(path.delimiter)
+		.some(directory => directory && fs.existsSync(path.join(directory, command)))
+}
+
+/** Nix users get the dev shell's libraries; everyone else starts with the package manager they used. */
+function launchCommand() {
+	const usingBun = /bun/.test(process.env.npm_execpath || "") || process.versions.bun
+	const runner = usingBun && commandExists("bun") ? "bun start" : "npm start"
+	if (commandExists("nix-shell"))
+		return `exec nix-shell ${quoteShell(path.join(projectRoot, "shell.nix"))} --run '${runner}'`
+	return `exec ${runner}`
+}
+
+writeIfChanged(launcherPath, `#!/bin/sh\nset -eu\ncd ${quoteShell(projectRoot)}\n${launchCommand()}\n`, {
+	mode: 0o755,
+})
 fs.chmodSync(launcherPath, 0o755)
 
 const desktopEntry = [

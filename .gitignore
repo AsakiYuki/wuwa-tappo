@@ -10,3 +10,5 @@ qa-data-*/
 *.bak
 !build/
 !build/**
+result
+result-*

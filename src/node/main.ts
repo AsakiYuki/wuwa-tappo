@@ -4,6 +4,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { setAutoStart } from "./autostart.js"
+import { findExecutable } from "./linux-tools.js"
 import { executeCommand, type CommandContext } from "./commands.js"
 import * as core from "./core.js"
 import { createInputManager } from "./input-manager.js"
@@ -351,10 +352,44 @@ class WuwaTappoApplication {
 		}
 		if (!devices.length) return
 
+		// pkexec resets PATH for the root process, so setfacl is passed by absolute path; this matters on
+		// NixOS, where it lives in the system profile rather than /usr/bin.
+		const pkexec = findExecutable("pkexec")
+		const setfacl = findExecutable("setfacl")
+		if (!pkexec || !setfacl) {
+			void this.showInputAccessHelp(
+				!pkexec ? "pkexec (polkit) is not installed." : "setfacl (acl) is not installed.",
+			)
+			return
+		}
+
 		const user = os.userInfo().username
-		execFile("pkexec", ["setfacl", "-m", `u:${user}:r`, ...devices], () => {
+		execFile(pkexec, [setfacl, "-m", `u:${user}:r`, ...devices], error => {
+			if (error) {
+				// Exit code 126 means the user dismissed the polkit prompt.
+				if (error.code !== 126) void this.showInputAccessHelp(`Granting access failed: ${error.message}`)
+				return
+			}
 			this.input.start()
 			this.windows.applySettings()
+		})
+	}
+
+	/** Explains the permanent alternatives when the one-click fix cannot run. */
+	private async showInputAccessHelp(reason: string) {
+		const nixos = fs.existsSync("/etc/NIXOS")
+		await dialog.showMessageBox({
+			type: "info",
+			buttons: ["OK"],
+			title: "Grant Input Access",
+			message: "Input access could not be granted automatically.",
+			detail:
+				reason +
+				"\n\n" +
+				(nixos
+					? "On NixOS, enable it declaratively instead:\n  programs.wuwa-tappo.inputAccess = true;\n(from this project's flake NixOS module), then rebuild and log in again."
+					: "Run ./fix-permissions.sh from the project folder, or install " +
+						"packaging/linux/70-wuwa-tappo-input.rules into /etc/udev/rules.d/ and log in again."),
 		})
 	}
 
