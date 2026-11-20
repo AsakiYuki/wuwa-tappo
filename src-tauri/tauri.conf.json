@@ -1,0 +1,22 @@
+{
+	"$schema": "https://schema.tauri.app/config/2",
+	"productName": "Wuwa Tappo",
+	"identifier": "com.asakiyuki.wuwa-tappo",
+	"build": {
+		"frontendDist": "frontend",
+		"beforeBuildCommand": "node scripts/tauri-prepare.cjs"
+	},
+	"app": {
+		"withGlobalTauri": true,
+		"macOSPrivateApi": true,
+		"windows": [],
+		"security": {
+			"csp": null
+		}
+	},
+	"bundle": {
+		"active": true,
+		"targets": ["nsis", "dmg", "appimage", "deb"],
+		"icon": ["../assets/appicon.png", "../assets/appicon.ico", "../assets/appicon.icns"]
+	}
+}

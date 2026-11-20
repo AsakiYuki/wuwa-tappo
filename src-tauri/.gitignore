@@ -1,0 +1,4 @@
+/target/
+/gen/
+# Staged by scripts/tauri-prepare.cjs
+/frontend/
