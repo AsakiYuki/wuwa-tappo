@@ -52,9 +52,23 @@ const BTN_TOUCH = 330
 const STATUS_EVDEV = "Global input connected (evdev)"
 const STATUS_UIOHOOK = "Global input connected (uiohook)"
 const STATUS_IOKIT = "Global input connected (IOKit Gamepad)"
+const STATUS_XINPUT = "Global input connected (XInput Gamepad)"
 const STATUS_WAYLAND_PERMISSION = "Wayland: Input permission required (run ./fix-permissions.sh)"
 const STATUS_MAC_PERMISSION =
 	"macOS: Accessibility permission required (System Settings > Privacy & Security > Accessibility)"
+const STATUS_WINDOWS_FAILED = "Windows: Global input hook failed to start (see errors.log)"
+
+/** Native controller watchers (src/native), one per platform without a JavaScript-readable gamepad API. */
+const GAMEPAD_WATCHERS: Partial<Record<NodeJS.Platform, string>> = {
+	darwin: "mac-gamepad-watcher",
+	win32: "win-gamepad-watcher.exe",
+}
+
+function failureStatus() {
+	if (process.platform === "darwin") return STATUS_MAC_PERMISSION
+	if (process.platform === "win32") return STATUS_WINDOWS_FAILED
+	return STATUS_WAYLAND_PERMISSION
+}
 
 export function createInputManager(options: InputManagerOptions) {
 	const { getState, items, getPet, dataDir, qa, save, laterSave, onStatus } = options
@@ -67,7 +81,7 @@ export function createInputManager(options: InputManagerOptions) {
 	let evdevTimer: NodeJS.Timeout | null = null
 	let evdevScanTimer: NodeJS.Timeout | null = null
 	let nextGamepadNumber = 0
-	let macGamepadProcess: ChildProcess | null = null
+	let gamepadWatcher: ChildProcess | null = null
 	let hookStatus = "Connecting keyboard..."
 
 	const logError = (message: string) => fs.appendFileSync(path.join(dataDir, "errors.log"), message + "\n")
@@ -283,22 +297,21 @@ export function createInputManager(options: InputManagerOptions) {
 		return evdevDevices.length > 0
 	}
 
-	/* -------------------------- macOS gamepad -------------------------- */
+	/* ----------------------- macOS / Windows gamepad ----------------------- */
 
-	function findMacGamepadWatcher() {
+	function findGamepadWatcher(binary: string) {
 		const appRoot = path.resolve(__dirname, "..")
 		const candidates: string[] = []
 		if (process.resourcesPath) {
-			candidates.push(
-				path.join(process.resourcesPath, "app.asar.unpacked", "assets", "bin", "mac-gamepad-watcher"),
-			)
+			candidates.push(path.join(process.resourcesPath, "app.asar.unpacked", "assets", "bin", binary))
 		}
 		const unpackedRoot = appRoot.includes("app.asar") ? appRoot.replace("app.asar", "app.asar.unpacked") : appRoot
-		candidates.push(path.join(unpackedRoot, "assets", "bin", "mac-gamepad-watcher"))
+		candidates.push(path.join(unpackedRoot, "assets", "bin", binary))
 		return candidates.find(candidate => fs.existsSync(candidate))
 	}
 
-	function handleMacGamepadLine(line: string) {
+	/** Watcher lines are `GamepadN \t evdev-code \t 0|1` (or `name \t 0|1`); `STATUS:` lines are informational. */
+	function handleGamepadLine(line: string) {
 		const trimmed = line.trim()
 		if (!trimmed || trimmed.startsWith("STATUS:")) return
 		const parts = trimmed.split("\t")
@@ -312,37 +325,42 @@ export function createInputManager(options: InputManagerOptions) {
 		}
 	}
 
-	function startMacGamepad() {
-		if (process.platform !== "darwin") return false
-		if (macGamepadProcess) return true
+	function startGamepadWatcher() {
+		const binary = GAMEPAD_WATCHERS[process.platform]
+		if (!binary) return false
+		if (gamepadWatcher) return true
 
-		const watcherPath = findMacGamepadWatcher()
+		const watcherPath = findGamepadWatcher(binary)
 		if (!watcherPath) return false
 
 		try {
-			try {
-				fs.chmodSync(watcherPath, 0o755)
-			} catch {}
-			const watcher = spawn(watcherPath, [], { stdio: ["ignore", "pipe", "ignore"] })
-			macGamepadProcess = watcher
+			if (process.platform !== "win32") {
+				try {
+					fs.chmodSync(watcherPath, 0o755)
+				} catch {}
+			}
+			// The Windows watcher exits on its own once this process is gone, even after a crash.
+			const args = process.platform === "win32" ? [String(process.pid)] : []
+			const watcher = spawn(watcherPath, args, { stdio: ["ignore", "pipe", "ignore"], windowsHide: true })
+			gamepadWatcher = watcher
 
 			let leftover = ""
 			watcher.stdout?.on("data", (chunk: Buffer) => {
 				const lines = (leftover + chunk.toString("utf8")).split("\n")
 				leftover = lines.pop() || ""
-				lines.forEach(handleMacGamepadLine)
+				lines.forEach(handleGamepadLine)
 			})
 			const forget = () => {
-				if (macGamepadProcess === watcher) macGamepadProcess = null
+				if (gamepadWatcher === watcher) gamepadWatcher = null
 			}
 			watcher.on("error", error => {
-				logError(`mac-gamepad: ${String(error)}`)
+				logError(`gamepad-watcher: ${String(error)}`)
 				forget()
 			})
 			watcher.on("exit", forget)
 			return true
 		} catch (error) {
-			logError(`mac-gamepad: ${String(error)}`)
+			logError(`gamepad-watcher: ${String(error)}`)
 			return false
 		}
 	}
@@ -397,12 +415,12 @@ export function createInputManager(options: InputManagerOptions) {
 
 	function start() {
 		const evdevOk = startEvdev()
-		const macGamepadOk = startMacGamepad()
+		const gamepadOk = startGamepadWatcher()
 		const uiohookOk = startUiohook()
 		if (evdevOk) hookStatus = STATUS_EVDEV
 		else if (uiohookOk) hookStatus = STATUS_UIOHOOK
-		else if (macGamepadOk) hookStatus = STATUS_IOKIT
-		else hookStatus = process.platform === "darwin" ? STATUS_MAC_PERMISSION : STATUS_WAYLAND_PERMISSION
+		else if (gamepadOk) hookStatus = process.platform === "win32" ? STATUS_XINPUT : STATUS_IOKIT
+		else hookStatus = failureStatus()
 		onStatus()
 	}
 
@@ -411,11 +429,11 @@ export function createInputManager(options: InputManagerOptions) {
 		try {
 			hook?.stop()
 		} catch {}
-		if (macGamepadProcess) {
+		if (gamepadWatcher) {
 			try {
-				macGamepadProcess.kill()
+				gamepadWatcher.kill()
 			} catch {}
-			macGamepadProcess = null
+			gamepadWatcher = null
 		}
 	}
 

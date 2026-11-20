@@ -13,6 +13,8 @@ import type { Catalog, CollectionState, HoverArea, InitPayload, ResizeEdge, Sett
 import { createWindowManager } from "./window-manager.js"
 
 const APP_ROOT = path.resolve(__dirname, "..")
+/** Must match `build.appId`: Windows groups taskbar entries and notifications by it. */
+const APP_USER_MODEL_ID = "com.asakiyuki.wuwa-tappo"
 const DEFERRED_SAVE_MS = 3000
 const KEEP_ON_TOP_INTERVAL_MS = 3000
 const PASSTHROUGH_POLL_MS = 80
@@ -58,6 +60,15 @@ function lockDownSession() {
 	session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => callback(false))
 }
 
+/** Electron's portable Windows build runs from a temp folder; this is where the user keeps the .exe. */
+function portableDirectory() {
+	if (process.platform === "win32" && process.env.PORTABLE_EXECUTABLE_DIR) return process.env.PORTABLE_EXECUTABLE_DIR
+	return app.isPackaged ? path.dirname(process.execPath) : APP_ROOT
+}
+
+/** Windows draws tray icons at 16 px (scaled by DPI); Linux and macOS panels use larger ones. */
+const TRAY_ICON_SIZE = process.platform === "win32" ? 16 : 24
+
 function trayIconPath() {
 	const devIcon = path.join(APP_ROOT, "assets", "appicon.png")
 	return fs.existsSync(devIcon) ? devIcon : path.join(path.dirname(process.resourcesPath), "appicon.png")
@@ -84,6 +95,7 @@ class WuwaTappoApplication {
 			: path.join(app.getPath("appData"), "wuwa-tappo")
 		fs.mkdirSync(this.dataDirectory, { recursive: true })
 		app.setName("Wuwa Tappo")
+		if (process.platform === "win32") app.setAppUserModelId(APP_USER_MODEL_ID)
 		app.setPath("userData", path.join(this.dataDirectory, "runtime"))
 		this.primaryInstance = app.requestSingleInstanceLock()
 
@@ -126,7 +138,7 @@ class WuwaTappoApplication {
 		if (!this.primaryInstance || launch.qa) return { state: core.initial(this.items), warning: "" }
 		const profile = storage.initProfile({
 			dataDir: this.dataDirectory,
-			portableDir: app.isPackaged ? path.dirname(process.execPath) : APP_ROOT,
+			portableDir: portableDirectory(),
 			searchRoots: [app.getPath("downloads")],
 			items: this.items,
 		})
@@ -348,7 +360,8 @@ class WuwaTappoApplication {
 	private createTray() {
 		const iconPath = trayIconPath()
 		if (process.platform === "darwin") app.dock?.setIcon(iconPath)
-		this.tray = new Tray(nativeImage.createFromPath(iconPath).resize({ width: 24, height: 24 }))
+		const icon = nativeImage.createFromPath(iconPath)
+		this.tray = new Tray(icon.resize({ width: TRAY_ICON_SIZE, height: TRAY_ICON_SIZE, quality: "best" }))
 		this.tray.setToolTip("Wuwa Tappo · Desktop Companion")
 		this.tray.setContextMenu(this.createTrayMenu())
 		this.tray.on("click", () => this.windows.showStudio())

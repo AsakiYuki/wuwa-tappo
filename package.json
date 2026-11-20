@@ -14,8 +14,9 @@
 		"start": "node scripts/start.cjs",
 		"start:mac": "node scripts/start.cjs --mac",
 		"start:linux": "node scripts/start.cjs --linux",
+		"start:win": "node scripts/start.cjs --win",
 		"start:nix": "nix-shell --run 'bun start'",
-		"node:build": "node scripts/clean-runtime.cjs && node scripts/build-mac-gamepad.cjs && tsc -p tsconfig.node.json",
+		"node:build": "node scripts/clean-runtime.cjs && node scripts/build-mac-gamepad.cjs && node scripts/build-win-gamepad.cjs && tsc -p tsconfig.node.json",
 		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && npm run renderer:typecheck",
 		"test": "npm run node:build && node --test runtime/test.js",
 		"test:ui": "npm run node:build && npm run renderer:build && node scripts/test-ui.cjs",
@@ -23,6 +24,7 @@
 		"build": "node scripts/build.cjs",
 		"build:mac": "node scripts/build.cjs --mac",
 		"build:linux": "node scripts/build.cjs --linux",
+		"build:win": "node scripts/build.cjs --win",
 		"postinstall": "node node_modules/electron/install.js",
 		"renderer:typecheck": "node scripts/typecheck-renderer.cjs",
 		"format": "prettier --write \"src/**/*.{ts,vue}\" \"scripts/**/*.cjs\" vite.config.mts"
@@ -124,6 +126,32 @@
 			],
 			"icon": "assets/appicon.png",
 			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
+		},
+		"win": {
+			"target": [
+				"nsis",
+				"portable"
+			],
+			"icon": "assets/appicon.png",
+			"executableName": "wuwa-tappo",
+			"extraFiles": [
+				{
+					"from": "assets/appicon.png",
+					"to": "appicon.png"
+				}
+			]
+		},
+		"nsis": {
+			"oneClick": false,
+			"perMachine": false,
+			"allowToChangeInstallationDirectory": true,
+			"createDesktopShortcut": true,
+			"createStartMenuShortcut": true,
+			"shortcutName": "Wuwa Tappo",
+			"artifactName": "wuwa-tappo-${version}-${arch}-setup.${ext}"
+		},
+		"portable": {
+			"artifactName": "wuwa-tappo-${version}-${arch}-portable.${ext}"
 		}
 	}
 }

@@ -1,0 +1,37 @@
+name: Windows packages
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      # Uses the committed XInput watcher; the runner's MinGW gcc recompiles it if the C source is newer.
+      - run: npm ci
+      - run: npm test
+      - run: npm run build:win
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-windows-x64-setup
+          path: dist/*-setup.exe
+          retention-days: 1
+          if-no-files-found: error
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: wuwa-tappo-windows-x64-portable
+          path: dist/*-portable.exe
+          retention-days: 1
+          if-no-files-found: error

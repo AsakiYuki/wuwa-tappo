@@ -30,6 +30,13 @@ const STUDIO_ZOOM_STEP = 1.1
 /** Delay before showing a freshly loaded window, so it never flashes an empty frame. */
 const PET_SHOW_DELAY_MS = 300
 const STUDIO_SHOW_DELAY_MS = 200
+/**
+ * Linux: a dock window stays out of the taskbar and above normal windows.
+ * Windows: a toolbar window has no taskbar button and is skipped by Alt+Tab.
+ */
+const PET_WINDOW_TYPE = process.platform === "linux" ? "dock" : process.platform === "win32" ? "toolbar" : "normal"
+/** Workspaces only exist on macOS and Linux; Electron ignores the call elsewhere. */
+const HAS_WORKSPACES = process.platform === "darwin" || process.platform === "linux"
 
 export function createWindowManager(options: WindowManagerOptions) {
 	let pet: BrowserWindow | null = null
@@ -71,7 +78,7 @@ export function createWindowManager(options: WindowManagerOptions) {
 			skipTaskbar: true,
 			hasShadow: false,
 			alwaysOnTop: settings().alwaysOnTop,
-			type: process.platform === "linux" ? "dock" : "normal",
+			type: PET_WINDOW_TYPE,
 			title: PET_WINDOW_TITLE,
 			webPreferences: webPreferences({ backgroundThrottling: false }),
 		})
@@ -158,7 +165,7 @@ export function createWindowManager(options: WindowManagerOptions) {
 		const window = usable(pet)
 		if (!window || !window.isVisible() || !settings().alwaysOnTop) return
 		window.setAlwaysOnTop(true, "screen-saver", 1)
-		window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+		if (HAS_WORKSPACES) window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 		applySkipTaskbar()
 		window.moveTop()
 	}
@@ -214,7 +221,7 @@ export function createWindowManager(options: WindowManagerOptions) {
 		const { alwaysOnTop } = settings()
 		updateKdeWindowRule(alwaysOnTop)
 		window.setAlwaysOnTop(alwaysOnTop, alwaysOnTop ? "screen-saver" : "normal", 1)
-		window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+		if (HAS_WORKSPACES) window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
 		if (alwaysOnTop) keepPetOnTop()
 		updateMousePassthrough()
 		options.getTray()?.setContextMenu(options.createTrayMenu())

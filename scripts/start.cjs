@@ -1,10 +1,11 @@
 const { execFileSync, spawn } = require("node:child_process")
 const path = require("node:path")
+const npmRun = require("./npm-run.cjs")
 
 const projectRoot = path.resolve(__dirname, "..")
 
 const rawArgs = process.argv.slice(2)
-let targetPlatform = process.platform === "darwin" ? "mac" : "linux"
+let targetPlatform = { darwin: "mac", win32: "win" }[process.platform] || "linux"
 const extraArgs = []
 
 for (const arg of rawArgs) {
@@ -12,6 +13,8 @@ for (const arg of rawArgs) {
 		targetPlatform = "mac"
 	} else if (arg === "--linux") {
 		targetPlatform = "linux"
+	} else if (arg === "--win" || arg === "--windows") {
+		targetPlatform = "win"
 	} else {
 		extraArgs.push(arg)
 	}
@@ -28,11 +31,11 @@ if (targetPlatform === "linux" && process.platform === "linux") {
 	}
 }
 
-execFileSync("npm", ["run", "node:build"], { cwd: projectRoot, stdio: "inherit" })
-execFileSync("npm", ["run", "renderer:build"], { cwd: projectRoot, stdio: "inherit" })
+npmRun("node:build", projectRoot)
+npmRun("renderer:build", projectRoot)
 
 const electron = require("electron")
-const args = targetPlatform === "linux" ? ["--ozone-platform=x11", "."] : ["."]
+const args = targetPlatform === "linux" && process.platform === "linux" ? ["--ozone-platform=x11", "."] : ["."]
 if (extraArgs.length > 0) {
 	args.push(...extraArgs)
 }

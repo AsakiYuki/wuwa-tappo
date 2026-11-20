@@ -5,7 +5,7 @@ import path from "node:path"
 import * as core from "./core.js"
 import * as storage from "./storage.js"
 import os from "node:os"
-import { getLinuxAutoStartExecutable, setLinuxAutoStart } from "./autostart.js"
+import { getLinuxAutoStartExecutable, getLoginItemExecutable, setLinuxAutoStart } from "./autostart.js"
 import { hoverScript } from "./kwin-hover-fade.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
@@ -16,6 +16,40 @@ test("macOS controller watcher is available as a universal binary", () => {
 	assert.ok(fs.existsSync(watcher), "mac-gamepad-watcher exists")
 	const stats = fs.statSync(watcher)
 	assert.ok((stats.mode & 0o111) !== 0, "mac-gamepad-watcher is executable")
+})
+test("Windows controller watcher is bundled as a 64-bit console executable", () => {
+	const watcher = path.join(PROJECT_ROOT, "assets", "bin", "win-gamepad-watcher.exe")
+	assert.ok(fs.existsSync(watcher), "win-gamepad-watcher.exe exists")
+	const binary = fs.readFileSync(watcher)
+	assert.equal(binary.toString("latin1", 0, 2), "MZ")
+	const pe = binary.readUInt32LE(0x3c)
+	assert.equal(binary.toString("latin1", pe, pe + 4), "PE\0\0")
+	assert.equal(binary.readUInt16LE(pe + 4), 0x8664, "x64 machine type")
+})
+test("Windows launch-at-startup points portable builds at the original .exe", () => {
+	assert.equal(
+		getLoginItemExecutable({
+			platform: "win32",
+			executablePath: "C:\\Users\\test\\AppData\\Local\\Temp\\2abc\\wuwa-tappo.exe",
+			portableExecutable: "D:\\Games\\wuwa-tappo-portable.exe",
+		}),
+		"D:\\Games\\wuwa-tappo-portable.exe",
+	)
+	assert.equal(
+		getLoginItemExecutable({
+			platform: "win32",
+			executablePath: "C:\\Program Files\\Wuwa Tappo\\wuwa-tappo.exe",
+		}),
+		"C:\\Program Files\\Wuwa Tappo\\wuwa-tappo.exe",
+	)
+	assert.equal(
+		getLoginItemExecutable({
+			platform: "darwin",
+			executablePath: "/Applications/Wuwa Tappo.app/Contents/MacOS/Wuwa Tappo",
+			portableExecutable: "/ignored",
+		}),
+		"/Applications/Wuwa Tappo.app/Contents/MacOS/Wuwa Tappo",
+	)
 })
 test("Linux auto-start uses the AppImage file or the development launcher", () => {
 	const dataHome = "/home/test/.local/share"

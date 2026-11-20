@@ -1,6 +1,6 @@
 # Wuwa Tappo
 
-Wuwa Tappo is a desktop companion app inspired by the Wuthering Waves desktop pet experience, built for Linux and macOS with smooth desktop integration and a complete collection-management workflow.
+Wuwa Tappo is a desktop companion app inspired by the Wuthering Waves desktop pet experience, built for Windows, Linux and macOS with smooth desktop integration and a complete collection-management workflow.
 
 ## Overview
 
@@ -14,7 +14,8 @@ This application brings together a floating desktop pet with a compact studio pa
 - Chest draws with pity tracking and pull history
 - Synthesis and item management workflows
 - Settings for startup, input, passthrough, and auto-emote behavior
-- Linux-focused window and tray integration
+- Linux-focused window and tray integration, plus native Windows and macOS support
+- Keyboard, mouse and controller input on every platform (evdev / IOKit / XInput)
 
 ## Why this version is different
 
@@ -36,11 +37,12 @@ This project is based on the original Wuwa Tappo concept, but it is optimized fo
 
 ## Requirements
 
-- Linux or macOS
+- Windows 10/11, Linux or macOS
 - Node.js 18+
 - npm
 - On Linux: X11 or Wayland
 - On macOS: Accessibility permission for global input tracking (System Settings > Privacy & Security > Accessibility)
+- On Windows: no extra permission is needed; Xbox-compatible (XInput) controllers are supported
 
 ## Installation
 
@@ -64,6 +66,9 @@ npm run start:mac
 
 # Linux
 npm run start:linux
+
+# Windows
+npm run start:win
 ```
 
 ## Build
@@ -82,7 +87,15 @@ npm run build:mac
 
 # Linux (deb, rpm, AppImage, tar.gz)
 npm run build:linux
+
+# Windows (NSIS installer and portable .exe)
+npm run build:win
 ```
+
+Windows packages are best built on Windows. The controller watcher
+(`assets/bin/win-gamepad-watcher.exe`) is committed prebuilt; to rebuild it, run
+`node scripts/build-win-gamepad.cjs --force` with MinGW gcc, clang or MSVC on `PATH`
+(on Linux, `x86_64-w64-mingw32-gcc` cross-compiles it).
 
 ## Testing
 

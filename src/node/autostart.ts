@@ -37,6 +37,23 @@ export function setLinuxAutoStart(enabled: boolean, configDirectory: string, exe
 	)
 }
 
+/**
+ * The executable to register as a login item. Electron's portable Windows build extracts itself to a
+ * temp folder on every launch, so the login item must point at the original .exe instead.
+ */
+export function getLoginItemExecutable({
+	platform,
+	executablePath,
+	portableExecutable,
+}: {
+	platform: NodeJS.Platform
+	executablePath: string
+	portableExecutable?: string
+}) {
+	if (platform === "win32" && portableExecutable) return portableExecutable
+	return executablePath
+}
+
 export function setAutoStart(enabled: boolean, app: App) {
 	if (process.platform === "linux") {
 		const dataHome = process.env.XDG_DATA_HOME || path.join(os.homedir(), ".local", "share")
@@ -53,7 +70,11 @@ export function setAutoStart(enabled: boolean, app: App) {
 
 	app.setLoginItemSettings({
 		openAtLogin: enabled,
-		path: process.execPath,
+		path: getLoginItemExecutable({
+			platform: process.platform,
+			executablePath: process.execPath,
+			portableExecutable: process.env.PORTABLE_EXECUTABLE_FILE,
+		}),
 		args: [],
 	})
 }
