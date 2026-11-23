@@ -22,6 +22,7 @@
 		"build": "node scripts/build.cjs",
 		"postinstall": "node node_modules/electron/install.js",
 		"renderer:typecheck": "node scripts/typecheck-renderer.cjs",
+		"assets:thumbnails": "node scripts/shrink-thumbnails.cjs",
 		"format": "prettier --write \"src/**/*.{ts,vue}\" \"scripts/**/*.cjs\" vite.config.mts"
 	},
 	"devDependencies": {
