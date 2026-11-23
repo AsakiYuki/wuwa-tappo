@@ -1,15 +1,12 @@
 import type { CatalogItem, CollectionState, RawCollection, Settings } from "../types.js"
 import { draw, equip, replaceEmote, synthesize } from "./actions.js"
-import { normalize, settings } from "./state.js"
+import { MAX_PRESETS, newPresetId, normalize, presetName, settings } from "./state.js"
 
 /*
  * Collection commands shared by both shells: the Electron main process (src/node/commands.ts) and
  * the Tauri port, which runs this file through QuickJS (src/backend). They only touch the state;
  * windows, dialogs, files and saving stay with each shell.
  */
-
-const MAX_PRESETS = 12
-const MAX_PRESET_NAME = 24
 
 type StateCommand = (state: CollectionState, items: CatalogItem[], argument: any) => unknown
 
@@ -32,10 +29,8 @@ export const STATE_COMMANDS: Record<string, StateCommand> = {
 	"preset-save"(state, _items, name: unknown) {
 		if (state.presets.length >= MAX_PRESETS) throw new Error("Maximum 12 presets allowed")
 		state.presets.push({
-			id: Date.now().toString(36),
-			name: String(name || "My Outfit")
-				.trim()
-				.slice(0, MAX_PRESET_NAME),
+			id: newPresetId(state.presets.map(preset => preset.id)),
+			name: presetName(name),
 			character: state.character,
 			accessory: state.accessory,
 			emotes: [...state.emotes],

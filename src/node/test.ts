@@ -620,3 +620,67 @@ test("Shared collection commands: presets, favorites, settings patches, imports 
 	assert.equal(canPlayEmote(s, items, s.emotes[0]), true)
 	assert.equal(canPlayEmote(s, items, s.character), false, "a character is not an emote")
 })
+test("Imported presets and history are rebuilt field by field; hostile values do not survive", () => {
+	const owned = Object.fromEntries(items.map((item: any) => [item.id, 1]))
+	const character = items.find((item: any) => item.type === "character").id
+	const accessory = items.find((item: any) => item.type === "accessory").id
+	const emote = items.find((item: any) => item.type === "emote").id
+	// Deeper than serde_json's recursion limit (128): the Tauri app used to panic on every start.
+	const nested = JSON.parse("[".repeat(1000) + "]".repeat(1000))
+	const state = importedState(
+		{
+			version: 2,
+			owned,
+			presets: [
+				{ id: "a", name: "x".repeat(1_000_000), character, accessory: "not-an-item", emotes: "abcde" },
+				{ id: "a", name: nested, character, accessory, emotes: [emote, emote, "emote:fake"] },
+				{ id: { evil: true }, name: "  ", character, emotes: null },
+				null,
+				{ id: "b", name: "no character" },
+			],
+			history: [{ id: character, fresh: "yes", source: "<b>x</b>", at: "never", extra: nested }, null, 5],
+		} as any,
+		items,
+		core.initial(items),
+	)
+
+	assert.deepEqual(
+		state.presets.map(preset => [preset.name.length, preset.accessory, preset.emotes]),
+		[
+			[24, "", []],
+			[9, accessory, [emote]],
+			[9, "", []],
+		],
+	)
+	assert.equal(new Set(state.presets.map(preset => preset.id)).size, 3, "preset ids are unique")
+	assert.deepEqual(state.history, [{ id: character, fresh: false, source: "draw", at: 0 }])
+
+	const depth = (value: unknown): number =>
+		value && typeof value === "object" ? 1 + Math.max(0, ...Object.values(value).map(depth)) : 0
+	assert.ok(depth(state) < 8, "the state stays shallow")
+
+	// Loading such a preset equips only owned items of the right type.
+	STATE_COMMANDS["preset-load"](state, items, state.presets[0].id)
+	assert.equal(state.accessory, "")
+	assert.deepEqual(state.emotes, [])
+})
+
+test("Presets saved at the same moment get distinct ids", () => {
+	const state = core.initial(items)
+	for (let index = 0; index < 12; index++) STATE_COMMANDS["preset-save"](state, items, `p${index}`)
+	assert.equal(new Set(state.presets.map(preset => preset.id)).size, 12)
+	STATE_COMMANDS["preset-delete"](state, items, state.presets[0].id)
+	assert.equal(state.presets.length, 11, "deleting one preset leaves the others")
+	STATE_COMMANDS["preset-save"](state, items, "   ")
+	assert.equal(state.presets.at(-1)!.name, "My Outfit")
+})
+
+test("The pet's screen index and saved position are bounded", () => {
+	const state = importedState(
+		{ version: 2, owned: {}, settings: { monitor: 1e308, petPosition: { x: 1e308, y: -1e308 } } } as any,
+		items,
+		core.initial(items),
+	)
+	assert.equal(state.settings.monitor, 32)
+	assert.deepEqual(state.settings.petPosition, { x: 100_000, y: -100_000 })
+})

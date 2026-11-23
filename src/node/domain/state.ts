@@ -1,7 +1,10 @@
-import type { CatalogItem, CollectionState, ItemType, RawCollection, Settings } from "../types.js"
+import type { CatalogItem, CollectionState, HistoryEntry, ItemType, Preset, RawCollection, Settings } from "../types.js"
 import { DEFAULTS } from "./constants.js"
 
-const MAX_PRESETS = 12
+export const MAX_PRESETS = 12
+export const MAX_PRESET_NAME = 24
+export const DEFAULT_PRESET_NAME = "My Outfit"
+const MAX_PRESET_ID = 32
 const MAX_HISTORY = 100
 const MAX_EMOTES = 5
 const MAX_OWNED = 1e9
@@ -13,6 +16,9 @@ const LEGACY_COUNTER_WRAP = 1000
 const MAX_KEY_LABELS = 256
 const MAX_KEY_NAME = 64
 const MAX_KEY_LABEL = 32
+/** Bounds on the pet's screen index and saved position, so a save cannot place it absurdly far away. */
+const MAX_MONITOR = 32
+const MAX_POSITION = 100_000
 
 /** Labels that older versions stored as defaults; they are dropped so the keyboard's own labels show. */
 const LEGACY_DEFAULT_KEY_LABELS: Record<string, string> = {
@@ -111,18 +117,71 @@ export function normalize(raw: RawCollection | null | undefined, items: CatalogI
 	if (raw.version === 1) fillStarterEmotes(state, items)
 
 	state.favorites = Array.isArray(raw.favorites) ? [...new Set(raw.favorites.filter(id => validIds.has(id)))] : []
-	state.presets = Array.isArray(raw.presets)
-		? raw.presets.filter(preset => preset && ownsItemOfType(preset.character, "character")).slice(0, MAX_PRESETS)
-		: []
-	state.history = Array.isArray(raw.history)
-		? raw.history.filter(entry => validIds.has(entry.id)).slice(0, MAX_HISTORY)
-		: []
+	state.presets = normalizePresets(raw.presets, ownsItemOfType)
+	state.history = normalizeHistory(raw.history, validIds)
 
 	const hasCounterLimit = Object.hasOwn(raw.settings || {}, "counterLimit")
 	state.settings = settings({ ...state.settings, ...raw.settings })
 	if (!hasCounterLimit) state.count %= LEGACY_COUNTER_WRAP
 	if (state.settings.counterLimit !== null) state.count = Math.min(state.count, state.settings.counterLimit)
 	return state
+}
+
+/**
+ * Rebuilds presets field by field. Every field is copied out of the save, so nothing unexpected
+ * (huge strings, nested objects, wrong types) survives into the state, the save file or the pages.
+ */
+function normalizePresets(raw: unknown, ownsItemOfType: (id: string, type: ItemType) => boolean): Preset[] {
+	if (!Array.isArray(raw)) return []
+	const presets: Preset[] = []
+	const ids = new Set<string>()
+	for (const preset of raw) {
+		if (presets.length >= MAX_PRESETS) break
+		if (!preset || typeof preset !== "object" || !ownsItemOfType(preset.character, "character")) continue
+		const savedId = typeof preset.id === "string" && preset.id.length <= MAX_PRESET_ID ? preset.id : ""
+		const id = savedId && !ids.has(savedId) ? savedId : newPresetId(ids)
+		ids.add(id)
+		presets.push({
+			id,
+			name: presetName(preset.name),
+			character: preset.character,
+			accessory: ownsItemOfType(preset.accessory, "accessory") ? preset.accessory : "",
+			emotes: Array.isArray(preset.emotes)
+				? [...new Set<string>(preset.emotes.filter((id: string) => ownsItemOfType(id, "emote")))].slice(
+						0,
+						MAX_EMOTES,
+					)
+				: [],
+		})
+	}
+	return presets
+}
+
+function normalizeHistory(raw: unknown, validIds: Set<string>): HistoryEntry[] {
+	if (!Array.isArray(raw)) return []
+	return raw
+		.filter(entry => entry && typeof entry === "object" && validIds.has(entry.id))
+		.slice(0, MAX_HISTORY)
+		.map(entry => ({
+			id: entry.id,
+			fresh: entry.fresh === true,
+			source: entry.source === "synthesis" ? "synthesis" : "draw",
+			at: Number.isFinite(entry.at) ? entry.at : 0,
+		}))
+}
+
+/** A preset's name: trimmed and bounded, or the default. */
+export function presetName(name: unknown): string {
+	return (typeof name === "string" ? name.trim().slice(0, MAX_PRESET_NAME) : "") || DEFAULT_PRESET_NAME
+}
+
+/** A preset id not in `taken`: the current time, with a suffix when several are made at once. */
+export function newPresetId(taken: Iterable<string>): string {
+	const ids = new Set(taken)
+	const base = Date.now().toString(36)
+	let id = base
+	for (let suffix = 1; ids.has(id); suffix++) id = `${base}-${suffix}`
+	return id
 }
 
 /** Version 1 saves had fewer emote slots; top them up with starter emotes. */
@@ -141,7 +200,7 @@ export function settings(input: Partial<Settings>): Settings {
 
 	result.scale = clamp(Number(input.scale) || 1, 0.65, 1.5)
 	result.opacity = clamp(Number(input.opacity) || 1, 0.3, 1)
-	result.monitor = Number.isInteger(input.monitor) ? Math.max(0, input.monitor) : 0
+	result.monitor = Number.isInteger(input.monitor) ? clamp(input.monitor, 0, MAX_MONITOR) : 0
 	result.counterFormat =
 		typeof input.counterFormat === "string" ? input.counterFormat.slice(0, 128) : DEFAULTS.counterFormat
 	result.counterLimit =
@@ -165,8 +224,11 @@ export function settings(input: Partial<Settings>): Settings {
 	result.keyLabels = normalizeKeyLabels(input.keyLabels)
 
 	const position = input.petPosition
-	if (position && typeof position.x === "number" && typeof position.y === "number")
-		result.petPosition = { x: Math.round(position.x), y: Math.round(position.y) }
+	if (position && Number.isFinite(position.x) && Number.isFinite(position.y))
+		result.petPosition = {
+			x: Math.round(clamp(position.x, -MAX_POSITION, MAX_POSITION)),
+			y: Math.round(clamp(position.y, -MAX_POSITION, MAX_POSITION)),
+		}
 	return result
 }
 
