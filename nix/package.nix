@@ -51,7 +51,7 @@ buildNpmPackage {
 
   # Update after changing package-lock.json: set to lib.fakeHash, build, and copy the hash from the error.
   # (importNpmLock cannot be used: it breaks the `typescript-vue` npm alias.)
-  npmDepsHash = "sha256-hYCLTGYHG1QGHIZAVp/bRlGydTHBLkypFXTPXBMv5M4=";
+  npmDepsHash = "sha256-z2S35nhEc9cwlI9gIYSaQYOMniDwZMCwY/wNf0Uh3F4=";
 
   # Install scripts would download Electron (the nixpkgs one is used instead); uiohook-napi ships
   # prebuilt addons, so nothing else needs them.

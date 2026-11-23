@@ -61,7 +61,9 @@ jobs:
       - run: npm test
 
       # beforeBuildCommand (scripts/tauri-prepare.cjs) builds the renderer and stages src-tauri/frontend.
-      - run: npx --yes @tauri-apps/cli@2 build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
+      # The CLI comes from package-lock.json (--no-install: never fetch an unpinned one), since it
+      # builds the binaries that get released.
+      - run: npx --no-install tauri build --target ${{ matrix.target }} --bundles ${{ matrix.bundles }}
 
       # Tauri names packages "Wuwa Tappo_1.0.8_x64-setup.exe" etc.; keep the old wuwa-tappo-<version>-<arch> names.
       - name: Collect packages
