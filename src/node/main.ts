@@ -4,7 +4,7 @@ import fs from "node:fs"
 import os from "node:os"
 import path from "node:path"
 import { setAutoStart } from "./autostart.js"
-import { findExecutable } from "./linux-tools.js"
+import { findSystemExecutable } from "./linux-tools.js"
 import { executeCommand, type CommandContext } from "./commands.js"
 import * as core from "./core.js"
 import { createInputManager } from "./input-manager.js"
@@ -352,10 +352,10 @@ class WuwaTappoApplication {
 		}
 		if (!devices.length) return
 
-		// pkexec resets PATH for the root process, so setfacl is passed by absolute path; this matters on
-		// NixOS, where it lives in the system profile rather than /usr/bin.
-		const pkexec = findExecutable("pkexec")
-		const setfacl = findExecutable("setfacl")
+		// Both run as root, so they only come from root-owned system directories, never $PATH; setfacl is
+		// passed by absolute path, since pkexec resets PATH (on NixOS it is not in /usr/bin).
+		const pkexec = findSystemExecutable("pkexec")
+		const setfacl = findSystemExecutable("setfacl")
 		if (!pkexec || !setfacl) {
 			void this.showInputAccessHelp(
 				!pkexec ? "pkexec (polkit) is not installed." : "setfacl (acl) is not installed.",

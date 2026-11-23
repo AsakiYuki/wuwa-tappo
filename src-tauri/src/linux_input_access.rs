@@ -2,19 +2,37 @@
 //! warning, like the Electron app (src/node/main.ts). evdev rescans every second, so the pet reacts
 //! as soon as the access is granted.
 
-use std::path::PathBuf;
+use std::os::unix::fs::{MetadataExt, PermissionsExt};
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use tauri::AppHandle;
 use tauri_plugin_dialog::{DialogExt, MessageDialogButtons, MessageDialogKind};
 
-/// pkexec resets PATH for the root process, so setfacl is passed by absolute path (on NixOS it is
-/// not in /usr/bin).
-fn find_executable(name: &str) -> Option<PathBuf> {
-	std::env::var_os("PATH")
-		.into_iter()
-		.flat_map(|path| std::env::split_paths(&path).collect::<Vec<_>>())
-		.map(|directory| directory.join(name))
-		.find(|candidate| candidate.is_file())
+/// Where pkexec and setfacl may come from. Never $PATH: any program running as the user can put a
+/// directory in front of it, and a planted `setfacl` would then run as root behind the polkit prompt.
+/// /run/wrappers/bin and /run/current-system/sw/bin are NixOS's.
+const SYSTEM_DIRECTORIES: [&str; 6] = ["/run/wrappers/bin", "/run/current-system/sw/bin", "/usr/bin", "/bin", "/usr/sbin", "/sbin"];
+
+/// The real path of a system executable that only root can change. That path, not the symlink that
+/// led to it, is what gets run, so the link cannot be swapped in between.
+fn system_executable(name: &str) -> Option<PathBuf> {
+	SYSTEM_DIRECTORIES
+		.iter()
+		.filter_map(|directory| std::fs::canonicalize(Path::new(directory).join(name)).ok())
+		.find(|path| path.is_file() && root_controlled(path))
+}
+
+/// The file and every directory above it belong to root and nobody else can write to them; a
+/// directory others may write to counts only with the sticky bit, which keeps them from replacing
+/// root's entries (the Nix store).
+fn root_controlled(path: &Path) -> bool {
+	path.ancestors().all(|entry| {
+		let Ok(metadata) = std::fs::metadata(entry) else { return false };
+		let mode = metadata.permissions().mode();
+		let shared_write = mode & 0o022 != 0;
+		let sticky_directory = metadata.is_dir() && mode & 0o1000 != 0;
+		metadata.uid() == 0 && (!shared_write || sticky_directory)
+	})
 }
 
 fn input_devices() -> Vec<PathBuf> {
@@ -29,11 +47,10 @@ fn input_devices() -> Vec<PathBuf> {
 		.collect()
 }
 
-/// The login name from the OS (`id -un`), not the spoofable $USER.
-fn user_name() -> Option<String> {
-	let output = Command::new("id").arg("-un").output().ok()?;
-	let name = String::from_utf8(output.stdout).ok()?.trim().to_string();
-	(!name.is_empty()).then_some(name)
+/// This process's user id, from the kernel (/proc/self belongs to it). Not `id -un`, which runs
+/// whatever `id` comes first in $PATH, nor the spoofable $USER.
+fn user_id() -> Option<u32> {
+	std::fs::metadata("/proc/self").ok().map(|metadata| metadata.uid())
 }
 
 fn help(app: &AppHandle, reason: &str) {
@@ -68,10 +85,10 @@ pub fn grant(app: AppHandle) {
 		}
 
 		let devices = input_devices();
-		let (Some(pkexec), Some(setfacl)) = (find_executable("pkexec"), find_executable("setfacl")) else {
+		let (Some(pkexec), Some(setfacl)) = (system_executable("pkexec"), system_executable("setfacl")) else {
 			return help(&app, "pkexec (polkit) or setfacl (acl) is not installed.");
 		};
-		let Some(user) = user_name() else { return help(&app, "Could not determine the user name.") };
+		let Some(user) = user_id() else { return help(&app, "Could not determine the user id.") };
 		if devices.is_empty() {
 			return;
 		}
@@ -83,4 +100,29 @@ pub fn grant(app: AppHandle) {
 			Err(error) => help(&app, &format!("Granting access failed: {error}.")),
 		}
 	});
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	#[test]
+	fn executables_outside_root_controlled_directories_are_refused() {
+		let directory = std::env::temp_dir().join(format!("wuwa-tappo-test-{}", std::process::id()));
+		std::fs::create_dir_all(&directory).unwrap();
+		let planted = directory.join("setfacl");
+		std::fs::write(&planted, "#!/bin/sh\n").unwrap();
+		std::fs::set_permissions(&planted, std::fs::Permissions::from_mode(0o755)).unwrap();
+		assert!(!root_controlled(&planted), "a file the user owns is not trusted");
+		std::fs::remove_dir_all(&directory).unwrap();
+		assert!(root_controlled(Path::new("/")));
+	}
+
+	#[test]
+	fn system_executables_resolve_to_root_owned_files() {
+		// `sh` exists on every Linux system, in a root-owned directory.
+		let sh = system_executable("sh").expect("sh is found");
+		assert!(sh.is_absolute() && root_controlled(&sh));
+		assert_eq!(system_executable("definitely-not-a-real-tool"), None);
+	}
 }

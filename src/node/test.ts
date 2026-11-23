@@ -11,7 +11,7 @@ import {
 	setLinuxAutoStart,
 	stableLauncherPath,
 } from "./autostart.js"
-import { findExecutable } from "./linux-tools.js"
+import { findExecutable, findSystemExecutable, isRootControlled } from "./linux-tools.js"
 import { STATE_COMMANDS, canPlayEmote, importedState, isKnownSave, patchSettings } from "./domain/commands.js"
 import { hoverScript } from "./kwin-hover-fade.js"
 const PROJECT_ROOT = path.resolve(__dirname, "..")
@@ -683,4 +683,19 @@ test("The pet's screen index and saved position are bounded", () => {
 	)
 	assert.equal(state.settings.monitor, 32)
 	assert.deepEqual(state.settings.petPosition, { x: 100_000, y: -100_000 })
+})
+
+test("Programs run as root are only taken from root-owned system directories, never $PATH", () => {
+	if (process.platform !== "linux") return
+	const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-planted-"))
+	try {
+		const planted = path.join(directory, "setfacl")
+		fs.writeFileSync(planted, "#!/bin/sh\n", { mode: 0o755 })
+		assert.equal(isRootControlled(planted), false)
+		assert.equal(findSystemExecutable("setfacl", [directory]), null, "a planted copy is ignored")
+		const sh = findSystemExecutable("sh")
+		assert.ok(sh && path.isAbsolute(sh) && isRootControlled(sh), "real system programs are found")
+	} finally {
+		fs.rmSync(directory, { recursive: true, force: true })
+	}
 })
