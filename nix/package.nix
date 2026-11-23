@@ -9,7 +9,6 @@
   copyDesktopItems,
   autoPatchelfHook,
   wmctrl,
-  acl,
   xorg,
   # Top-level names in current nixpkgs; the xorg.* fallbacks keep older releases working.
   libx11 ? xorg.libX11,
@@ -98,8 +97,8 @@ buildNpmPackage {
 
     # --ozone-platform=x11: global input hooks and transparent click-through windows need X11/XWayland.
     # WUWA_TAPPO_LAUNCHER: lets launch-at-startup point at this wrapper instead of the bare Electron.
-    # wmctrl/xprop/setfacl are appended to PATH so system versions win; pkexec must stay the
-    # setuid wrapper from /run/wrappers, so it is deliberately not added.
+    # wmctrl/xprop are appended to PATH so system versions win. pkexec and setfacl (input access)
+    # are never taken from PATH: the app runs them as root, so it only uses root-owned system copies.
     makeWrapper ${lib.getExe electron} $out/bin/wuwa-tappo \
       --add-flags --ozone-platform=x11 \
       --add-flags $app \
@@ -108,7 +107,6 @@ buildNpmPackage {
         lib.makeBinPath [
           wmctrl
           xprop
-          acl
         ]
       }
 
