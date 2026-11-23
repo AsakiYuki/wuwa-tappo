@@ -73,11 +73,10 @@ pub(crate) struct AppState {
 	pub counts: (Value, Value, Value),
 	pub pressed: HashSet<String>,
 	pub serial: u64,
-	/// Reported by the renderer; Electron uses it for KWin's hover-fade (here the page hit-tests).
-	#[allow(dead_code)]
+	/// The pet's visible content, as reported by its page; hover-fade hit-tests the cursor against it.
 	pub hover_area: Option<pet::HoverArea>,
-	/// Whether the pet page is being fed the cursor (`pet::feed_cursor`).
-	pub tracking_cursor: bool,
+	/// Hover-fade's cursor feed to the pet page (`pet::feed_cursor`).
+	pub cursor: pet::CursorFeed,
 	/// Set when the global input hook stopped with an error.
 	pub hook_error: Option<String>,
 	pub save_warning: String,
@@ -225,7 +224,7 @@ pub fn run() {
 					pressed: HashSet::new(),
 					serial: 0,
 					hover_area: None,
-					tracking_cursor: false,
+					cursor: pet::CursorFeed::default(),
 					hook_error: None,
 					save_warning: warning,
 					studio: studio::StudioState::default(),

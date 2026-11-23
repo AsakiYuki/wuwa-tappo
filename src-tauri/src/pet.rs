@@ -19,12 +19,30 @@ const CURSOR_POLL: Duration = Duration::from_millis(80);
 
 /// The pet's visible content box, as fractions (0–1) of the pet window's size.
 #[derive(Clone, Copy, Deserialize)]
-#[allow(dead_code)]
 pub(crate) struct HoverArea {
 	left: f64,
 	top: f64,
 	right: f64,
 	bottom: f64,
+}
+
+impl HoverArea {
+	/// Same test as the page's own (PetApp.vue `handleCursor`), for a point relative to the window.
+	fn contains(&self, (x, y): (f64, f64), (width, height): (f64, f64)) -> bool {
+		x >= self.left * width && x < self.right * width && y >= self.top * height && y < self.bottom * height
+	}
+}
+
+/// Whether the pet page is being fed the cursor for hover-fade (a click-through pet gets no pointer
+/// events). Only changes of the hover state are sent: the cursor moves up to 60 times a second
+/// anywhere on screen, and the page only cares whether it is over the pet.
+#[derive(Clone, Copy, Default, PartialEq)]
+pub(crate) enum CursorFeed {
+	#[default]
+	Off,
+	/// The last hover state sent; `None` while the page has not reported its hover area yet, so
+	/// every position is passed on for the page to hit-test.
+	On(Option<bool>),
 }
 
 /// Pet window size in logical pixels for the current settings.
@@ -168,15 +186,24 @@ pub(crate) fn reset(app: &AppHandle, shared: &Shared) {
 
 /* ------------------------------ cursor feed ------------------------------ */
 
-/// Passes the cursor, relative to the pet window in logical pixels, to the page's hover-fade.
+/// Passes the cursor, relative to the pet window in logical pixels, to the page's hover-fade, when
+/// it changes whether the cursor is over the pet.
 pub(crate) fn feed_cursor(app: &AppHandle, shared: &Shared, x: f64, y: f64) {
-	shared.state.lock().unwrap().tracking_cursor = true;
-	let _ = app.emit_to(PET_LABEL, "cursor", json!({ "x": x, "y": y }));
+	let hovered = {
+		let mut state = shared.state.lock().unwrap();
+		let hovered = state.hover_area.map(|area| area.contains((x, y), size(&state.settings)));
+		if hovered.is_some() && state.cursor == CursorFeed::On(hovered) {
+			return;
+		}
+		state.cursor = CursorFeed::On(hovered);
+		hovered
+	};
+	let _ = app.emit_to(PET_LABEL, "cursor", json!({ "x": x, "y": y, "hovered": hovered }));
 }
 
 /// Stops the cursor feed; the page goes back to its own hover events.
 fn stop_cursor_feed(app: &AppHandle, shared: &Shared) {
-	if std::mem::take(&mut shared.state.lock().unwrap().tracking_cursor) {
+	if std::mem::take(&mut shared.state.lock().unwrap().cursor) != CursorFeed::Off {
 		let _ = app.emit_to(PET_LABEL, "cursor", Value::Null);
 	}
 }
@@ -273,5 +300,10 @@ pub(crate) fn set_hover_area(shared: tauri::State<Shared>, area: HoverArea) {
 	if !valid {
 		return;
 	}
-	shared.state.lock().unwrap().hover_area = Some(area);
+	let mut state = shared.state.lock().unwrap();
+	state.hover_area = Some(area);
+	// The next cursor position is sent whatever it is, since the pet's box has moved under it.
+	if state.cursor != CursorFeed::Off {
+		state.cursor = CursorFeed::On(None);
+	}
 }

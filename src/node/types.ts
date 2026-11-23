@@ -168,6 +168,11 @@ export interface CommandResult<T = unknown> {
 export interface CursorMessage {
 	x: number
 	y: number
+	/**
+	 * Whether the cursor is over the pet's hover area, when the sender already hit-tested it (the
+	 * Tauri app, which then only sends changes); otherwise the page tests `x`/`y` itself.
+	 */
+	hovered?: boolean | null
 }
 
 /** The pet's visible content box, as fractions (0–1) of the pet window's size. */

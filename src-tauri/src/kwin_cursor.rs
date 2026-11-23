@@ -3,8 +3,9 @@
 //! Wayland gives apps no global cursor position. KWin always knows it: while it is needed, a small
 //! KWin script sends it to this app over D-Bus (`io.github.WuwaTappo`).
 //!
-//! - Hover-fade: it goes to the same cursor feed the X11 build polls for (`pet::feed_cursor`): a
-//!   click-through pet gets no pointer events, and WebKitGTK's `:hover` can stick.
+//! - Hover-fade: it goes to the same cursor feed the X11 build polls for (`pet::feed_cursor`, which
+//!   tells the page only when the cursor enters or leaves the pet): a click-through pet gets no
+//!   pointer events, and WebKitGTK's `:hover` can stick.
 //! - Dragging: the page only sees positions relative to the pet's own surface, which moves with the
 //!   drag, so its deltas fall short and the pet trails the cursor. While dragging, the pet is put at
 //!   its start position plus how far the cursor has moved since.

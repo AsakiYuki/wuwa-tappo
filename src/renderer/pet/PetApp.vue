@@ -91,6 +91,10 @@ function handleInput(event: InputMessage) {
 
 function handleCursor(cursor: CursorMessage | null) {
 	cursorFed.value = cursor !== null
+	if (typeof cursor?.hovered === "boolean") {
+		cursorHovered.value = cursor.hovered
+		return
+	}
 	const rect = content.value?.getBoundingClientRect()
 	cursorHovered.value = Boolean(
 		cursor &&
