@@ -1,0 +1,7 @@
+{
+	"$schema": "../gen/schemas/desktop-schema.json",
+	"identifier": "pet",
+	"description": "The pet page only listens to backend events (input, emotes, state, cursor) and calls the app's own commands; it is moved through `move_pet`. Nothing else: no emitting events, no tray, menu, image or path APIs.",
+	"windows": ["pet"],
+	"permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
+}

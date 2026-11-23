@@ -174,7 +174,17 @@ pub(crate) fn resize(app: &AppHandle, shared: &Shared, action: &str) {
 
 /// The studio is frameless; its edge handles report pointer deltas in CSS pixels.
 #[tauri::command]
-pub(crate) fn resize_studio_edge(app: AppHandle, shared: tauri::State<Shared>, edge: String, dx: f64, dy: f64) {
+pub(crate) fn resize_studio_edge(
+	app: AppHandle,
+	sender: tauri::Window,
+	shared: tauri::State<Shared>,
+	edge: String,
+	dx: f64,
+	dy: f64,
+) {
+	if sender.label() != STUDIO_LABEL {
+		return;
+	}
 	let Some(studio) = window(&app, STUDIO_LABEL) else { return };
 	let (Some((monitor, (position, size))), Ok(scale)) = (bounds(&studio), studio.scale_factor()) else {
 		return;

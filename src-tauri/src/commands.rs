@@ -10,6 +10,8 @@ use tauri_plugin_dialog::DialogExt;
 
 /// The pet window may only open the studio, play emotes and report clicks (src/node/main.ts).
 const PET_COMMANDS: [&str; 3] = ["tap", "emote", "open"];
+/// Saves are ~30 KB; anything far larger is not one, and is not read into memory.
+const MAX_IMPORT_BYTES: u64 = 8 * 1024 * 1024;
 
 #[tauri::command]
 pub(crate) fn init(app: AppHandle, shared: tauri::State<Shared>) -> Value {
@@ -60,9 +62,13 @@ pub(crate) async fn command(
 		let Some(path) = chosen.and_then(|path| path.into_path().ok()) else {
 			return Ok(json!({ "ok": true, "result": "cancelled" }));
 		};
+		let not_a_save = || Ok(json!({ "ok": false, "error": "This file is not a valid Wuwa Tappo save" }));
+		if std::fs::metadata(&path).map_or(true, |metadata| metadata.len() > MAX_IMPORT_BYTES) {
+			return not_a_save();
+		}
 		match std::fs::read_to_string(path) {
 			Ok(text) => Value::String(text),
-			Err(_) => return Ok(json!({ "ok": false, "error": "This file is not a valid Wuwa Tappo save" })),
+			Err(_) => return not_a_save(),
 		}
 	} else {
 		argument

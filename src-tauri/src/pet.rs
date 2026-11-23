@@ -9,7 +9,9 @@ use crate::{
 use serde::Deserialize;
 use serde_json::{json, Value};
 use std::time::Duration;
-use tauri::{AppHandle, Emitter, LogicalPosition, LogicalSize, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
+use tauri::{
+	AppHandle, Emitter, LogicalPosition, LogicalSize, PhysicalPosition, WebviewUrl, Window, WebviewWindow, WebviewWindowBuilder,
+};
 
 /// Window sizes match src/node/window-manager.ts.
 const SIZE_KEYBOARD: (f64, f64) = (320.0, 350.0);
@@ -266,9 +268,12 @@ pub(crate) fn end_pet_drag(app: AppHandle, shared: tauri::State<Shared>) {
 	let _ = (&app, &shared);
 }
 
-/// Drag delta from the renderer, in CSS pixels; the new spot is remembered.
+/// Drag delta from the pet page, in CSS pixels; the new spot is remembered.
 #[tauri::command]
-pub(crate) fn move_pet(app: AppHandle, shared: tauri::State<Shared>, dx: f64, dy: f64) {
+pub(crate) fn move_pet(app: AppHandle, sender: Window, shared: tauri::State<Shared>, dx: f64, dy: f64) {
+	if sender.label() != PET_LABEL || !dx.is_finite() || !dy.is_finite() {
+		return;
+	}
 	let settings = settings(&shared);
 	if setting_bool(&settings, "passthrough", false) || setting_bool(&settings, "lockDrag", false) {
 		return;
@@ -294,8 +299,12 @@ pub(crate) fn move_pet(app: AppHandle, shared: tauri::State<Shared>, dx: f64, dy
 	save_later(&app, &shared);
 }
 
+/// The pet page's visible content box, for hover-fade.
 #[tauri::command]
-pub(crate) fn set_hover_area(shared: tauri::State<Shared>, area: HoverArea) {
+pub(crate) fn set_hover_area(sender: Window, shared: tauri::State<Shared>, area: HoverArea) {
+	if sender.label() != PET_LABEL {
+		return;
+	}
 	let valid = [area.left, area.top, area.right, area.bottom].iter().all(|v| v.is_finite() && (0.0..=1.0).contains(v));
 	if !valid {
 		return;
