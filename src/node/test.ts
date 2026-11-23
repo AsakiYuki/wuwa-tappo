@@ -146,15 +146,16 @@ test("Starts with the classic Rover pair, Abby, and eight base emotes", () => {
 	assert.equal(items.filter(i => s.owned[i.id] && i.type === "character").length, 2)
 	assert(items.every(i => i.starter === !!s.owned[i.id]))
 })
-test("All 899 collection items and 3,098 offline images are available", () => {
+test("All 899 collection items and 3,358 offline images are available", () => {
 	assert.equal(items.length, 899)
 	const names = new Set<string>()
 	for (const it of items) {
 		assert(core.RARITIES.includes(it.rarity))
 		for (const file of [it.image, it.thumbnail, ...Object.values(it.layers ?? {})]) names.add(file)
-		if (it.type === "character") assert.equal(Object.keys(it.layers).length, 5)
+		if (it.type === "character")
+			assert.deepEqual(Object.keys(it.layers), ["body1", "body2", "body3", "body4", "head1", "head2"])
 	}
-	assert.equal(names.size, 3098)
+	assert.equal(names.size, 3358)
 	for (const file of names) {
 		const b = fs.readFileSync(path.join(PROJECT_ROOT, file))
 		assert.equal(b.readUInt32BE(0), 0x89504e47)

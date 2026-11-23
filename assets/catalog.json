@@ -20,6 +20,7 @@
         "body1": "assets/characters/zhezhi-classic/body1.png",
         "body2": "assets/characters/zhezhi-classic/body2.png",
         "body3": "assets/characters/zhezhi-classic/body3.png",
+        "body4": "assets/characters/zhezhi-classic/body4.png",
         "head1": "assets/characters/zhezhi-classic/head1.png",
         "head2": "assets/characters/zhezhi-classic/head2.png"
       },
@@ -44,6 +45,7 @@
         "body1": "assets/characters/carlotta-classic/body1.png",
         "body2": "assets/characters/carlotta-classic/body2.png",
         "body3": "assets/characters/carlotta-classic/body3.png",
+        "body4": "assets/characters/carlotta-classic/body4.png",
         "head1": "assets/characters/carlotta-classic/head1.png",
         "head2": "assets/characters/carlotta-classic/head2.png"
       },
@@ -68,6 +70,7 @@
         "body1": "assets/characters/phoebe-classic/body1.png",
         "body2": "assets/characters/phoebe-classic/body2.png",
         "body3": "assets/characters/phoebe-classic/body3.png",
+        "body4": "assets/characters/phoebe-classic/body4.png",
         "head1": "assets/characters/phoebe-classic/head1.png",
         "head2": "assets/characters/phoebe-classic/head2.png"
       },
@@ -92,6 +95,7 @@
         "body1": "assets/characters/mornye-classic/body1.png",
         "body2": "assets/characters/mornye-classic/body2.png",
         "body3": "assets/characters/mornye-classic/body3.png",
+        "body4": "assets/characters/mornye-classic/body4.png",
         "head1": "assets/characters/mornye-classic/head1.png",
         "head2": "assets/characters/mornye-classic/head2.png"
       },
@@ -116,6 +120,7 @@
         "body1": "assets/characters/amis-classic/body1.png",
         "body2": "assets/characters/amis-classic/body2.png",
         "body3": "assets/characters/amis-classic/body3.png",
+        "body4": "assets/characters/amis-classic/body4.png",
         "head1": "assets/characters/amis-classic/head1.png",
         "head2": "assets/characters/amis-classic/head2.png"
       },
@@ -140,6 +145,7 @@
         "body1": "assets/characters/danya-classic/body1.png",
         "body2": "assets/characters/danya-classic/body2.png",
         "body3": "assets/characters/danya-classic/body3.png",
+        "body4": "assets/characters/danya-classic/body4.png",
         "head1": "assets/characters/danya-classic/head1.png",
         "head2": "assets/characters/danya-classic/head2.png"
       },
@@ -164,6 +170,7 @@
         "body1": "assets/characters/jingran-classic/body1.png",
         "body2": "assets/characters/jingran-classic/body2.png",
         "body3": "assets/characters/jingran-classic/body3.png",
+        "body4": "assets/characters/jingran-classic/body4.png",
         "head1": "assets/characters/jingran-classic/head1.png",
         "head2": "assets/characters/jingran-classic/head2.png"
       },
@@ -188,6 +195,7 @@
         "body1": "assets/characters/calcharo-classic/body1.png",
         "body2": "assets/characters/calcharo-classic/body2.png",
         "body3": "assets/characters/calcharo-classic/body3.png",
+        "body4": "assets/characters/calcharo-classic/body4.png",
         "head1": "assets/characters/calcharo-classic/head1.png",
         "head2": "assets/characters/calcharo-classic/head2.png"
       },
@@ -212,6 +220,7 @@
         "body1": "assets/characters/katisia-classic/body1.png",
         "body2": "assets/characters/katisia-classic/body2.png",
         "body3": "assets/characters/katisia-classic/body3.png",
+        "body4": "assets/characters/katisia-classic/body4.png",
         "head1": "assets/characters/katisia-classic/head1.png",
         "head2": "assets/characters/katisia-classic/head2.png"
       },
@@ -236,6 +245,7 @@
         "body1": "assets/characters/chisaki-classic/body1.png",
         "body2": "assets/characters/chisaki-classic/body2.png",
         "body3": "assets/characters/chisaki-classic/body3.png",
+        "body4": "assets/characters/chisaki-classic/body4.png",
         "head1": "assets/characters/chisaki-classic/head1.png",
         "head2": "assets/characters/chisaki-classic/head2.png"
       },
@@ -260,6 +270,7 @@
         "body1": "assets/characters/linnae-classic/body1.png",
         "body2": "assets/characters/linnae-classic/body2.png",
         "body3": "assets/characters/linnae-classic/body3.png",
+        "body4": "assets/characters/linnae-classic/body4.png",
         "head1": "assets/characters/linnae-classic/head1.png",
         "head2": "assets/characters/linnae-classic/head2.png"
       },
@@ -284,6 +295,7 @@
         "body1": "assets/characters/lu-hess-classic/body1.png",
         "body2": "assets/characters/lu-hess-classic/body2.png",
         "body3": "assets/characters/lu-hess-classic/body3.png",
+        "body4": "assets/characters/lu-hess-classic/body4.png",
         "head1": "assets/characters/lu-hess-classic/head1.png",
         "head2": "assets/characters/lu-hess-classic/head2.png"
       },
@@ -308,6 +320,7 @@
         "body1": "assets/characters/danjin-classic/body1.png",
         "body2": "assets/characters/danjin-classic/body2.png",
         "body3": "assets/characters/danjin-classic/body3.png",
+        "body4": "assets/characters/danjin-classic/body4.png",
         "head1": "assets/characters/danjin-classic/head1.png",
         "head2": "assets/characters/danjin-classic/head2.png"
       },
@@ -332,6 +345,7 @@
         "body1": "assets/characters/rococo-classic/body1.png",
         "body2": "assets/characters/rococo-classic/body2.png",
         "body3": "assets/characters/rococo-classic/body3.png",
+        "body4": "assets/characters/rococo-classic/body4.png",
         "head1": "assets/characters/rococo-classic/head1.png",
         "head2": "assets/characters/rococo-classic/head2.png"
       },
@@ -356,6 +370,7 @@
         "body1": "assets/characters/cantarella-classic/body1.png",
         "body2": "assets/characters/cantarella-classic/body2.png",
         "body3": "assets/characters/cantarella-classic/body3.png",
+        "body4": "assets/characters/cantarella-classic/body4.png",
         "head1": "assets/characters/cantarella-classic/head1.png",
         "head2": "assets/characters/cantarella-classic/head2.png"
       },
@@ -380,6 +395,7 @@
         "body1": "assets/characters/phrolova-classic/body1.png",
         "body2": "assets/characters/phrolova-classic/body2.png",
         "body3": "assets/characters/phrolova-classic/body3.png",
+        "body4": "assets/characters/phrolova-classic/body4.png",
         "head1": "assets/characters/phrolova-classic/head1.png",
         "head2": "assets/characters/phrolova-classic/head2.png"
       },
@@ -404,6 +420,7 @@
         "body1": "assets/characters/yangyang-plume-classic/body1.png",
         "body2": "assets/characters/yangyang-plume-classic/body2.png",
         "body3": "assets/characters/yangyang-plume-classic/body3.png",
+        "body4": "assets/characters/yangyang-plume-classic/body4.png",
         "head1": "assets/characters/yangyang-plume-classic/head1.png",
         "head2": "assets/characters/yangyang-plume-classic/head2.png"
       },
@@ -428,6 +445,7 @@
         "body1": "assets/characters/sanhua-classic/body1.png",
         "body2": "assets/characters/sanhua-classic/body2.png",
         "body3": "assets/characters/sanhua-classic/body3.png",
+        "body4": "assets/characters/sanhua-classic/body4.png",
         "head1": "assets/characters/sanhua-classic/head1.png",
         "head2": "assets/characters/sanhua-classic/head2.png"
       },
@@ -452,6 +470,7 @@
         "body1": "assets/characters/rover-f-spinning/body1.png",
         "body2": "assets/characters/rover-f-spinning/body2.png",
         "body3": "assets/characters/rover-f-spinning/body3.png",
+        "body4": "assets/characters/rover-f-spinning/body4.png",
         "head1": "assets/characters/rover-f-spinning/head1.png",
         "head2": "assets/characters/rover-f-spinning/head2.png"
       },
@@ -476,6 +495,7 @@
         "body1": "assets/characters/rover-m-spinning/body1.png",
         "body2": "assets/characters/rover-m-spinning/body2.png",
         "body3": "assets/characters/rover-m-spinning/body3.png",
+        "body4": "assets/characters/rover-m-spinning/body4.png",
         "head1": "assets/characters/rover-m-spinning/head1.png",
         "head2": "assets/characters/rover-m-spinning/head2.png"
       },
@@ -500,6 +520,7 @@
         "body1": "assets/characters/verina-spinning/body1.png",
         "body2": "assets/characters/verina-spinning/body2.png",
         "body3": "assets/characters/verina-spinning/body3.png",
+        "body4": "assets/characters/verina-spinning/body4.png",
         "head1": "assets/characters/verina-spinning/head1.png",
         "head2": "assets/characters/verina-spinning/head2.png"
       },
@@ -524,6 +545,7 @@
         "body1": "assets/characters/shorekeeper-spinning/body1.png",
         "body2": "assets/characters/shorekeeper-spinning/body2.png",
         "body3": "assets/characters/shorekeeper-spinning/body3.png",
+        "body4": "assets/characters/shorekeeper-spinning/body4.png",
         "head1": "assets/characters/shorekeeper-spinning/head1.png",
         "head2": "assets/characters/shorekeeper-spinning/head2.png"
       },
@@ -548,6 +570,7 @@
         "body1": "assets/characters/phebe-spinning/body1.png",
         "body2": "assets/characters/phebe-spinning/body2.png",
         "body3": "assets/characters/phebe-spinning/body3.png",
+        "body4": "assets/characters/phebe-spinning/body4.png",
         "head1": "assets/characters/phebe-spinning/head1.png",
         "head2": "assets/characters/phebe-spinning/head2.png"
       },
@@ -572,6 +595,7 @@
         "body1": "assets/characters/zani-spinning/body1.png",
         "body2": "assets/characters/zani-spinning/body2.png",
         "body3": "assets/characters/zani-spinning/body3.png",
+        "body4": "assets/characters/zani-spinning/body4.png",
         "head1": "assets/characters/zani-spinning/head1.png",
         "head2": "assets/characters/zani-spinning/head2.png"
       },
@@ -596,6 +620,7 @@
         "body1": "assets/characters/chisaki-spinning/body1.png",
         "body2": "assets/characters/chisaki-spinning/body2.png",
         "body3": "assets/characters/chisaki-spinning/body3.png",
+        "body4": "assets/characters/chisaki-spinning/body4.png",
         "head1": "assets/characters/chisaki-spinning/head1.png",
         "head2": "assets/characters/chisaki-spinning/head2.png"
       },
@@ -620,6 +645,7 @@
         "body1": "assets/characters/linnae-spinning/body1.png",
         "body2": "assets/characters/linnae-spinning/body2.png",
         "body3": "assets/characters/linnae-spinning/body3.png",
+        "body4": "assets/characters/linnae-spinning/body4.png",
         "head1": "assets/characters/linnae-spinning/head1.png",
         "head2": "assets/characters/linnae-spinning/head2.png"
       },
@@ -644,6 +670,7 @@
         "body1": "assets/characters/lu-hess-spinning/body1.png",
         "body2": "assets/characters/lu-hess-spinning/body2.png",
         "body3": "assets/characters/lu-hess-spinning/body3.png",
+        "body4": "assets/characters/lu-hess-spinning/body4.png",
         "head1": "assets/characters/lu-hess-spinning/head1.png",
         "head2": "assets/characters/lu-hess-spinning/head2.png"
       },
@@ -668,6 +695,7 @@
         "body1": "assets/characters/camellya-spinning/body1.png",
         "body2": "assets/characters/camellya-spinning/body2.png",
         "body3": "assets/characters/camellya-spinning/body3.png",
+        "body4": "assets/characters/camellya-spinning/body4.png",
         "head1": "assets/characters/camellya-spinning/head1.png",
         "head2": "assets/characters/camellya-spinning/head2.png"
       },
@@ -692,6 +720,7 @@
         "body1": "assets/characters/rococo-spinning/body1.png",
         "body2": "assets/characters/rococo-spinning/body2.png",
         "body3": "assets/characters/rococo-spinning/body3.png",
+        "body4": "assets/characters/rococo-spinning/body4.png",
         "head1": "assets/characters/rococo-spinning/head1.png",
         "head2": "assets/characters/rococo-spinning/head2.png"
       },
@@ -716,6 +745,7 @@
         "body1": "assets/characters/cantarella-spinning/body1.png",
         "body2": "assets/characters/cantarella-spinning/body2.png",
         "body3": "assets/characters/cantarella-spinning/body3.png",
+        "body4": "assets/characters/cantarella-spinning/body4.png",
         "head1": "assets/characters/cantarella-spinning/head1.png",
         "head2": "assets/characters/cantarella-spinning/head2.png"
       },
@@ -740,6 +770,7 @@
         "body1": "assets/characters/phrolova-spinning/body1.png",
         "body2": "assets/characters/phrolova-spinning/body2.png",
         "body3": "assets/characters/phrolova-spinning/body3.png",
+        "body4": "assets/characters/phrolova-spinning/body4.png",
         "head1": "assets/characters/phrolova-spinning/head1.png",
         "head2": "assets/characters/phrolova-spinning/head2.png"
       },
@@ -764,6 +795,7 @@
         "body1": "assets/characters/yangyang-plume-spinning/body1.png",
         "body2": "assets/characters/yangyang-plume-spinning/body2.png",
         "body3": "assets/characters/yangyang-plume-spinning/body3.png",
+        "body4": "assets/characters/yangyang-plume-spinning/body4.png",
         "head1": "assets/characters/yangyang-plume-spinning/head1.png",
         "head2": "assets/characters/yangyang-plume-spinning/head2.png"
       },
@@ -788,6 +820,7 @@
         "body1": "assets/characters/lingyang-spinning/body1.png",
         "body2": "assets/characters/lingyang-spinning/body2.png",
         "body3": "assets/characters/lingyang-spinning/body3.png",
+        "body4": "assets/characters/lingyang-spinning/body4.png",
         "head1": "assets/characters/lingyang-spinning/head1.png",
         "head2": "assets/characters/lingyang-spinning/head2.png"
       },
@@ -812,6 +845,7 @@
         "body1": "assets/characters/zhezhi-spinning/body1.png",
         "body2": "assets/characters/zhezhi-spinning/body2.png",
         "body3": "assets/characters/zhezhi-spinning/body3.png",
+        "body4": "assets/characters/zhezhi-spinning/body4.png",
         "head1": "assets/characters/zhezhi-spinning/head1.png",
         "head2": "assets/characters/zhezhi-spinning/head2.png"
       },
@@ -836,6 +870,7 @@
         "body1": "assets/characters/carlotta-spinning/body1.png",
         "body2": "assets/characters/carlotta-spinning/body2.png",
         "body3": "assets/characters/carlotta-spinning/body3.png",
+        "body4": "assets/characters/carlotta-spinning/body4.png",
         "head1": "assets/characters/carlotta-spinning/head1.png",
         "head2": "assets/characters/carlotta-spinning/head2.png"
       },
@@ -860,6 +895,7 @@
         "body1": "assets/characters/phoebe-spinning/body1.png",
         "body2": "assets/characters/phoebe-spinning/body2.png",
         "body3": "assets/characters/phoebe-spinning/body3.png",
+        "body4": "assets/characters/phoebe-spinning/body4.png",
         "head1": "assets/characters/phoebe-spinning/head1.png",
         "head2": "assets/characters/phoebe-spinning/head2.png"
       },
@@ -884,6 +920,7 @@
         "body1": "assets/characters/roccia-spinning/body1.png",
         "body2": "assets/characters/roccia-spinning/body2.png",
         "body3": "assets/characters/roccia-spinning/body3.png",
+        "body4": "assets/characters/roccia-spinning/body4.png",
         "head1": "assets/characters/roccia-spinning/head1.png",
         "head2": "assets/characters/roccia-spinning/head2.png"
       },
@@ -908,6 +945,7 @@
         "body1": "assets/characters/sui-sui-spinning/body1.png",
         "body2": "assets/characters/sui-sui-spinning/body2.png",
         "body3": "assets/characters/sui-sui-spinning/body3.png",
+        "body4": "assets/characters/sui-sui-spinning/body4.png",
         "head1": "assets/characters/sui-sui-spinning/head1.png",
         "head2": "assets/characters/sui-sui-spinning/head2.png"
       },
@@ -932,6 +970,7 @@
         "body1": "assets/characters/encore-spinning/body1.png",
         "body2": "assets/characters/encore-spinning/body2.png",
         "body3": "assets/characters/encore-spinning/body3.png",
+        "body4": "assets/characters/encore-spinning/body4.png",
         "head1": "assets/characters/encore-spinning/head1.png",
         "head2": "assets/characters/encore-spinning/head2.png"
       },
@@ -956,6 +995,7 @@
         "body1": "assets/characters/changli-spinning/body1.png",
         "body2": "assets/characters/changli-spinning/body2.png",
         "body3": "assets/characters/changli-spinning/body3.png",
+        "body4": "assets/characters/changli-spinning/body4.png",
         "head1": "assets/characters/changli-spinning/head1.png",
         "head2": "assets/characters/changli-spinning/head2.png"
       },
@@ -980,6 +1020,7 @@
         "body1": "assets/characters/brant-spinning/body1.png",
         "body2": "assets/characters/brant-spinning/body2.png",
         "body3": "assets/characters/brant-spinning/body3.png",
+        "body4": "assets/characters/brant-spinning/body4.png",
         "head1": "assets/characters/brant-spinning/head1.png",
         "head2": "assets/characters/brant-spinning/head2.png"
       },
@@ -1004,6 +1045,7 @@
         "body1": "assets/characters/lupa-spinning/body1.png",
         "body2": "assets/characters/lupa-spinning/body2.png",
         "body3": "assets/characters/lupa-spinning/body3.png",
+        "body4": "assets/characters/lupa-spinning/body4.png",
         "head1": "assets/characters/lupa-spinning/head1.png",
         "head2": "assets/characters/lupa-spinning/head2.png"
       },
@@ -1028,6 +1070,7 @@
         "body1": "assets/characters/gaberina-spinning/body1.png",
         "body2": "assets/characters/gaberina-spinning/body2.png",
         "body3": "assets/characters/gaberina-spinning/body3.png",
+        "body4": "assets/characters/gaberina-spinning/body4.png",
         "head1": "assets/characters/gaberina-spinning/head1.png",
         "head2": "assets/characters/gaberina-spinning/head2.png"
       },
@@ -1052,6 +1095,7 @@
         "body1": "assets/characters/mornye-spinning/body1.png",
         "body2": "assets/characters/mornye-spinning/body2.png",
         "body3": "assets/characters/mornye-spinning/body3.png",
+        "body4": "assets/characters/mornye-spinning/body4.png",
         "head1": "assets/characters/mornye-spinning/head1.png",
         "head2": "assets/characters/mornye-spinning/head2.png"
       },
@@ -1076,6 +1120,7 @@
         "body1": "assets/characters/amis-spinning/body1.png",
         "body2": "assets/characters/amis-spinning/body2.png",
         "body3": "assets/characters/amis-spinning/body3.png",
+        "body4": "assets/characters/amis-spinning/body4.png",
         "head1": "assets/characters/amis-spinning/head1.png",
         "head2": "assets/characters/amis-spinning/head2.png"
       },
@@ -1100,6 +1145,7 @@
         "body1": "assets/characters/danya-spinning/body1.png",
         "body2": "assets/characters/danya-spinning/body2.png",
         "body3": "assets/characters/danya-spinning/body3.png",
+        "body4": "assets/characters/danya-spinning/body4.png",
         "head1": "assets/characters/danya-spinning/head1.png",
         "head2": "assets/characters/danya-spinning/head2.png"
       },
@@ -1124,6 +1170,7 @@
         "body1": "assets/characters/jingran-spinning/body1.png",
         "body2": "assets/characters/jingran-spinning/body2.png",
         "body3": "assets/characters/jingran-spinning/body3.png",
+        "body4": "assets/characters/jingran-spinning/body4.png",
         "head1": "assets/characters/jingran-spinning/head1.png",
         "head2": "assets/characters/jingran-spinning/head2.png"
       },
@@ -1148,6 +1195,7 @@
         "body1": "assets/characters/calcharo-spinning/body1.png",
         "body2": "assets/characters/calcharo-spinning/body2.png",
         "body3": "assets/characters/calcharo-spinning/body3.png",
+        "body4": "assets/characters/calcharo-spinning/body4.png",
         "head1": "assets/characters/calcharo-spinning/head1.png",
         "head2": "assets/characters/calcharo-spinning/head2.png"
       },
@@ -1172,6 +1220,7 @@
         "body1": "assets/characters/yinlin-spinning/body1.png",
         "body2": "assets/characters/yinlin-spinning/body2.png",
         "body3": "assets/characters/yinlin-spinning/body3.png",
+        "body4": "assets/characters/yinlin-spinning/body4.png",
         "head1": "assets/characters/yinlin-spinning/head1.png",
         "head2": "assets/characters/yinlin-spinning/head2.png"
       },
@@ -1196,6 +1245,7 @@
         "body1": "assets/characters/jinhsi-spinning/body1.png",
         "body2": "assets/characters/jinhsi-spinning/body2.png",
         "body3": "assets/characters/jinhsi-spinning/body3.png",
+        "body4": "assets/characters/jinhsi-spinning/body4.png",
         "head1": "assets/characters/jinhsi-spinning/head1.png",
         "head2": "assets/characters/jinhsi-spinning/head2.png"
       },
@@ -1220,6 +1270,7 @@
         "body1": "assets/characters/xiangli-yao-spinning/body1.png",
         "body2": "assets/characters/xiangli-yao-spinning/body2.png",
         "body3": "assets/characters/xiangli-yao-spinning/body3.png",
+        "body4": "assets/characters/xiangli-yao-spinning/body4.png",
         "head1": "assets/characters/xiangli-yao-spinning/head1.png",
         "head2": "assets/characters/xiangli-yao-spinning/head2.png"
       },
@@ -1244,6 +1295,7 @@
         "body1": "assets/characters/augusta-spinning/body1.png",
         "body2": "assets/characters/augusta-spinning/body2.png",
         "body3": "assets/characters/augusta-spinning/body3.png",
+        "body4": "assets/characters/augusta-spinning/body4.png",
         "head1": "assets/characters/augusta-spinning/head1.png",
         "head2": "assets/characters/augusta-spinning/head2.png"
       },
@@ -1268,6 +1320,7 @@
         "body1": "assets/characters/xin-spinning/body1.png",
         "body2": "assets/characters/xin-spinning/body2.png",
         "body3": "assets/characters/xin-spinning/body3.png",
+        "body4": "assets/characters/xin-spinning/body4.png",
         "head1": "assets/characters/xin-spinning/head1.png",
         "head2": "assets/characters/xin-spinning/head2.png"
       },
@@ -1292,6 +1345,7 @@
         "body1": "assets/characters/jiyan-spinning/body1.png",
         "body2": "assets/characters/jiyan-spinning/body2.png",
         "body3": "assets/characters/jiyan-spinning/body3.png",
+        "body4": "assets/characters/jiyan-spinning/body4.png",
         "head1": "assets/characters/jiyan-spinning/head1.png",
         "head2": "assets/characters/jiyan-spinning/head2.png"
       },
@@ -1316,6 +1370,7 @@
         "body1": "assets/characters/jianxin-spinning/body1.png",
         "body2": "assets/characters/jianxin-spinning/body2.png",
         "body3": "assets/characters/jianxin-spinning/body3.png",
+        "body4": "assets/characters/jianxin-spinning/body4.png",
         "head1": "assets/characters/jianxin-spinning/head1.png",
         "head2": "assets/characters/jianxin-spinning/head2.png"
       },
@@ -1340,6 +1395,7 @@
         "body1": "assets/characters/xiakong-spinning/body1.png",
         "body2": "assets/characters/xiakong-spinning/body2.png",
         "body3": "assets/characters/xiakong-spinning/body3.png",
+        "body4": "assets/characters/xiakong-spinning/body4.png",
         "head1": "assets/characters/xiakong-spinning/head1.png",
         "head2": "assets/characters/xiakong-spinning/head2.png"
       },
@@ -1364,6 +1420,7 @@
         "body1": "assets/characters/katisia-spinning/body1.png",
         "body2": "assets/characters/katisia-spinning/body2.png",
         "body3": "assets/characters/katisia-spinning/body3.png",
+        "body4": "assets/characters/katisia-spinning/body4.png",
         "head1": "assets/characters/katisia-spinning/head1.png",
         "head2": "assets/characters/katisia-spinning/head2.png"
       },
@@ -1388,6 +1445,7 @@
         "body1": "assets/characters/yuno-spinning/body1.png",
         "body2": "assets/characters/yuno-spinning/body2.png",
         "body3": "assets/characters/yuno-spinning/body3.png",
+        "body4": "assets/characters/yuno-spinning/body4.png",
         "head1": "assets/characters/yuno-spinning/head1.png",
         "head2": "assets/characters/yuno-spinning/head2.png"
       },
@@ -1412,6 +1470,7 @@
         "body1": "assets/characters/qiuyuan-spinning/body1.png",
         "body2": "assets/characters/qiuyuan-spinning/body2.png",
         "body3": "assets/characters/qiuyuan-spinning/body3.png",
+        "body4": "assets/characters/qiuyuan-spinning/body4.png",
         "head1": "assets/characters/qiuyuan-spinning/head1.png",
         "head2": "assets/characters/qiuyuan-spinning/head2.png"
       },
@@ -1436,6 +1495,7 @@
         "body1": "assets/characters/sigrika-spinning/body1.png",
         "body2": "assets/characters/sigrika-spinning/body2.png",
         "body3": "assets/characters/sigrika-spinning/body3.png",
+        "body4": "assets/characters/sigrika-spinning/body4.png",
         "head1": "assets/characters/sigrika-spinning/head1.png",
         "head2": "assets/characters/sigrika-spinning/head2.png"
       },
@@ -1460,6 +1520,7 @@
         "body1": "assets/characters/qingsxiao-spinning/body1.png",
         "body2": "assets/characters/qingsxiao-spinning/body2.png",
         "body3": "assets/characters/qingsxiao-spinning/body3.png",
+        "body4": "assets/characters/qingsxiao-spinning/body4.png",
         "head1": "assets/characters/qingsxiao-spinning/head1.png",
         "head2": "assets/characters/qingsxiao-spinning/head2.png"
       },
@@ -1484,6 +1545,7 @@
         "body1": "assets/characters/carlotta-are/body1.png",
         "body2": "assets/characters/carlotta-are/body2.png",
         "body3": "assets/characters/carlotta-are/body3.png",
+        "body4": "assets/characters/carlotta-are/body4.png",
         "head1": "assets/characters/carlotta-are/head1.png",
         "head2": "assets/characters/carlotta-are/head2.png"
       },
@@ -1508,6 +1570,7 @@
         "body1": "assets/characters/phoebe-are/body1.png",
         "body2": "assets/characters/phoebe-are/body2.png",
         "body3": "assets/characters/phoebe-are/body3.png",
+        "body4": "assets/characters/phoebe-are/body4.png",
         "head1": "assets/characters/phoebe-are/head1.png",
         "head2": "assets/characters/phoebe-are/head2.png"
       },
@@ -1532,6 +1595,7 @@
         "body1": "assets/characters/roccia-are/body1.png",
         "body2": "assets/characters/roccia-are/body2.png",
         "body3": "assets/characters/roccia-are/body3.png",
+        "body4": "assets/characters/roccia-are/body4.png",
         "head1": "assets/characters/roccia-are/head1.png",
         "head2": "assets/characters/roccia-are/head2.png"
       },
@@ -1556,6 +1620,7 @@
         "body1": "assets/characters/sui-sui-are/body1.png",
         "body2": "assets/characters/sui-sui-are/body2.png",
         "body3": "assets/characters/sui-sui-are/body3.png",
+        "body4": "assets/characters/sui-sui-are/body4.png",
         "head1": "assets/characters/sui-sui-are/head1.png",
         "head2": "assets/characters/sui-sui-are/head2.png"
       },
@@ -1580,6 +1645,7 @@
         "body1": "assets/characters/changli-are/body1.png",
         "body2": "assets/characters/changli-are/body2.png",
         "body3": "assets/characters/changli-are/body3.png",
+        "body4": "assets/characters/changli-are/body4.png",
         "head1": "assets/characters/changli-are/head1.png",
         "head2": "assets/characters/changli-are/head2.png"
       },
@@ -1604,6 +1670,7 @@
         "body1": "assets/characters/brant-are/body1.png",
         "body2": "assets/characters/brant-are/body2.png",
         "body3": "assets/characters/brant-are/body3.png",
+        "body4": "assets/characters/brant-are/body4.png",
         "head1": "assets/characters/brant-are/head1.png",
         "head2": "assets/characters/brant-are/head2.png"
       },
@@ -1628,6 +1695,7 @@
         "body1": "assets/characters/lupa-are/body1.png",
         "body2": "assets/characters/lupa-are/body2.png",
         "body3": "assets/characters/lupa-are/body3.png",
+        "body4": "assets/characters/lupa-are/body4.png",
         "head1": "assets/characters/lupa-are/head1.png",
         "head2": "assets/characters/lupa-are/head2.png"
       },
@@ -1652,6 +1720,7 @@
         "body1": "assets/characters/gaberina-are/body1.png",
         "body2": "assets/characters/gaberina-are/body2.png",
         "body3": "assets/characters/gaberina-are/body3.png",
+        "body4": "assets/characters/gaberina-are/body4.png",
         "head1": "assets/characters/gaberina-are/head1.png",
         "head2": "assets/characters/gaberina-are/head2.png"
       },
@@ -1676,6 +1745,7 @@
         "body1": "assets/characters/mornye-are/body1.png",
         "body2": "assets/characters/mornye-are/body2.png",
         "body3": "assets/characters/mornye-are/body3.png",
+        "body4": "assets/characters/mornye-are/body4.png",
         "head1": "assets/characters/mornye-are/head1.png",
         "head2": "assets/characters/mornye-are/head2.png"
       },
@@ -1700,6 +1770,7 @@
         "body1": "assets/characters/amis-are/body1.png",
         "body2": "assets/characters/amis-are/body2.png",
         "body3": "assets/characters/amis-are/body3.png",
+        "body4": "assets/characters/amis-are/body4.png",
         "head1": "assets/characters/amis-are/head1.png",
         "head2": "assets/characters/amis-are/head2.png"
       },
@@ -1724,6 +1795,7 @@
         "body1": "assets/characters/danya-are/body1.png",
         "body2": "assets/characters/danya-are/body2.png",
         "body3": "assets/characters/danya-are/body3.png",
+        "body4": "assets/characters/danya-are/body4.png",
         "head1": "assets/characters/danya-are/head1.png",
         "head2": "assets/characters/danya-are/head2.png"
       },
@@ -1748,6 +1820,7 @@
         "body1": "assets/characters/jingran-are/body1.png",
         "body2": "assets/characters/jingran-are/body2.png",
         "body3": "assets/characters/jingran-are/body3.png",
+        "body4": "assets/characters/jingran-are/body4.png",
         "head1": "assets/characters/jingran-are/head1.png",
         "head2": "assets/characters/jingran-are/head2.png"
       },
@@ -1772,6 +1845,7 @@
         "body1": "assets/characters/yinlin-are/body1.png",
         "body2": "assets/characters/yinlin-are/body2.png",
         "body3": "assets/characters/yinlin-are/body3.png",
+        "body4": "assets/characters/yinlin-are/body4.png",
         "head1": "assets/characters/yinlin-are/head1.png",
         "head2": "assets/characters/yinlin-are/head2.png"
       },
@@ -1796,6 +1870,7 @@
         "body1": "assets/characters/jinhsi-are/body1.png",
         "body2": "assets/characters/jinhsi-are/body2.png",
         "body3": "assets/characters/jinhsi-are/body3.png",
+        "body4": "assets/characters/jinhsi-are/body4.png",
         "head1": "assets/characters/jinhsi-are/head1.png",
         "head2": "assets/characters/jinhsi-are/head2.png"
       },
@@ -1820,6 +1895,7 @@
         "body1": "assets/characters/xiangli-yao-are/body1.png",
         "body2": "assets/characters/xiangli-yao-are/body2.png",
         "body3": "assets/characters/xiangli-yao-are/body3.png",
+        "body4": "assets/characters/xiangli-yao-are/body4.png",
         "head1": "assets/characters/xiangli-yao-are/head1.png",
         "head2": "assets/characters/xiangli-yao-are/head2.png"
       },
@@ -1844,6 +1920,7 @@
         "body1": "assets/characters/augusta-are/body1.png",
         "body2": "assets/characters/augusta-are/body2.png",
         "body3": "assets/characters/augusta-are/body3.png",
+        "body4": "assets/characters/augusta-are/body4.png",
         "head1": "assets/characters/augusta-are/head1.png",
         "head2": "assets/characters/augusta-are/head2.png"
       },
@@ -1868,6 +1945,7 @@
         "body1": "assets/characters/xin-are/body1.png",
         "body2": "assets/characters/xin-are/body2.png",
         "body3": "assets/characters/xin-are/body3.png",
+        "body4": "assets/characters/xin-are/body4.png",
         "head1": "assets/characters/xin-are/head1.png",
         "head2": "assets/characters/xin-are/head2.png"
       },
@@ -1892,6 +1970,7 @@
         "body1": "assets/characters/jiyan-are/body1.png",
         "body2": "assets/characters/jiyan-are/body2.png",
         "body3": "assets/characters/jiyan-are/body3.png",
+        "body4": "assets/characters/jiyan-are/body4.png",
         "head1": "assets/characters/jiyan-are/head1.png",
         "head2": "assets/characters/jiyan-are/head2.png"
       },
@@ -1916,6 +1995,7 @@
         "body1": "assets/characters/xiakong-are/body1.png",
         "body2": "assets/characters/xiakong-are/body2.png",
         "body3": "assets/characters/xiakong-are/body3.png",
+        "body4": "assets/characters/xiakong-are/body4.png",
         "head1": "assets/characters/xiakong-are/head1.png",
         "head2": "assets/characters/xiakong-are/head2.png"
       },
@@ -1940,6 +2020,7 @@
         "body1": "assets/characters/katisia-are/body1.png",
         "body2": "assets/characters/katisia-are/body2.png",
         "body3": "assets/characters/katisia-are/body3.png",
+        "body4": "assets/characters/katisia-are/body4.png",
         "head1": "assets/characters/katisia-are/head1.png",
         "head2": "assets/characters/katisia-are/head2.png"
       },
@@ -1964,6 +2045,7 @@
         "body1": "assets/characters/yuno-are/body1.png",
         "body2": "assets/characters/yuno-are/body2.png",
         "body3": "assets/characters/yuno-are/body3.png",
+        "body4": "assets/characters/yuno-are/body4.png",
         "head1": "assets/characters/yuno-are/head1.png",
         "head2": "assets/characters/yuno-are/head2.png"
       },
@@ -1988,6 +2070,7 @@
         "body1": "assets/characters/qiuyuan-are/body1.png",
         "body2": "assets/characters/qiuyuan-are/body2.png",
         "body3": "assets/characters/qiuyuan-are/body3.png",
+        "body4": "assets/characters/qiuyuan-are/body4.png",
         "head1": "assets/characters/qiuyuan-are/head1.png",
         "head2": "assets/characters/qiuyuan-are/head2.png"
       },
@@ -2012,6 +2095,7 @@
         "body1": "assets/characters/sigrika-are/body1.png",
         "body2": "assets/characters/sigrika-are/body2.png",
         "body3": "assets/characters/sigrika-are/body3.png",
+        "body4": "assets/characters/sigrika-are/body4.png",
         "head1": "assets/characters/sigrika-are/head1.png",
         "head2": "assets/characters/sigrika-are/head2.png"
       },
@@ -2036,6 +2120,7 @@
         "body1": "assets/characters/qingsxiao-are/body1.png",
         "body2": "assets/characters/qingsxiao-are/body2.png",
         "body3": "assets/characters/qingsxiao-are/body3.png",
+        "body4": "assets/characters/qingsxiao-are/body4.png",
         "head1": "assets/characters/qingsxiao-are/head1.png",
         "head2": "assets/characters/qingsxiao-are/head2.png"
       },
@@ -2060,6 +2145,7 @@
         "body1": "assets/characters/shorekeeper-are/body1.png",
         "body2": "assets/characters/shorekeeper-are/body2.png",
         "body3": "assets/characters/shorekeeper-are/body3.png",
+        "body4": "assets/characters/shorekeeper-are/body4.png",
         "head1": "assets/characters/shorekeeper-are/head1.png",
         "head2": "assets/characters/shorekeeper-are/head2.png"
       },
@@ -2084,6 +2170,7 @@
         "body1": "assets/characters/phebe-are/body1.png",
         "body2": "assets/characters/phebe-are/body2.png",
         "body3": "assets/characters/phebe-are/body3.png",
+        "body4": "assets/characters/phebe-are/body4.png",
         "head1": "assets/characters/phebe-are/head1.png",
         "head2": "assets/characters/phebe-are/head2.png"
       },
@@ -2108,6 +2195,7 @@
         "body1": "assets/characters/zani-are/body1.png",
         "body2": "assets/characters/zani-are/body2.png",
         "body3": "assets/characters/zani-are/body3.png",
+        "body4": "assets/characters/zani-are/body4.png",
         "head1": "assets/characters/zani-are/head1.png",
         "head2": "assets/characters/zani-are/head2.png"
       },
@@ -2132,6 +2220,7 @@
         "body1": "assets/characters/chisaki-are/body1.png",
         "body2": "assets/characters/chisaki-are/body2.png",
         "body3": "assets/characters/chisaki-are/body3.png",
+        "body4": "assets/characters/chisaki-are/body4.png",
         "head1": "assets/characters/chisaki-are/head1.png",
         "head2": "assets/characters/chisaki-are/head2.png"
       },
@@ -2156,6 +2245,7 @@
         "body1": "assets/characters/linnae-are/body1.png",
         "body2": "assets/characters/linnae-are/body2.png",
         "body3": "assets/characters/linnae-are/body3.png",
+        "body4": "assets/characters/linnae-are/body4.png",
         "head1": "assets/characters/linnae-are/head1.png",
         "head2": "assets/characters/linnae-are/head2.png"
       },
@@ -2180,6 +2270,7 @@
         "body1": "assets/characters/lu-hess-are/body1.png",
         "body2": "assets/characters/lu-hess-are/body2.png",
         "body3": "assets/characters/lu-hess-are/body3.png",
+        "body4": "assets/characters/lu-hess-are/body4.png",
         "head1": "assets/characters/lu-hess-are/head1.png",
         "head2": "assets/characters/lu-hess-are/head2.png"
       },
@@ -2204,6 +2295,7 @@
         "body1": "assets/characters/camellya-are/body1.png",
         "body2": "assets/characters/camellya-are/body2.png",
         "body3": "assets/characters/camellya-are/body3.png",
+        "body4": "assets/characters/camellya-are/body4.png",
         "head1": "assets/characters/camellya-are/head1.png",
         "head2": "assets/characters/camellya-are/head2.png"
       },
@@ -2228,6 +2320,7 @@
         "body1": "assets/characters/rococo-are/body1.png",
         "body2": "assets/characters/rococo-are/body2.png",
         "body3": "assets/characters/rococo-are/body3.png",
+        "body4": "assets/characters/rococo-are/body4.png",
         "head1": "assets/characters/rococo-are/head1.png",
         "head2": "assets/characters/rococo-are/head2.png"
       },
@@ -2252,6 +2345,7 @@
         "body1": "assets/characters/cantarella-are/body1.png",
         "body2": "assets/characters/cantarella-are/body2.png",
         "body3": "assets/characters/cantarella-are/body3.png",
+        "body4": "assets/characters/cantarella-are/body4.png",
         "head1": "assets/characters/cantarella-are/head1.png",
         "head2": "assets/characters/cantarella-are/head2.png"
       },
@@ -2276,6 +2370,7 @@
         "body1": "assets/characters/phrolova-are/body1.png",
         "body2": "assets/characters/phrolova-are/body2.png",
         "body3": "assets/characters/phrolova-are/body3.png",
+        "body4": "assets/characters/phrolova-are/body4.png",
         "head1": "assets/characters/phrolova-are/head1.png",
         "head2": "assets/characters/phrolova-are/head2.png"
       },
@@ -2300,6 +2395,7 @@
         "body1": "assets/characters/yangyang-plume-are/body1.png",
         "body2": "assets/characters/yangyang-plume-are/body2.png",
         "body3": "assets/characters/yangyang-plume-are/body3.png",
+        "body4": "assets/characters/yangyang-plume-are/body4.png",
         "head1": "assets/characters/yangyang-plume-are/head1.png",
         "head2": "assets/characters/yangyang-plume-are/head2.png"
       },
@@ -2324,6 +2420,7 @@
         "body1": "assets/characters/zhezhi-are/body1.png",
         "body2": "assets/characters/zhezhi-are/body2.png",
         "body3": "assets/characters/zhezhi-are/body3.png",
+        "body4": "assets/characters/zhezhi-are/body4.png",
         "head1": "assets/characters/zhezhi-are/head1.png",
         "head2": "assets/characters/zhezhi-are/head2.png"
       },
@@ -2348,6 +2445,7 @@
         "body1": "assets/characters/rover-f-are/body1.png",
         "body2": "assets/characters/rover-f-are/body2.png",
         "body3": "assets/characters/rover-f-are/body3.png",
+        "body4": "assets/characters/rover-f-are/body4.png",
         "head1": "assets/characters/rover-f-are/head1.png",
         "head2": "assets/characters/rover-f-are/head2.png"
       },
@@ -2372,6 +2470,7 @@
         "body1": "assets/characters/rover-m-classic/body1.png",
         "body2": "assets/characters/rover-m-classic/body2.png",
         "body3": "assets/characters/rover-m-classic/body3.png",
+        "body4": "assets/characters/rover-m-classic/body4.png",
         "head1": "assets/characters/rover-m-classic/head1.png",
         "head2": "assets/characters/rover-m-classic/head2.png"
       },
@@ -2396,6 +2495,7 @@
         "body1": "assets/characters/rover-m-are/body1.png",
         "body2": "assets/characters/rover-m-are/body2.png",
         "body3": "assets/characters/rover-m-are/body3.png",
+        "body4": "assets/characters/rover-m-are/body4.png",
         "head1": "assets/characters/rover-m-are/head1.png",
         "head2": "assets/characters/rover-m-are/head2.png"
       },
@@ -2420,6 +2520,7 @@
         "body1": "assets/characters/rover-f-classic/body1.png",
         "body2": "assets/characters/rover-f-classic/body2.png",
         "body3": "assets/characters/rover-f-classic/body3.png",
+        "body4": "assets/characters/rover-f-classic/body4.png",
         "head1": "assets/characters/rover-f-classic/head1.png",
         "head2": "assets/characters/rover-f-classic/head2.png"
       },
@@ -2444,6 +2545,7 @@
         "body1": "assets/characters/carlotta-pixel/body1.png",
         "body2": "assets/characters/carlotta-pixel/body2.png",
         "body3": "assets/characters/carlotta-pixel/body3.png",
+        "body4": "assets/characters/carlotta-pixel/body4.png",
         "head1": "assets/characters/carlotta-pixel/head1.png",
         "head2": "assets/characters/carlotta-pixel/head2.png"
       },
@@ -2468,6 +2570,7 @@
         "body1": "assets/characters/phoebe-pixel/body1.png",
         "body2": "assets/characters/phoebe-pixel/body2.png",
         "body3": "assets/characters/phoebe-pixel/body3.png",
+        "body4": "assets/characters/phoebe-pixel/body4.png",
         "head1": "assets/characters/phoebe-pixel/head1.png",
         "head2": "assets/characters/phoebe-pixel/head2.png"
       },
@@ -2492,6 +2595,7 @@
         "body1": "assets/characters/roccia-pixel/body1.png",
         "body2": "assets/characters/roccia-pixel/body2.png",
         "body3": "assets/characters/roccia-pixel/body3.png",
+        "body4": "assets/characters/roccia-pixel/body4.png",
         "head1": "assets/characters/roccia-pixel/head1.png",
         "head2": "assets/characters/roccia-pixel/head2.png"
       },
@@ -2516,6 +2620,7 @@
         "body1": "assets/characters/sui-sui-pixel/body1.png",
         "body2": "assets/characters/sui-sui-pixel/body2.png",
         "body3": "assets/characters/sui-sui-pixel/body3.png",
+        "body4": "assets/characters/sui-sui-pixel/body4.png",
         "head1": "assets/characters/sui-sui-pixel/head1.png",
         "head2": "assets/characters/sui-sui-pixel/head2.png"
       },
@@ -2540,6 +2645,7 @@
         "body1": "assets/characters/changli-pixel/body1.png",
         "body2": "assets/characters/changli-pixel/body2.png",
         "body3": "assets/characters/changli-pixel/body3.png",
+        "body4": "assets/characters/changli-pixel/body4.png",
         "head1": "assets/characters/changli-pixel/head1.png",
         "head2": "assets/characters/changli-pixel/head2.png"
       },
@@ -2564,6 +2670,7 @@
         "body1": "assets/characters/brant-pixel/body1.png",
         "body2": "assets/characters/brant-pixel/body2.png",
         "body3": "assets/characters/brant-pixel/body3.png",
+        "body4": "assets/characters/brant-pixel/body4.png",
         "head1": "assets/characters/brant-pixel/head1.png",
         "head2": "assets/characters/brant-pixel/head2.png"
       },
@@ -2588,6 +2695,7 @@
         "body1": "assets/characters/lupa-pixel/body1.png",
         "body2": "assets/characters/lupa-pixel/body2.png",
         "body3": "assets/characters/lupa-pixel/body3.png",
+        "body4": "assets/characters/lupa-pixel/body4.png",
         "head1": "assets/characters/lupa-pixel/head1.png",
         "head2": "assets/characters/lupa-pixel/head2.png"
       },
@@ -2612,6 +2720,7 @@
         "body1": "assets/characters/gaberina-pixel/body1.png",
         "body2": "assets/characters/gaberina-pixel/body2.png",
         "body3": "assets/characters/gaberina-pixel/body3.png",
+        "body4": "assets/characters/gaberina-pixel/body4.png",
         "head1": "assets/characters/gaberina-pixel/head1.png",
         "head2": "assets/characters/gaberina-pixel/head2.png"
       },
@@ -2636,6 +2745,7 @@
         "body1": "assets/characters/mornye-pixel/body1.png",
         "body2": "assets/characters/mornye-pixel/body2.png",
         "body3": "assets/characters/mornye-pixel/body3.png",
+        "body4": "assets/characters/mornye-pixel/body4.png",
         "head1": "assets/characters/mornye-pixel/head1.png",
         "head2": "assets/characters/mornye-pixel/head2.png"
       },
@@ -2660,6 +2770,7 @@
         "body1": "assets/characters/amis-pixel/body1.png",
         "body2": "assets/characters/amis-pixel/body2.png",
         "body3": "assets/characters/amis-pixel/body3.png",
+        "body4": "assets/characters/amis-pixel/body4.png",
         "head1": "assets/characters/amis-pixel/head1.png",
         "head2": "assets/characters/amis-pixel/head2.png"
       },
@@ -2684,6 +2795,7 @@
         "body1": "assets/characters/danya-pixel/body1.png",
         "body2": "assets/characters/danya-pixel/body2.png",
         "body3": "assets/characters/danya-pixel/body3.png",
+        "body4": "assets/characters/danya-pixel/body4.png",
         "head1": "assets/characters/danya-pixel/head1.png",
         "head2": "assets/characters/danya-pixel/head2.png"
       },
@@ -2708,6 +2820,7 @@
         "body1": "assets/characters/jingran-pixel/body1.png",
         "body2": "assets/characters/jingran-pixel/body2.png",
         "body3": "assets/characters/jingran-pixel/body3.png",
+        "body4": "assets/characters/jingran-pixel/body4.png",
         "head1": "assets/characters/jingran-pixel/head1.png",
         "head2": "assets/characters/jingran-pixel/head2.png"
       },
@@ -2732,6 +2845,7 @@
         "body1": "assets/characters/yinlin-pixel/body1.png",
         "body2": "assets/characters/yinlin-pixel/body2.png",
         "body3": "assets/characters/yinlin-pixel/body3.png",
+        "body4": "assets/characters/yinlin-pixel/body4.png",
         "head1": "assets/characters/yinlin-pixel/head1.png",
         "head2": "assets/characters/yinlin-pixel/head2.png"
       },
@@ -2756,6 +2870,7 @@
         "body1": "assets/characters/jinhsi-pixel/body1.png",
         "body2": "assets/characters/jinhsi-pixel/body2.png",
         "body3": "assets/characters/jinhsi-pixel/body3.png",
+        "body4": "assets/characters/jinhsi-pixel/body4.png",
         "head1": "assets/characters/jinhsi-pixel/head1.png",
         "head2": "assets/characters/jinhsi-pixel/head2.png"
       },
@@ -2780,6 +2895,7 @@
         "body1": "assets/characters/xiangli-yao-pixel/body1.png",
         "body2": "assets/characters/xiangli-yao-pixel/body2.png",
         "body3": "assets/characters/xiangli-yao-pixel/body3.png",
+        "body4": "assets/characters/xiangli-yao-pixel/body4.png",
         "head1": "assets/characters/xiangli-yao-pixel/head1.png",
         "head2": "assets/characters/xiangli-yao-pixel/head2.png"
       },
@@ -2804,6 +2920,7 @@
         "body1": "assets/characters/augusta-pixel/body1.png",
         "body2": "assets/characters/augusta-pixel/body2.png",
         "body3": "assets/characters/augusta-pixel/body3.png",
+        "body4": "assets/characters/augusta-pixel/body4.png",
         "head1": "assets/characters/augusta-pixel/head1.png",
         "head2": "assets/characters/augusta-pixel/head2.png"
       },
@@ -2828,6 +2945,7 @@
         "body1": "assets/characters/xin-pixel/body1.png",
         "body2": "assets/characters/xin-pixel/body2.png",
         "body3": "assets/characters/xin-pixel/body3.png",
+        "body4": "assets/characters/xin-pixel/body4.png",
         "head1": "assets/characters/xin-pixel/head1.png",
         "head2": "assets/characters/xin-pixel/head2.png"
       },
@@ -2852,6 +2970,7 @@
         "body1": "assets/characters/jiyan-pixel/body1.png",
         "body2": "assets/characters/jiyan-pixel/body2.png",
         "body3": "assets/characters/jiyan-pixel/body3.png",
+        "body4": "assets/characters/jiyan-pixel/body4.png",
         "head1": "assets/characters/jiyan-pixel/head1.png",
         "head2": "assets/characters/jiyan-pixel/head2.png"
       },
@@ -2876,6 +2995,7 @@
         "body1": "assets/characters/xiakong-pixel/body1.png",
         "body2": "assets/characters/xiakong-pixel/body2.png",
         "body3": "assets/characters/xiakong-pixel/body3.png",
+        "body4": "assets/characters/xiakong-pixel/body4.png",
         "head1": "assets/characters/xiakong-pixel/head1.png",
         "head2": "assets/characters/xiakong-pixel/head2.png"
       },
@@ -2900,6 +3020,7 @@
         "body1": "assets/characters/katisia-pixel/body1.png",
         "body2": "assets/characters/katisia-pixel/body2.png",
         "body3": "assets/characters/katisia-pixel/body3.png",
+        "body4": "assets/characters/katisia-pixel/body4.png",
         "head1": "assets/characters/katisia-pixel/head1.png",
         "head2": "assets/characters/katisia-pixel/head2.png"
       },
@@ -2924,6 +3045,7 @@
         "body1": "assets/characters/yuno-pixel/body1.png",
         "body2": "assets/characters/yuno-pixel/body2.png",
         "body3": "assets/characters/yuno-pixel/body3.png",
+        "body4": "assets/characters/yuno-pixel/body4.png",
         "head1": "assets/characters/yuno-pixel/head1.png",
         "head2": "assets/characters/yuno-pixel/head2.png"
       },
@@ -2948,6 +3070,7 @@
         "body1": "assets/characters/qiuyuan-pixel/body1.png",
         "body2": "assets/characters/qiuyuan-pixel/body2.png",
         "body3": "assets/characters/qiuyuan-pixel/body3.png",
+        "body4": "assets/characters/qiuyuan-pixel/body4.png",
         "head1": "assets/characters/qiuyuan-pixel/head1.png",
         "head2": "assets/characters/qiuyuan-pixel/head2.png"
       },
@@ -2972,6 +3095,7 @@
         "body1": "assets/characters/sigrika-pixel/body1.png",
         "body2": "assets/characters/sigrika-pixel/body2.png",
         "body3": "assets/characters/sigrika-pixel/body3.png",
+        "body4": "assets/characters/sigrika-pixel/body4.png",
         "head1": "assets/characters/sigrika-pixel/head1.png",
         "head2": "assets/characters/sigrika-pixel/head2.png"
       },
@@ -2996,6 +3120,7 @@
         "body1": "assets/characters/qingsxiao-pixel/body1.png",
         "body2": "assets/characters/qingsxiao-pixel/body2.png",
         "body3": "assets/characters/qingsxiao-pixel/body3.png",
+        "body4": "assets/characters/qingsxiao-pixel/body4.png",
         "head1": "assets/characters/qingsxiao-pixel/head1.png",
         "head2": "assets/characters/qingsxiao-pixel/head2.png"
       },
@@ -3020,6 +3145,7 @@
         "body1": "assets/characters/rover-m-pixel/body1.png",
         "body2": "assets/characters/rover-m-pixel/body2.png",
         "body3": "assets/characters/rover-m-pixel/body3.png",
+        "body4": "assets/characters/rover-m-pixel/body4.png",
         "head1": "assets/characters/rover-m-pixel/head1.png",
         "head2": "assets/characters/rover-m-pixel/head2.png"
       },
@@ -3044,6 +3170,7 @@
         "body1": "assets/characters/rover-f-pixel/body1.png",
         "body2": "assets/characters/rover-f-pixel/body2.png",
         "body3": "assets/characters/rover-f-pixel/body3.png",
+        "body4": "assets/characters/rover-f-pixel/body4.png",
         "head1": "assets/characters/rover-f-pixel/head1.png",
         "head2": "assets/characters/rover-f-pixel/head2.png"
       },
@@ -3068,6 +3195,7 @@
         "body1": "assets/characters/shorekeeper-pixel/body1.png",
         "body2": "assets/characters/shorekeeper-pixel/body2.png",
         "body3": "assets/characters/shorekeeper-pixel/body3.png",
+        "body4": "assets/characters/shorekeeper-pixel/body4.png",
         "head1": "assets/characters/shorekeeper-pixel/head1.png",
         "head2": "assets/characters/shorekeeper-pixel/head2.png"
       },
@@ -3092,6 +3220,7 @@
         "body1": "assets/characters/phebe-pixel/body1.png",
         "body2": "assets/characters/phebe-pixel/body2.png",
         "body3": "assets/characters/phebe-pixel/body3.png",
+        "body4": "assets/characters/phebe-pixel/body4.png",
         "head1": "assets/characters/phebe-pixel/head1.png",
         "head2": "assets/characters/phebe-pixel/head2.png"
       },
@@ -3116,6 +3245,7 @@
         "body1": "assets/characters/zani-pixel/body1.png",
         "body2": "assets/characters/zani-pixel/body2.png",
         "body3": "assets/characters/zani-pixel/body3.png",
+        "body4": "assets/characters/zani-pixel/body4.png",
         "head1": "assets/characters/zani-pixel/head1.png",
         "head2": "assets/characters/zani-pixel/head2.png"
       },
@@ -3140,6 +3270,7 @@
         "body1": "assets/characters/chisaki-pixel/body1.png",
         "body2": "assets/characters/chisaki-pixel/body2.png",
         "body3": "assets/characters/chisaki-pixel/body3.png",
+        "body4": "assets/characters/chisaki-pixel/body4.png",
         "head1": "assets/characters/chisaki-pixel/head1.png",
         "head2": "assets/characters/chisaki-pixel/head2.png"
       },
@@ -3164,6 +3295,7 @@
         "body1": "assets/characters/linnae-pixel/body1.png",
         "body2": "assets/characters/linnae-pixel/body2.png",
         "body3": "assets/characters/linnae-pixel/body3.png",
+        "body4": "assets/characters/linnae-pixel/body4.png",
         "head1": "assets/characters/linnae-pixel/head1.png",
         "head2": "assets/characters/linnae-pixel/head2.png"
       },
@@ -3188,6 +3320,7 @@
         "body1": "assets/characters/lu-hess-pixel/body1.png",
         "body2": "assets/characters/lu-hess-pixel/body2.png",
         "body3": "assets/characters/lu-hess-pixel/body3.png",
+        "body4": "assets/characters/lu-hess-pixel/body4.png",
         "head1": "assets/characters/lu-hess-pixel/head1.png",
         "head2": "assets/characters/lu-hess-pixel/head2.png"
       },
@@ -3212,6 +3345,7 @@
         "body1": "assets/characters/camellya-pixel/body1.png",
         "body2": "assets/characters/camellya-pixel/body2.png",
         "body3": "assets/characters/camellya-pixel/body3.png",
+        "body4": "assets/characters/camellya-pixel/body4.png",
         "head1": "assets/characters/camellya-pixel/head1.png",
         "head2": "assets/characters/camellya-pixel/head2.png"
       },
@@ -3236,6 +3370,7 @@
         "body1": "assets/characters/rococo-pixel/body1.png",
         "body2": "assets/characters/rococo-pixel/body2.png",
         "body3": "assets/characters/rococo-pixel/body3.png",
+        "body4": "assets/characters/rococo-pixel/body4.png",
         "head1": "assets/characters/rococo-pixel/head1.png",
         "head2": "assets/characters/rococo-pixel/head2.png"
       },
@@ -3260,6 +3395,7 @@
         "body1": "assets/characters/cantarella-pixel/body1.png",
         "body2": "assets/characters/cantarella-pixel/body2.png",
         "body3": "assets/characters/cantarella-pixel/body3.png",
+        "body4": "assets/characters/cantarella-pixel/body4.png",
         "head1": "assets/characters/cantarella-pixel/head1.png",
         "head2": "assets/characters/cantarella-pixel/head2.png"
       },
@@ -3284,6 +3420,7 @@
         "body1": "assets/characters/phrolova-pixel/body1.png",
         "body2": "assets/characters/phrolova-pixel/body2.png",
         "body3": "assets/characters/phrolova-pixel/body3.png",
+        "body4": "assets/characters/phrolova-pixel/body4.png",
         "head1": "assets/characters/phrolova-pixel/head1.png",
         "head2": "assets/characters/phrolova-pixel/head2.png"
       },
@@ -3308,6 +3445,7 @@
         "body1": "assets/characters/yangyang-plume-pixel/body1.png",
         "body2": "assets/characters/yangyang-plume-pixel/body2.png",
         "body3": "assets/characters/yangyang-plume-pixel/body3.png",
+        "body4": "assets/characters/yangyang-plume-pixel/body4.png",
         "head1": "assets/characters/yangyang-plume-pixel/head1.png",
         "head2": "assets/characters/yangyang-plume-pixel/head2.png"
       },
@@ -3332,6 +3470,7 @@
         "body1": "assets/characters/zhezhi-pixel/body1.png",
         "body2": "assets/characters/zhezhi-pixel/body2.png",
         "body3": "assets/characters/zhezhi-pixel/body3.png",
+        "body4": "assets/characters/zhezhi-pixel/body4.png",
         "head1": "assets/characters/zhezhi-pixel/head1.png",
         "head2": "assets/characters/zhezhi-pixel/head2.png"
       },
@@ -3356,6 +3495,7 @@
         "body1": "assets/characters/laurel-nymph/body1.png",
         "body2": "assets/characters/laurel-nymph/body2.png",
         "body3": "assets/characters/laurel-nymph/body3.png",
+        "body4": "assets/characters/laurel-nymph/body4.png",
         "head1": "assets/characters/laurel-nymph/head1.png",
         "head2": "assets/characters/laurel-nymph/head2.png"
       },
@@ -3380,6 +3520,7 @@
         "body1": "assets/characters/velvet-dream/body1.png",
         "body2": "assets/characters/velvet-dream/body2.png",
         "body3": "assets/characters/velvet-dream/body3.png",
+        "body4": "assets/characters/velvet-dream/body4.png",
         "head1": "assets/characters/velvet-dream/head1.png",
         "head2": "assets/characters/velvet-dream/head2.png"
       },
@@ -3404,6 +3545,7 @@
         "body1": "assets/characters/peppermint/body1.png",
         "body2": "assets/characters/peppermint/body2.png",
         "body3": "assets/characters/peppermint/body3.png",
+        "body4": "assets/characters/peppermint/body4.png",
         "head1": "assets/characters/peppermint/head1.png",
         "head2": "assets/characters/peppermint/head2.png"
       },
@@ -3428,6 +3570,7 @@
         "body1": "assets/characters/summer-romance/body1.png",
         "body2": "assets/characters/summer-romance/body2.png",
         "body3": "assets/characters/summer-romance/body3.png",
+        "body4": "assets/characters/summer-romance/body4.png",
         "head1": "assets/characters/summer-romance/head1.png",
         "head2": "assets/characters/summer-romance/head2.png"
       },
@@ -3452,6 +3595,7 @@
         "body1": "assets/characters/peach-sorbet/body1.png",
         "body2": "assets/characters/peach-sorbet/body2.png",
         "body3": "assets/characters/peach-sorbet/body3.png",
+        "body4": "assets/characters/peach-sorbet/body4.png",
         "head1": "assets/characters/peach-sorbet/head1.png",
         "head2": "assets/characters/peach-sorbet/head2.png"
       },
@@ -3476,6 +3620,7 @@
         "body1": "assets/characters/urban-afternoon-tea/body1.png",
         "body2": "assets/characters/urban-afternoon-tea/body2.png",
         "body3": "assets/characters/urban-afternoon-tea/body3.png",
+        "body4": "assets/characters/urban-afternoon-tea/body4.png",
         "head1": "assets/characters/urban-afternoon-tea/head1.png",
         "head2": "assets/characters/urban-afternoon-tea/head2.png"
       },
@@ -3500,6 +3645,7 @@
         "body1": "assets/characters/demon-expelling-decree/body1.png",
         "body2": "assets/characters/demon-expelling-decree/body2.png",
         "body3": "assets/characters/demon-expelling-decree/body3.png",
+        "body4": "assets/characters/demon-expelling-decree/body4.png",
         "head1": "assets/characters/demon-expelling-decree/head1.png",
         "head2": "assets/characters/demon-expelling-decree/head2.png"
       },
@@ -3524,6 +3670,7 @@
         "body1": "assets/characters/eternal-spark-m/body1.png",
         "body2": "assets/characters/eternal-spark-m/body2.png",
         "body3": "assets/characters/eternal-spark-m/body3.png",
+        "body4": "assets/characters/eternal-spark-m/body4.png",
         "head1": "assets/characters/eternal-spark-m/head1.png",
         "head2": "assets/characters/eternal-spark-m/head2.png"
       },
@@ -3548,6 +3695,7 @@
         "body1": "assets/characters/eternal-spark-f/body1.png",
         "body2": "assets/characters/eternal-spark-f/body2.png",
         "body3": "assets/characters/eternal-spark-f/body3.png",
+        "body4": "assets/characters/eternal-spark-f/body4.png",
         "head1": "assets/characters/eternal-spark-f/head1.png",
         "head2": "assets/characters/eternal-spark-f/head2.png"
       },
@@ -3572,6 +3720,7 @@
         "body1": "assets/characters/radiant-peach/body1.png",
         "body2": "assets/characters/radiant-peach/body2.png",
         "body3": "assets/characters/radiant-peach/body3.png",
+        "body4": "assets/characters/radiant-peach/body4.png",
         "head1": "assets/characters/radiant-peach/head1.png",
         "head2": "assets/characters/radiant-peach/head2.png"
       },
@@ -3596,6 +3745,7 @@
         "body1": "assets/characters/carlotta-chubby/body1.png",
         "body2": "assets/characters/carlotta-chubby/body2.png",
         "body3": "assets/characters/carlotta-chubby/body3.png",
+        "body4": "assets/characters/carlotta-chubby/body4.png",
         "head1": "assets/characters/carlotta-chubby/head1.png",
         "head2": "assets/characters/carlotta-chubby/head2.png"
       },
@@ -3620,6 +3770,7 @@
         "body1": "assets/characters/phoebe-chubby/body1.png",
         "body2": "assets/characters/phoebe-chubby/body2.png",
         "body3": "assets/characters/phoebe-chubby/body3.png",
+        "body4": "assets/characters/phoebe-chubby/body4.png",
         "head1": "assets/characters/phoebe-chubby/head1.png",
         "head2": "assets/characters/phoebe-chubby/head2.png"
       },
@@ -3644,6 +3795,7 @@
         "body1": "assets/characters/roccia-chubby/body1.png",
         "body2": "assets/characters/roccia-chubby/body2.png",
         "body3": "assets/characters/roccia-chubby/body3.png",
+        "body4": "assets/characters/roccia-chubby/body4.png",
         "head1": "assets/characters/roccia-chubby/head1.png",
         "head2": "assets/characters/roccia-chubby/head2.png"
       },
@@ -3668,6 +3820,7 @@
         "body1": "assets/characters/sui-sui-chubby/body1.png",
         "body2": "assets/characters/sui-sui-chubby/body2.png",
         "body3": "assets/characters/sui-sui-chubby/body3.png",
+        "body4": "assets/characters/sui-sui-chubby/body4.png",
         "head1": "assets/characters/sui-sui-chubby/head1.png",
         "head2": "assets/characters/sui-sui-chubby/head2.png"
       },
@@ -3692,6 +3845,7 @@
         "body1": "assets/characters/changli-chubby/body1.png",
         "body2": "assets/characters/changli-chubby/body2.png",
         "body3": "assets/characters/changli-chubby/body3.png",
+        "body4": "assets/characters/changli-chubby/body4.png",
         "head1": "assets/characters/changli-chubby/head1.png",
         "head2": "assets/characters/changli-chubby/head2.png"
       },
@@ -3716,6 +3870,7 @@
         "body1": "assets/characters/brant-chubby/body1.png",
         "body2": "assets/characters/brant-chubby/body2.png",
         "body3": "assets/characters/brant-chubby/body3.png",
+        "body4": "assets/characters/brant-chubby/body4.png",
         "head1": "assets/characters/brant-chubby/head1.png",
         "head2": "assets/characters/brant-chubby/head2.png"
       },
@@ -3740,6 +3895,7 @@
         "body1": "assets/characters/lupa-chubby/body1.png",
         "body2": "assets/characters/lupa-chubby/body2.png",
         "body3": "assets/characters/lupa-chubby/body3.png",
+        "body4": "assets/characters/lupa-chubby/body4.png",
         "head1": "assets/characters/lupa-chubby/head1.png",
         "head2": "assets/characters/lupa-chubby/head2.png"
       },
@@ -3764,6 +3920,7 @@
         "body1": "assets/characters/gaberina-chubby/body1.png",
         "body2": "assets/characters/gaberina-chubby/body2.png",
         "body3": "assets/characters/gaberina-chubby/body3.png",
+        "body4": "assets/characters/gaberina-chubby/body4.png",
         "head1": "assets/characters/gaberina-chubby/head1.png",
         "head2": "assets/characters/gaberina-chubby/head2.png"
       },
@@ -3788,6 +3945,7 @@
         "body1": "assets/characters/mornye-chubby/body1.png",
         "body2": "assets/characters/mornye-chubby/body2.png",
         "body3": "assets/characters/mornye-chubby/body3.png",
+        "body4": "assets/characters/mornye-chubby/body4.png",
         "head1": "assets/characters/mornye-chubby/head1.png",
         "head2": "assets/characters/mornye-chubby/head2.png"
       },
@@ -3812,6 +3970,7 @@
         "body1": "assets/characters/amis-chubby/body1.png",
         "body2": "assets/characters/amis-chubby/body2.png",
         "body3": "assets/characters/amis-chubby/body3.png",
+        "body4": "assets/characters/amis-chubby/body4.png",
         "head1": "assets/characters/amis-chubby/head1.png",
         "head2": "assets/characters/amis-chubby/head2.png"
       },
@@ -3836,6 +3995,7 @@
         "body1": "assets/characters/danya-chubby/body1.png",
         "body2": "assets/characters/danya-chubby/body2.png",
         "body3": "assets/characters/danya-chubby/body3.png",
+        "body4": "assets/characters/danya-chubby/body4.png",
         "head1": "assets/characters/danya-chubby/head1.png",
         "head2": "assets/characters/danya-chubby/head2.png"
       },
@@ -3860,6 +4020,7 @@
         "body1": "assets/characters/jingran-chubby/body1.png",
         "body2": "assets/characters/jingran-chubby/body2.png",
         "body3": "assets/characters/jingran-chubby/body3.png",
+        "body4": "assets/characters/jingran-chubby/body4.png",
         "head1": "assets/characters/jingran-chubby/head1.png",
         "head2": "assets/characters/jingran-chubby/head2.png"
       },
@@ -3884,6 +4045,7 @@
         "body1": "assets/characters/yinlin-chubby/body1.png",
         "body2": "assets/characters/yinlin-chubby/body2.png",
         "body3": "assets/characters/yinlin-chubby/body3.png",
+        "body4": "assets/characters/yinlin-chubby/body4.png",
         "head1": "assets/characters/yinlin-chubby/head1.png",
         "head2": "assets/characters/yinlin-chubby/head2.png"
       },
@@ -3908,6 +4070,7 @@
         "body1": "assets/characters/jinhsi-chubby/body1.png",
         "body2": "assets/characters/jinhsi-chubby/body2.png",
         "body3": "assets/characters/jinhsi-chubby/body3.png",
+        "body4": "assets/characters/jinhsi-chubby/body4.png",
         "head1": "assets/characters/jinhsi-chubby/head1.png",
         "head2": "assets/characters/jinhsi-chubby/head2.png"
       },
@@ -3932,6 +4095,7 @@
         "body1": "assets/characters/xiangli-yao-chubby/body1.png",
         "body2": "assets/characters/xiangli-yao-chubby/body2.png",
         "body3": "assets/characters/xiangli-yao-chubby/body3.png",
+        "body4": "assets/characters/xiangli-yao-chubby/body4.png",
         "head1": "assets/characters/xiangli-yao-chubby/head1.png",
         "head2": "assets/characters/xiangli-yao-chubby/head2.png"
       },
@@ -3956,6 +4120,7 @@
         "body1": "assets/characters/augusta-chubby/body1.png",
         "body2": "assets/characters/augusta-chubby/body2.png",
         "body3": "assets/characters/augusta-chubby/body3.png",
+        "body4": "assets/characters/augusta-chubby/body4.png",
         "head1": "assets/characters/augusta-chubby/head1.png",
         "head2": "assets/characters/augusta-chubby/head2.png"
       },
@@ -3980,6 +4145,7 @@
         "body1": "assets/characters/xin-chubby/body1.png",
         "body2": "assets/characters/xin-chubby/body2.png",
         "body3": "assets/characters/xin-chubby/body3.png",
+        "body4": "assets/characters/xin-chubby/body4.png",
         "head1": "assets/characters/xin-chubby/head1.png",
         "head2": "assets/characters/xin-chubby/head2.png"
       },
@@ -4004,6 +4170,7 @@
         "body1": "assets/characters/jiyan-chubby/body1.png",
         "body2": "assets/characters/jiyan-chubby/body2.png",
         "body3": "assets/characters/jiyan-chubby/body3.png",
+        "body4": "assets/characters/jiyan-chubby/body4.png",
         "head1": "assets/characters/jiyan-chubby/head1.png",
         "head2": "assets/characters/jiyan-chubby/head2.png"
       },
@@ -4028,6 +4195,7 @@
         "body1": "assets/characters/xiakong-chubby/body1.png",
         "body2": "assets/characters/xiakong-chubby/body2.png",
         "body3": "assets/characters/xiakong-chubby/body3.png",
+        "body4": "assets/characters/xiakong-chubby/body4.png",
         "head1": "assets/characters/xiakong-chubby/head1.png",
         "head2": "assets/characters/xiakong-chubby/head2.png"
       },
@@ -4052,6 +4220,7 @@
         "body1": "assets/characters/katisia-chubby/body1.png",
         "body2": "assets/characters/katisia-chubby/body2.png",
         "body3": "assets/characters/katisia-chubby/body3.png",
+        "body4": "assets/characters/katisia-chubby/body4.png",
         "head1": "assets/characters/katisia-chubby/head1.png",
         "head2": "assets/characters/katisia-chubby/head2.png"
       },
@@ -4076,6 +4245,7 @@
         "body1": "assets/characters/yuno-chubby/body1.png",
         "body2": "assets/characters/yuno-chubby/body2.png",
         "body3": "assets/characters/yuno-chubby/body3.png",
+        "body4": "assets/characters/yuno-chubby/body4.png",
         "head1": "assets/characters/yuno-chubby/head1.png",
         "head2": "assets/characters/yuno-chubby/head2.png"
       },
@@ -4100,6 +4270,7 @@
         "body1": "assets/characters/qiuyuan-chubby/body1.png",
         "body2": "assets/characters/qiuyuan-chubby/body2.png",
         "body3": "assets/characters/qiuyuan-chubby/body3.png",
+        "body4": "assets/characters/qiuyuan-chubby/body4.png",
         "head1": "assets/characters/qiuyuan-chubby/head1.png",
         "head2": "assets/characters/qiuyuan-chubby/head2.png"
       },
@@ -4124,6 +4295,7 @@
         "body1": "assets/characters/sigrika-chubby/body1.png",
         "body2": "assets/characters/sigrika-chubby/body2.png",
         "body3": "assets/characters/sigrika-chubby/body3.png",
+        "body4": "assets/characters/sigrika-chubby/body4.png",
         "head1": "assets/characters/sigrika-chubby/head1.png",
         "head2": "assets/characters/sigrika-chubby/head2.png"
       },
@@ -4148,6 +4320,7 @@
         "body1": "assets/characters/qingsxiao-chubby/body1.png",
         "body2": "assets/characters/qingsxiao-chubby/body2.png",
         "body3": "assets/characters/qingsxiao-chubby/body3.png",
+        "body4": "assets/characters/qingsxiao-chubby/body4.png",
         "head1": "assets/characters/qingsxiao-chubby/head1.png",
         "head2": "assets/characters/qingsxiao-chubby/head2.png"
       },
@@ -4172,6 +4345,7 @@
         "body1": "assets/characters/rover-m-chubby/body1.png",
         "body2": "assets/characters/rover-m-chubby/body2.png",
         "body3": "assets/characters/rover-m-chubby/body3.png",
+        "body4": "assets/characters/rover-m-chubby/body4.png",
         "head1": "assets/characters/rover-m-chubby/head1.png",
         "head2": "assets/characters/rover-m-chubby/head2.png"
       },
@@ -4196,6 +4370,7 @@
         "body1": "assets/characters/rover-f-chubby/body1.png",
         "body2": "assets/characters/rover-f-chubby/body2.png",
         "body3": "assets/characters/rover-f-chubby/body3.png",
+        "body4": "assets/characters/rover-f-chubby/body4.png",
         "head1": "assets/characters/rover-f-chubby/head1.png",
         "head2": "assets/characters/rover-f-chubby/head2.png"
       },
@@ -4220,6 +4395,7 @@
         "body1": "assets/characters/shorekeeper-chubby/body1.png",
         "body2": "assets/characters/shorekeeper-chubby/body2.png",
         "body3": "assets/characters/shorekeeper-chubby/body3.png",
+        "body4": "assets/characters/shorekeeper-chubby/body4.png",
         "head1": "assets/characters/shorekeeper-chubby/head1.png",
         "head2": "assets/characters/shorekeeper-chubby/head2.png"
       },
@@ -4244,6 +4420,7 @@
         "body1": "assets/characters/phebe-chubby/body1.png",
         "body2": "assets/characters/phebe-chubby/body2.png",
         "body3": "assets/characters/phebe-chubby/body3.png",
+        "body4": "assets/characters/phebe-chubby/body4.png",
         "head1": "assets/characters/phebe-chubby/head1.png",
         "head2": "assets/characters/phebe-chubby/head2.png"
       },
@@ -4268,6 +4445,7 @@
         "body1": "assets/characters/zani-chubby/body1.png",
         "body2": "assets/characters/zani-chubby/body2.png",
         "body3": "assets/characters/zani-chubby/body3.png",
+        "body4": "assets/characters/zani-chubby/body4.png",
         "head1": "assets/characters/zani-chubby/head1.png",
         "head2": "assets/characters/zani-chubby/head2.png"
       },
@@ -4292,6 +4470,7 @@
         "body1": "assets/characters/chisaki-chubby/body1.png",
         "body2": "assets/characters/chisaki-chubby/body2.png",
         "body3": "assets/characters/chisaki-chubby/body3.png",
+        "body4": "assets/characters/chisaki-chubby/body4.png",
         "head1": "assets/characters/chisaki-chubby/head1.png",
         "head2": "assets/characters/chisaki-chubby/head2.png"
       },
@@ -4316,6 +4495,7 @@
         "body1": "assets/characters/linnae-chubby/body1.png",
         "body2": "assets/characters/linnae-chubby/body2.png",
         "body3": "assets/characters/linnae-chubby/body3.png",
+        "body4": "assets/characters/linnae-chubby/body4.png",
         "head1": "assets/characters/linnae-chubby/head1.png",
         "head2": "assets/characters/linnae-chubby/head2.png"
       },
@@ -4340,6 +4520,7 @@
         "body1": "assets/characters/lu-hess-chubby/body1.png",
         "body2": "assets/characters/lu-hess-chubby/body2.png",
         "body3": "assets/characters/lu-hess-chubby/body3.png",
+        "body4": "assets/characters/lu-hess-chubby/body4.png",
         "head1": "assets/characters/lu-hess-chubby/head1.png",
         "head2": "assets/characters/lu-hess-chubby/head2.png"
       },
@@ -4364,6 +4545,7 @@
         "body1": "assets/characters/camellya-chubby/body1.png",
         "body2": "assets/characters/camellya-chubby/body2.png",
         "body3": "assets/characters/camellya-chubby/body3.png",
+        "body4": "assets/characters/camellya-chubby/body4.png",
         "head1": "assets/characters/camellya-chubby/head1.png",
         "head2": "assets/characters/camellya-chubby/head2.png"
       },
@@ -4388,6 +4570,7 @@
         "body1": "assets/characters/rococo-chubby/body1.png",
         "body2": "assets/characters/rococo-chubby/body2.png",
         "body3": "assets/characters/rococo-chubby/body3.png",
+        "body4": "assets/characters/rococo-chubby/body4.png",
         "head1": "assets/characters/rococo-chubby/head1.png",
         "head2": "assets/characters/rococo-chubby/head2.png"
       },
@@ -4412,6 +4595,7 @@
         "body1": "assets/characters/cantarella-chubby/body1.png",
         "body2": "assets/characters/cantarella-chubby/body2.png",
         "body3": "assets/characters/cantarella-chubby/body3.png",
+        "body4": "assets/characters/cantarella-chubby/body4.png",
         "head1": "assets/characters/cantarella-chubby/head1.png",
         "head2": "assets/characters/cantarella-chubby/head2.png"
       },
@@ -4436,6 +4620,7 @@
         "body1": "assets/characters/phrolova-chubby/body1.png",
         "body2": "assets/characters/phrolova-chubby/body2.png",
         "body3": "assets/characters/phrolova-chubby/body3.png",
+        "body4": "assets/characters/phrolova-chubby/body4.png",
         "head1": "assets/characters/phrolova-chubby/head1.png",
         "head2": "assets/characters/phrolova-chubby/head2.png"
       },
@@ -4460,6 +4645,7 @@
         "body1": "assets/characters/yangyang-plume-chubby/body1.png",
         "body2": "assets/characters/yangyang-plume-chubby/body2.png",
         "body3": "assets/characters/yangyang-plume-chubby/body3.png",
+        "body4": "assets/characters/yangyang-plume-chubby/body4.png",
         "head1": "assets/characters/yangyang-plume-chubby/head1.png",
         "head2": "assets/characters/yangyang-plume-chubby/head2.png"
       },
@@ -4484,6 +4670,7 @@
         "body1": "assets/characters/zhezhi-chubby/body1.png",
         "body2": "assets/characters/zhezhi-chubby/body2.png",
         "body3": "assets/characters/zhezhi-chubby/body3.png",
+        "body4": "assets/characters/zhezhi-chubby/body4.png",
         "head1": "assets/characters/zhezhi-chubby/head1.png",
         "head2": "assets/characters/zhezhi-chubby/head2.png"
       },
@@ -4508,6 +4695,7 @@
         "body1": "assets/characters/baizhi-classic/body1.png",
         "body2": "assets/characters/baizhi-classic/body2.png",
         "body3": "assets/characters/baizhi-classic/body3.png",
+        "body4": "assets/characters/baizhi-classic/body4.png",
         "head1": "assets/characters/baizhi-classic/head1.png",
         "head2": "assets/characters/baizhi-classic/head2.png"
       },
@@ -4532,6 +4720,7 @@
         "body1": "assets/characters/lingyang-classic/body1.png",
         "body2": "assets/characters/lingyang-classic/body2.png",
         "body3": "assets/characters/lingyang-classic/body3.png",
+        "body4": "assets/characters/lingyang-classic/body4.png",
         "head1": "assets/characters/lingyang-classic/head1.png",
         "head2": "assets/characters/lingyang-classic/head2.png"
       },
@@ -4556,6 +4745,7 @@
         "body1": "assets/characters/youhu-classic/body1.png",
         "body2": "assets/characters/youhu-classic/body2.png",
         "body3": "assets/characters/youhu-classic/body3.png",
+        "body4": "assets/characters/youhu-classic/body4.png",
         "head1": "assets/characters/youhu-classic/head1.png",
         "head2": "assets/characters/youhu-classic/head2.png"
       },
@@ -4580,6 +4770,7 @@
         "body1": "assets/characters/roccia-classic/body1.png",
         "body2": "assets/characters/roccia-classic/body2.png",
         "body3": "assets/characters/roccia-classic/body3.png",
+        "body4": "assets/characters/roccia-classic/body4.png",
         "head1": "assets/characters/roccia-classic/head1.png",
         "head2": "assets/characters/roccia-classic/head2.png"
       },
@@ -4604,6 +4795,7 @@
         "body1": "assets/characters/sui-sui-classic/body1.png",
         "body2": "assets/characters/sui-sui-classic/body2.png",
         "body3": "assets/characters/sui-sui-classic/body3.png",
+        "body4": "assets/characters/sui-sui-classic/body4.png",
         "head1": "assets/characters/sui-sui-classic/head1.png",
         "head2": "assets/characters/sui-sui-classic/head2.png"
       },
@@ -4628,6 +4820,7 @@
         "body1": "assets/characters/chixia-classic/body1.png",
         "body2": "assets/characters/chixia-classic/body2.png",
         "body3": "assets/characters/chixia-classic/body3.png",
+        "body4": "assets/characters/chixia-classic/body4.png",
         "head1": "assets/characters/chixia-classic/head1.png",
         "head2": "assets/characters/chixia-classic/head2.png"
       },
@@ -4652,6 +4845,7 @@
         "body1": "assets/characters/encore-classic/body1.png",
         "body2": "assets/characters/encore-classic/body2.png",
         "body3": "assets/characters/encore-classic/body3.png",
+        "body4": "assets/characters/encore-classic/body4.png",
         "head1": "assets/characters/encore-classic/head1.png",
         "head2": "assets/characters/encore-classic/head2.png"
       },
@@ -4676,6 +4870,7 @@
         "body1": "assets/characters/mortefi-classic/body1.png",
         "body2": "assets/characters/mortefi-classic/body2.png",
         "body3": "assets/characters/mortefi-classic/body3.png",
+        "body4": "assets/characters/mortefi-classic/body4.png",
         "head1": "assets/characters/mortefi-classic/head1.png",
         "head2": "assets/characters/mortefi-classic/head2.png"
       },
@@ -4700,6 +4895,7 @@
         "body1": "assets/characters/changli-classic/body1.png",
         "body2": "assets/characters/changli-classic/body2.png",
         "body3": "assets/characters/changli-classic/body3.png",
+        "body4": "assets/characters/changli-classic/body4.png",
         "head1": "assets/characters/changli-classic/head1.png",
         "head2": "assets/characters/changli-classic/head2.png"
       },
@@ -4724,6 +4920,7 @@
         "body1": "assets/characters/brant-classic/body1.png",
         "body2": "assets/characters/brant-classic/body2.png",
         "body3": "assets/characters/brant-classic/body3.png",
+        "body4": "assets/characters/brant-classic/body4.png",
         "head1": "assets/characters/brant-classic/head1.png",
         "head2": "assets/characters/brant-classic/head2.png"
       },
@@ -4748,6 +4945,7 @@
         "body1": "assets/characters/lupa-classic/body1.png",
         "body2": "assets/characters/lupa-classic/body2.png",
         "body3": "assets/characters/lupa-classic/body3.png",
+        "body4": "assets/characters/lupa-classic/body4.png",
         "head1": "assets/characters/lupa-classic/head1.png",
         "head2": "assets/characters/lupa-classic/head2.png"
       },
@@ -4772,6 +4970,7 @@
         "body1": "assets/characters/gaberina-classic/body1.png",
         "body2": "assets/characters/gaberina-classic/body2.png",
         "body3": "assets/characters/gaberina-classic/body3.png",
+        "body4": "assets/characters/gaberina-classic/body4.png",
         "head1": "assets/characters/gaberina-classic/head1.png",
         "head2": "assets/characters/gaberina-classic/head2.png"
       },
@@ -4796,6 +4995,7 @@
         "body1": "assets/characters/yinlin-classic/body1.png",
         "body2": "assets/characters/yinlin-classic/body2.png",
         "body3": "assets/characters/yinlin-classic/body3.png",
+        "body4": "assets/characters/yinlin-classic/body4.png",
         "head1": "assets/characters/yinlin-classic/head1.png",
         "head2": "assets/characters/yinlin-classic/head2.png"
       },
@@ -4820,6 +5020,7 @@
         "body1": "assets/characters/yuanwu-classic/body1.png",
         "body2": "assets/characters/yuanwu-classic/body2.png",
         "body3": "assets/characters/yuanwu-classic/body3.png",
+        "body4": "assets/characters/yuanwu-classic/body4.png",
         "head1": "assets/characters/yuanwu-classic/head1.png",
         "head2": "assets/characters/yuanwu-classic/head2.png"
       },
@@ -4844,6 +5045,7 @@
         "body1": "assets/characters/jinhsi-classic/body1.png",
         "body2": "assets/characters/jinhsi-classic/body2.png",
         "body3": "assets/characters/jinhsi-classic/body3.png",
+        "body4": "assets/characters/jinhsi-classic/body4.png",
         "head1": "assets/characters/jinhsi-classic/head1.png",
         "head2": "assets/characters/jinhsi-classic/head2.png"
       },
@@ -4868,6 +5070,7 @@
         "body1": "assets/characters/xiangli-yao-classic/body1.png",
         "body2": "assets/characters/xiangli-yao-classic/body2.png",
         "body3": "assets/characters/xiangli-yao-classic/body3.png",
+        "body4": "assets/characters/xiangli-yao-classic/body4.png",
         "head1": "assets/characters/xiangli-yao-classic/head1.png",
         "head2": "assets/characters/xiangli-yao-classic/head2.png"
       },
@@ -4892,6 +5095,7 @@
         "body1": "assets/characters/augusta-classic/body1.png",
         "body2": "assets/characters/augusta-classic/body2.png",
         "body3": "assets/characters/augusta-classic/body3.png",
+        "body4": "assets/characters/augusta-classic/body4.png",
         "head1": "assets/characters/augusta-classic/head1.png",
         "head2": "assets/characters/augusta-classic/head2.png"
       },
@@ -4916,6 +5120,7 @@
         "body1": "assets/characters/buling-classic/body1.png",
         "body2": "assets/characters/buling-classic/body2.png",
         "body3": "assets/characters/buling-classic/body3.png",
+        "body4": "assets/characters/buling-classic/body4.png",
         "head1": "assets/characters/buling-classic/head1.png",
         "head2": "assets/characters/buling-classic/head2.png"
       },
@@ -4940,6 +5145,7 @@
         "body1": "assets/characters/xin-classic/body1.png",
         "body2": "assets/characters/xin-classic/body2.png",
         "body3": "assets/characters/xin-classic/body3.png",
+        "body4": "assets/characters/xin-classic/body4.png",
         "head1": "assets/characters/xin-classic/head1.png",
         "head2": "assets/characters/xin-classic/head2.png"
       },
@@ -4964,6 +5170,7 @@
         "body1": "assets/characters/yangyang-classic/body1.png",
         "body2": "assets/characters/yangyang-classic/body2.png",
         "body3": "assets/characters/yangyang-classic/body3.png",
+        "body4": "assets/characters/yangyang-classic/body4.png",
         "head1": "assets/characters/yangyang-classic/head1.png",
         "head2": "assets/characters/yangyang-classic/head2.png"
       },
@@ -4988,6 +5195,7 @@
         "body1": "assets/characters/aalto-classic/body1.png",
         "body2": "assets/characters/aalto-classic/body2.png",
         "body3": "assets/characters/aalto-classic/body3.png",
+        "body4": "assets/characters/aalto-classic/body4.png",
         "head1": "assets/characters/aalto-classic/head1.png",
         "head2": "assets/characters/aalto-classic/head2.png"
       },
@@ -5012,6 +5220,7 @@
         "body1": "assets/characters/jiyan-classic/body1.png",
         "body2": "assets/characters/jiyan-classic/body2.png",
         "body3": "assets/characters/jiyan-classic/body3.png",
+        "body4": "assets/characters/jiyan-classic/body4.png",
         "head1": "assets/characters/jiyan-classic/head1.png",
         "head2": "assets/characters/jiyan-classic/head2.png"
       },
@@ -5036,6 +5245,7 @@
         "body1": "assets/characters/jianxin-classic/body1.png",
         "body2": "assets/characters/jianxin-classic/body2.png",
         "body3": "assets/characters/jianxin-classic/body3.png",
+        "body4": "assets/characters/jianxin-classic/body4.png",
         "head1": "assets/characters/jianxin-classic/head1.png",
         "head2": "assets/characters/jianxin-classic/head2.png"
       },
@@ -5060,6 +5270,7 @@
         "body1": "assets/characters/xiakong-classic/body1.png",
         "body2": "assets/characters/xiakong-classic/body2.png",
         "body3": "assets/characters/xiakong-classic/body3.png",
+        "body4": "assets/characters/xiakong-classic/body4.png",
         "head1": "assets/characters/xiakong-classic/head1.png",
         "head2": "assets/characters/xiakong-classic/head2.png"
       },
@@ -5084,6 +5295,7 @@
         "body1": "assets/characters/yuno-classic/body1.png",
         "body2": "assets/characters/yuno-classic/body2.png",
         "body3": "assets/characters/yuno-classic/body3.png",
+        "body4": "assets/characters/yuno-classic/body4.png",
         "head1": "assets/characters/yuno-classic/head1.png",
         "head2": "assets/characters/yuno-classic/head2.png"
       },
@@ -5108,6 +5320,7 @@
         "body1": "assets/characters/qiuyuan-classic/body1.png",
         "body2": "assets/characters/qiuyuan-classic/body2.png",
         "body3": "assets/characters/qiuyuan-classic/body3.png",
+        "body4": "assets/characters/qiuyuan-classic/body4.png",
         "head1": "assets/characters/qiuyuan-classic/head1.png",
         "head2": "assets/characters/qiuyuan-classic/head2.png"
       },
@@ -5132,6 +5345,7 @@
         "body1": "assets/characters/sigrika-classic/body1.png",
         "body2": "assets/characters/sigrika-classic/body2.png",
         "body3": "assets/characters/sigrika-classic/body3.png",
+        "body4": "assets/characters/sigrika-classic/body4.png",
         "head1": "assets/characters/sigrika-classic/head1.png",
         "head2": "assets/characters/sigrika-classic/head2.png"
       },
@@ -5156,6 +5370,7 @@
         "body1": "assets/characters/qingsxiao-classic/body1.png",
         "body2": "assets/characters/qingsxiao-classic/body2.png",
         "body3": "assets/characters/qingsxiao-classic/body3.png",
+        "body4": "assets/characters/qingsxiao-classic/body4.png",
         "head1": "assets/characters/qingsxiao-classic/head1.png",
         "head2": "assets/characters/qingsxiao-classic/head2.png"
       },
@@ -5180,6 +5395,7 @@
         "body1": "assets/characters/verina-classic/body1.png",
         "body2": "assets/characters/verina-classic/body2.png",
         "body3": "assets/characters/verina-classic/body3.png",
+        "body4": "assets/characters/verina-classic/body4.png",
         "head1": "assets/characters/verina-classic/head1.png",
         "head2": "assets/characters/verina-classic/head2.png"
       },
@@ -5204,6 +5420,7 @@
         "body1": "assets/characters/lumi-classic/body1.png",
         "body2": "assets/characters/lumi-classic/body2.png",
         "body3": "assets/characters/lumi-classic/body3.png",
+        "body4": "assets/characters/lumi-classic/body4.png",
         "head1": "assets/characters/lumi-classic/head1.png",
         "head2": "assets/characters/lumi-classic/head2.png"
       },
@@ -5228,6 +5445,7 @@
         "body1": "assets/characters/shorekeeper-classic/body1.png",
         "body2": "assets/characters/shorekeeper-classic/body2.png",
         "body3": "assets/characters/shorekeeper-classic/body3.png",
+        "body4": "assets/characters/shorekeeper-classic/body4.png",
         "head1": "assets/characters/shorekeeper-classic/head1.png",
         "head2": "assets/characters/shorekeeper-classic/head2.png"
       },
@@ -5252,6 +5470,7 @@
         "body1": "assets/characters/phebe-classic/body1.png",
         "body2": "assets/characters/phebe-classic/body2.png",
         "body3": "assets/characters/phebe-classic/body3.png",
+        "body4": "assets/characters/phebe-classic/body4.png",
         "head1": "assets/characters/phebe-classic/head1.png",
         "head2": "assets/characters/phebe-classic/head2.png"
       },
@@ -5276,6 +5495,7 @@
         "body1": "assets/characters/zani-classic/body1.png",
         "body2": "assets/characters/zani-classic/body2.png",
         "body3": "assets/characters/zani-classic/body3.png",
+        "body4": "assets/characters/zani-classic/body4.png",
         "head1": "assets/characters/zani-classic/head1.png",
         "head2": "assets/characters/zani-classic/head2.png"
       },
@@ -5300,6 +5520,7 @@
         "body1": "assets/characters/taoqi-classic/body1.png",
         "body2": "assets/characters/taoqi-classic/body2.png",
         "body3": "assets/characters/taoqi-classic/body3.png",
+        "body4": "assets/characters/taoqi-classic/body4.png",
         "head1": "assets/characters/taoqi-classic/head1.png",
         "head2": "assets/characters/taoqi-classic/head2.png"
       },
@@ -5324,6 +5545,7 @@
         "body1": "assets/characters/camellya-classic/body1.png",
         "body2": "assets/characters/camellya-classic/body2.png",
         "body3": "assets/characters/camellya-classic/body3.png",
+        "body4": "assets/characters/camellya-classic/body4.png",
         "head1": "assets/characters/camellya-classic/head1.png",
         "head2": "assets/characters/camellya-classic/head2.png"
       },
@@ -5348,6 +5570,7 @@
         "body1": "assets/characters/rover-m-miratsu/body1.png",
         "body2": "assets/characters/rover-m-miratsu/body2.png",
         "body3": "assets/characters/rover-m-miratsu/body3.png",
+        "body4": "assets/characters/rover-m-miratsu/body4.png",
         "head1": "assets/characters/rover-m-miratsu/head1.png",
         "head2": "assets/characters/rover-m-miratsu/head2.png"
       },
@@ -5372,6 +5595,7 @@
         "body1": "assets/characters/rover-f-miratsu/body1.png",
         "body2": "assets/characters/rover-f-miratsu/body2.png",
         "body3": "assets/characters/rover-f-miratsu/body3.png",
+        "body4": "assets/characters/rover-f-miratsu/body4.png",
         "head1": "assets/characters/rover-f-miratsu/head1.png",
         "head2": "assets/characters/rover-f-miratsu/head2.png"
       },
@@ -5396,6 +5620,7 @@
         "body1": "assets/characters/phebe-miratsu/body1.png",
         "body2": "assets/characters/phebe-miratsu/body2.png",
         "body3": "assets/characters/phebe-miratsu/body3.png",
+        "body4": "assets/characters/phebe-miratsu/body4.png",
         "head1": "assets/characters/phebe-miratsu/head1.png",
         "head2": "assets/characters/phebe-miratsu/head2.png"
       },
@@ -5420,6 +5645,7 @@
         "body1": "assets/characters/zani-miratsu/body1.png",
         "body2": "assets/characters/zani-miratsu/body2.png",
         "body3": "assets/characters/zani-miratsu/body3.png",
+        "body4": "assets/characters/zani-miratsu/body4.png",
         "head1": "assets/characters/zani-miratsu/head1.png",
         "head2": "assets/characters/zani-miratsu/head2.png"
       },
@@ -5444,6 +5670,7 @@
         "body1": "assets/characters/chisaki-miratsu/body1.png",
         "body2": "assets/characters/chisaki-miratsu/body2.png",
         "body3": "assets/characters/chisaki-miratsu/body3.png",
+        "body4": "assets/characters/chisaki-miratsu/body4.png",
         "head1": "assets/characters/chisaki-miratsu/head1.png",
         "head2": "assets/characters/chisaki-miratsu/head2.png"
       },
@@ -5468,6 +5695,7 @@
         "body1": "assets/characters/linnae-miratsu/body1.png",
         "body2": "assets/characters/linnae-miratsu/body2.png",
         "body3": "assets/characters/linnae-miratsu/body3.png",
+        "body4": "assets/characters/linnae-miratsu/body4.png",
         "head1": "assets/characters/linnae-miratsu/head1.png",
         "head2": "assets/characters/linnae-miratsu/head2.png"
       },
@@ -5492,6 +5720,7 @@
         "body1": "assets/characters/lu-hess-miratsu/body1.png",
         "body2": "assets/characters/lu-hess-miratsu/body2.png",
         "body3": "assets/characters/lu-hess-miratsu/body3.png",
+        "body4": "assets/characters/lu-hess-miratsu/body4.png",
         "head1": "assets/characters/lu-hess-miratsu/head1.png",
         "head2": "assets/characters/lu-hess-miratsu/head2.png"
       },
@@ -5516,6 +5745,7 @@
         "body1": "assets/characters/camellya-miratsu/body1.png",
         "body2": "assets/characters/camellya-miratsu/body2.png",
         "body3": "assets/characters/camellya-miratsu/body3.png",
+        "body4": "assets/characters/camellya-miratsu/body4.png",
         "head1": "assets/characters/camellya-miratsu/head1.png",
         "head2": "assets/characters/camellya-miratsu/head2.png"
       },
@@ -5540,6 +5770,7 @@
         "body1": "assets/characters/rococo-miratsu/body1.png",
         "body2": "assets/characters/rococo-miratsu/body2.png",
         "body3": "assets/characters/rococo-miratsu/body3.png",
+        "body4": "assets/characters/rococo-miratsu/body4.png",
         "head1": "assets/characters/rococo-miratsu/head1.png",
         "head2": "assets/characters/rococo-miratsu/head2.png"
       },
@@ -5564,6 +5795,7 @@
         "body1": "assets/characters/cantarella-miratsu/body1.png",
         "body2": "assets/characters/cantarella-miratsu/body2.png",
         "body3": "assets/characters/cantarella-miratsu/body3.png",
+        "body4": "assets/characters/cantarella-miratsu/body4.png",
         "head1": "assets/characters/cantarella-miratsu/head1.png",
         "head2": "assets/characters/cantarella-miratsu/head2.png"
       },
@@ -5588,6 +5820,7 @@
         "body1": "assets/characters/phrolova-miratsu/body1.png",
         "body2": "assets/characters/phrolova-miratsu/body2.png",
         "body3": "assets/characters/phrolova-miratsu/body3.png",
+        "body4": "assets/characters/phrolova-miratsu/body4.png",
         "head1": "assets/characters/phrolova-miratsu/head1.png",
         "head2": "assets/characters/phrolova-miratsu/head2.png"
       },
@@ -5612,6 +5845,7 @@
         "body1": "assets/characters/yangyang-plume-miratsu/body1.png",
         "body2": "assets/characters/yangyang-plume-miratsu/body2.png",
         "body3": "assets/characters/yangyang-plume-miratsu/body3.png",
+        "body4": "assets/characters/yangyang-plume-miratsu/body4.png",
         "head1": "assets/characters/yangyang-plume-miratsu/head1.png",
         "head2": "assets/characters/yangyang-plume-miratsu/head2.png"
       },
@@ -5636,6 +5870,7 @@
         "body1": "assets/characters/zhezhi-miratsu/body1.png",
         "body2": "assets/characters/zhezhi-miratsu/body2.png",
         "body3": "assets/characters/zhezhi-miratsu/body3.png",
+        "body4": "assets/characters/zhezhi-miratsu/body4.png",
         "head1": "assets/characters/zhezhi-miratsu/head1.png",
         "head2": "assets/characters/zhezhi-miratsu/head2.png"
       },
@@ -5660,6 +5895,7 @@
         "body1": "assets/characters/carlotta-miratsu/body1.png",
         "body2": "assets/characters/carlotta-miratsu/body2.png",
         "body3": "assets/characters/carlotta-miratsu/body3.png",
+        "body4": "assets/characters/carlotta-miratsu/body4.png",
         "head1": "assets/characters/carlotta-miratsu/head1.png",
         "head2": "assets/characters/carlotta-miratsu/head2.png"
       },
@@ -5684,6 +5920,7 @@
         "body1": "assets/characters/phoebe-miratsu/body1.png",
         "body2": "assets/characters/phoebe-miratsu/body2.png",
         "body3": "assets/characters/phoebe-miratsu/body3.png",
+        "body4": "assets/characters/phoebe-miratsu/body4.png",
         "head1": "assets/characters/phoebe-miratsu/head1.png",
         "head2": "assets/characters/phoebe-miratsu/head2.png"
       },
@@ -5708,6 +5945,7 @@
         "body1": "assets/characters/roccia-miratsu/body1.png",
         "body2": "assets/characters/roccia-miratsu/body2.png",
         "body3": "assets/characters/roccia-miratsu/body3.png",
+        "body4": "assets/characters/roccia-miratsu/body4.png",
         "head1": "assets/characters/roccia-miratsu/head1.png",
         "head2": "assets/characters/roccia-miratsu/head2.png"
       },
@@ -5732,6 +5970,7 @@
         "body1": "assets/characters/sui-sui-miratsu/body1.png",
         "body2": "assets/characters/sui-sui-miratsu/body2.png",
         "body3": "assets/characters/sui-sui-miratsu/body3.png",
+        "body4": "assets/characters/sui-sui-miratsu/body4.png",
         "head1": "assets/characters/sui-sui-miratsu/head1.png",
         "head2": "assets/characters/sui-sui-miratsu/head2.png"
       },
@@ -5756,6 +5995,7 @@
         "body1": "assets/characters/changli-miratsu/body1.png",
         "body2": "assets/characters/changli-miratsu/body2.png",
         "body3": "assets/characters/changli-miratsu/body3.png",
+        "body4": "assets/characters/changli-miratsu/body4.png",
         "head1": "assets/characters/changli-miratsu/head1.png",
         "head2": "assets/characters/changli-miratsu/head2.png"
       },
@@ -5780,6 +6020,7 @@
         "body1": "assets/characters/brant-miratsu/body1.png",
         "body2": "assets/characters/brant-miratsu/body2.png",
         "body3": "assets/characters/brant-miratsu/body3.png",
+        "body4": "assets/characters/brant-miratsu/body4.png",
         "head1": "assets/characters/brant-miratsu/head1.png",
         "head2": "assets/characters/brant-miratsu/head2.png"
       },
@@ -5804,6 +6045,7 @@
         "body1": "assets/characters/lupa-miratsu/body1.png",
         "body2": "assets/characters/lupa-miratsu/body2.png",
         "body3": "assets/characters/lupa-miratsu/body3.png",
+        "body4": "assets/characters/lupa-miratsu/body4.png",
         "head1": "assets/characters/lupa-miratsu/head1.png",
         "head2": "assets/characters/lupa-miratsu/head2.png"
       },
@@ -5828,6 +6070,7 @@
         "body1": "assets/characters/gaberina-miratsu/body1.png",
         "body2": "assets/characters/gaberina-miratsu/body2.png",
         "body3": "assets/characters/gaberina-miratsu/body3.png",
+        "body4": "assets/characters/gaberina-miratsu/body4.png",
         "head1": "assets/characters/gaberina-miratsu/head1.png",
         "head2": "assets/characters/gaberina-miratsu/head2.png"
       },
@@ -5852,6 +6095,7 @@
         "body1": "assets/characters/mornye-miratsu/body1.png",
         "body2": "assets/characters/mornye-miratsu/body2.png",
         "body3": "assets/characters/mornye-miratsu/body3.png",
+        "body4": "assets/characters/mornye-miratsu/body4.png",
         "head1": "assets/characters/mornye-miratsu/head1.png",
         "head2": "assets/characters/mornye-miratsu/head2.png"
       },
@@ -5876,6 +6120,7 @@
         "body1": "assets/characters/amis-miratsu/body1.png",
         "body2": "assets/characters/amis-miratsu/body2.png",
         "body3": "assets/characters/amis-miratsu/body3.png",
+        "body4": "assets/characters/amis-miratsu/body4.png",
         "head1": "assets/characters/amis-miratsu/head1.png",
         "head2": "assets/characters/amis-miratsu/head2.png"
       },
@@ -5900,6 +6145,7 @@
         "body1": "assets/characters/danya-miratsu/body1.png",
         "body2": "assets/characters/danya-miratsu/body2.png",
         "body3": "assets/characters/danya-miratsu/body3.png",
+        "body4": "assets/characters/danya-miratsu/body4.png",
         "head1": "assets/characters/danya-miratsu/head1.png",
         "head2": "assets/characters/danya-miratsu/head2.png"
       },
@@ -5924,6 +6170,7 @@
         "body1": "assets/characters/jingran-miratsu/body1.png",
         "body2": "assets/characters/jingran-miratsu/body2.png",
         "body3": "assets/characters/jingran-miratsu/body3.png",
+        "body4": "assets/characters/jingran-miratsu/body4.png",
         "head1": "assets/characters/jingran-miratsu/head1.png",
         "head2": "assets/characters/jingran-miratsu/head2.png"
       },
@@ -5948,6 +6195,7 @@
         "body1": "assets/characters/yinlin-miratsu/body1.png",
         "body2": "assets/characters/yinlin-miratsu/body2.png",
         "body3": "assets/characters/yinlin-miratsu/body3.png",
+        "body4": "assets/characters/yinlin-miratsu/body4.png",
         "head1": "assets/characters/yinlin-miratsu/head1.png",
         "head2": "assets/characters/yinlin-miratsu/head2.png"
       },
@@ -5972,6 +6220,7 @@
         "body1": "assets/characters/jinhsi-miratsu/body1.png",
         "body2": "assets/characters/jinhsi-miratsu/body2.png",
         "body3": "assets/characters/jinhsi-miratsu/body3.png",
+        "body4": "assets/characters/jinhsi-miratsu/body4.png",
         "head1": "assets/characters/jinhsi-miratsu/head1.png",
         "head2": "assets/characters/jinhsi-miratsu/head2.png"
       },
@@ -5996,6 +6245,7 @@
         "body1": "assets/characters/xiangli-yao-miratsu/body1.png",
         "body2": "assets/characters/xiangli-yao-miratsu/body2.png",
         "body3": "assets/characters/xiangli-yao-miratsu/body3.png",
+        "body4": "assets/characters/xiangli-yao-miratsu/body4.png",
         "head1": "assets/characters/xiangli-yao-miratsu/head1.png",
         "head2": "assets/characters/xiangli-yao-miratsu/head2.png"
       },
@@ -6020,6 +6270,7 @@
         "body1": "assets/characters/augusta-miratsu/body1.png",
         "body2": "assets/characters/augusta-miratsu/body2.png",
         "body3": "assets/characters/augusta-miratsu/body3.png",
+        "body4": "assets/characters/augusta-miratsu/body4.png",
         "head1": "assets/characters/augusta-miratsu/head1.png",
         "head2": "assets/characters/augusta-miratsu/head2.png"
       },
@@ -6044,6 +6295,7 @@
         "body1": "assets/characters/xin-miratsu/body1.png",
         "body2": "assets/characters/xin-miratsu/body2.png",
         "body3": "assets/characters/xin-miratsu/body3.png",
+        "body4": "assets/characters/xin-miratsu/body4.png",
         "head1": "assets/characters/xin-miratsu/head1.png",
         "head2": "assets/characters/xin-miratsu/head2.png"
       },
@@ -6068,6 +6320,7 @@
         "body1": "assets/characters/jiyan-miratsu/body1.png",
         "body2": "assets/characters/jiyan-miratsu/body2.png",
         "body3": "assets/characters/jiyan-miratsu/body3.png",
+        "body4": "assets/characters/jiyan-miratsu/body4.png",
         "head1": "assets/characters/jiyan-miratsu/head1.png",
         "head2": "assets/characters/jiyan-miratsu/head2.png"
       },
@@ -6092,6 +6345,7 @@
         "body1": "assets/characters/xiakong-miratsu/body1.png",
         "body2": "assets/characters/xiakong-miratsu/body2.png",
         "body3": "assets/characters/xiakong-miratsu/body3.png",
+        "body4": "assets/characters/xiakong-miratsu/body4.png",
         "head1": "assets/characters/xiakong-miratsu/head1.png",
         "head2": "assets/characters/xiakong-miratsu/head2.png"
       },
@@ -6116,6 +6370,7 @@
         "body1": "assets/characters/katisia-miratsu/body1.png",
         "body2": "assets/characters/katisia-miratsu/body2.png",
         "body3": "assets/characters/katisia-miratsu/body3.png",
+        "body4": "assets/characters/katisia-miratsu/body4.png",
         "head1": "assets/characters/katisia-miratsu/head1.png",
         "head2": "assets/characters/katisia-miratsu/head2.png"
       },
@@ -6140,6 +6395,7 @@
         "body1": "assets/characters/yuno-miratsu/body1.png",
         "body2": "assets/characters/yuno-miratsu/body2.png",
         "body3": "assets/characters/yuno-miratsu/body3.png",
+        "body4": "assets/characters/yuno-miratsu/body4.png",
         "head1": "assets/characters/yuno-miratsu/head1.png",
         "head2": "assets/characters/yuno-miratsu/head2.png"
       },
@@ -6164,6 +6420,7 @@
         "body1": "assets/characters/qiuyuan-miratsu/body1.png",
         "body2": "assets/characters/qiuyuan-miratsu/body2.png",
         "body3": "assets/characters/qiuyuan-miratsu/body3.png",
+        "body4": "assets/characters/qiuyuan-miratsu/body4.png",
         "head1": "assets/characters/qiuyuan-miratsu/head1.png",
         "head2": "assets/characters/qiuyuan-miratsu/head2.png"
       },
@@ -6188,6 +6445,7 @@
         "body1": "assets/characters/sigrika-miratsu/body1.png",
         "body2": "assets/characters/sigrika-miratsu/body2.png",
         "body3": "assets/characters/sigrika-miratsu/body3.png",
+        "body4": "assets/characters/sigrika-miratsu/body4.png",
         "head1": "assets/characters/sigrika-miratsu/head1.png",
         "head2": "assets/characters/sigrika-miratsu/head2.png"
       },
@@ -6212,6 +6470,7 @@
         "body1": "assets/characters/qingsxiao-miratsu/body1.png",
         "body2": "assets/characters/qingsxiao-miratsu/body2.png",
         "body3": "assets/characters/qingsxiao-miratsu/body3.png",
+        "body4": "assets/characters/qingsxiao-miratsu/body4.png",
         "head1": "assets/characters/qingsxiao-miratsu/head1.png",
         "head2": "assets/characters/qingsxiao-miratsu/head2.png"
       },
@@ -6236,6 +6495,7 @@
         "body1": "assets/characters/shorekeeper-miratsu/body1.png",
         "body2": "assets/characters/shorekeeper-miratsu/body2.png",
         "body3": "assets/characters/shorekeeper-miratsu/body3.png",
+        "body4": "assets/characters/shorekeeper-miratsu/body4.png",
         "head1": "assets/characters/shorekeeper-miratsu/head1.png",
         "head2": "assets/characters/shorekeeper-miratsu/head2.png"
       },

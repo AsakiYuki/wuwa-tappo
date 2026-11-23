@@ -50,7 +50,15 @@ const drag = usePetDrag(state, pressedAt => {
 const character = computed(() => (state.value ? itemMap.value.get(state.value.character) : undefined))
 const accessory = computed(() => (state.value ? itemMap.value.get(state.value.accessory) : undefined))
 const headImage = computed(() => character.value?.layers?.[`head${face.value}`] ?? character.value?.image)
-const bodyImage = computed(() => character.value?.layers?.[`body${hand.action.value}`] ?? character.value?.image)
+// A catalog without the both-hands pose (body4) falls back to the right hand's.
+const bodyImage = computed(() => {
+	const layers = character.value?.layers
+	return (
+		layers?.[`body${hand.action.value}`] ??
+		(hand.action.value === 4 ? layers?.body3 : undefined) ??
+		character.value?.image
+	)
+})
 
 const rootClass = computed(() => ({
 	"hover-fade": settings.value.hoverFade,

@@ -1,8 +1,8 @@
 import { onBeforeUnmount, ref, watch, type Ref } from "vue"
 import type { CollectionState, HandSide } from "../../shared/types"
 
-/** Body layer index: 1 = idle, 2 = left hand down, 3 = right hand down. */
-export type BodyAction = 1 | 2 | 3
+/** Body layer index: 1 = idle, 2 = left hand down, 3 = right hand down, 4 = both hands down. */
+export type BodyAction = 1 | 2 | 3 | 4
 
 const TAP_DURATION_MS = 150
 
@@ -50,18 +50,28 @@ export function useHandAction(state: Ref<CollectionState | null>) {
 			tap(side)
 			return
 		}
-		const next = resolve(side)
-		heldKeys.set(key, next)
+		heldKeys.delete(key)
+		heldKeys.set(key, resolve(side))
 		stopTimer()
-		action.value = next
+		action.value = heldAction()
 	}
 
-	/** On release the most recent key that is still held takes over again. */
+	/** On release the keys still held decide the pose again. */
 	function release(key: string) {
 		const wasHeld = heldKeys.delete(key)
 		if (!settings()?.holdAnimation || !wasHeld) return
 		stopTimer()
-		action.value = [...heldKeys.values()].at(-1) ?? 1
+		action.value = heldAction()
+	}
+
+	/**
+	 * The pose for the keys being held: in adaptive mode, keys held on both sides put both hands down;
+	 * otherwise the most recently pressed key's hand.
+	 */
+	function heldAction(): BodyAction {
+		const hands = [...heldKeys.values()]
+		if (settings()?.handAnimation === "adaptive" && hands.includes(2) && hands.includes(3)) return 4
+		return hands.at(-1) ?? 1
 	}
 
 	watch(
