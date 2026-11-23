@@ -87,12 +87,16 @@ fn parse_line(line: &str) -> Option<(String, bool)> {
 	}
 }
 
-/// Next to the executable once bundled (on macOS in Contents/MacOS); the repo's assets/bin during
-/// development.
+/// Next to the executable once bundled (on macOS in Contents/MacOS); the repo's assets/bin in debug
+/// builds. Release builds never look in the build machine's source folder, a path that could exist
+/// on a user's machine with someone else's program in it.
 fn find_watcher() -> Option<PathBuf> {
 	let exe_dir = std::env::current_exe().ok()?.parent()?.to_path_buf();
-	let dev = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..").join("assets").join("bin");
-	[exe_dir.clone(), exe_dir.join("bin"), dev].into_iter().map(|dir| dir.join(WATCHER)).find(|path| path.exists())
+	let mut directories = vec![exe_dir.clone(), exe_dir.join("bin")];
+	if cfg!(debug_assertions) {
+		directories.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("..").join("assets").join("bin"));
+	}
+	directories.into_iter().map(|dir| dir.join(WATCHER)).find(|path| path.exists())
 }
 
 /// Starts the watcher and calls `on_input(key, down)` for every button change. Returns false if it
