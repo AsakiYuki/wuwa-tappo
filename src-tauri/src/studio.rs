@@ -1,5 +1,9 @@
 //! The studio window (collection, atlas, chests, synthesis, presets, settings): frameless, created
-//! on first use; closing it only hides it.
+//! on demand and destroyed when closed.
+//!
+//! Closing destroys it rather than hiding it: its WebView runs in a web process of its own, which
+//! keeps every image the studio decoded (hundreds of MB once the atlas was scrolled through) for as
+//! long as it lives. Reopening loads the page again, which takes a moment.
 
 use crate::{page_scripts, wayland_session, window, Shared, STUDIO_LABEL};
 use std::time::Duration;
@@ -14,7 +18,7 @@ const NAVIGATE_AFTER_LOAD: Duration = Duration::from_millis(300);
 
 type Bounds = (PhysicalPosition<i32>, PhysicalSize<u32>);
 
-/// What the app tracks about the studio window.
+/// What the app tracks about the studio window; reset when it is destroyed.
 #[derive(Default)]
 pub(crate) struct StudioState {
 	loaded: bool,
@@ -53,7 +57,7 @@ fn navigate(app: &AppHandle, page: String) {
 	let _ = app.emit_to(STUDIO_LABEL, "page", page);
 }
 
-/// Shows the studio, creating it on first use. Opens `page` if given.
+/// Shows the studio, creating it if needed. Opens `page` if given.
 pub(crate) fn show(app: &AppHandle, shared: &Shared, page: Option<String>) {
 	if let Some(studio) = window(app, STUDIO_LABEL) {
 		let _ = studio.unminimize();
@@ -117,11 +121,10 @@ pub(crate) fn show(app: &AppHandle, shared: &Shared, page: Option<String>) {
 		.build();
 	match built {
 		Ok(studio) => {
-			let hidden = studio.clone();
+			let shared = shared.clone();
 			studio.on_window_event(move |event| {
-				if let WindowEvent::CloseRequested { api, .. } = event {
-					api.prevent_close();
-					let _ = hidden.hide();
+				if let WindowEvent::Destroyed = event {
+					shared.state.lock().unwrap().studio = StudioState::default();
 				}
 			});
 		}
@@ -129,10 +132,10 @@ pub(crate) fn show(app: &AppHandle, shared: &Shared, page: Option<String>) {
 	}
 }
 
-/// Hides the studio; the app keeps running.
+/// Closes the studio, freeing its web process; the app keeps running.
 pub(crate) fn close(app: &AppHandle) {
 	if let Some(studio) = window(app, STUDIO_LABEL) {
-		let _ = studio.hide();
+		let _ = studio.destroy();
 	}
 }
 
