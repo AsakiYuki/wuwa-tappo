@@ -3,19 +3,18 @@
 //! Wayland gives apps no global cursor position. KWin always knows it: while it is needed, a small
 //! KWin script sends it to this app over D-Bus (`io.github.WuwaTappo`).
 //!
-//! - Hover-fade: it is forwarded to the pet page as the same `cursor` event the X11 build polls for
-//!   (a click-through pet gets no pointer events, and WebKitGTK's `:hover` can stick).
+//! - Hover-fade: it goes to the same cursor feed the X11 build polls for (`pet::feed_cursor`): a
+//!   click-through pet gets no pointer events, and WebKitGTK's `:hover` can stick.
 //! - Dragging: the page only sees positions relative to the pet's own surface, which moves with the
 //!   drag, so its deltas fall short and the pet trails the cursor. While dragging, the pet is put at
 //!   its start position plus how far the cursor has moved since.
 //!
 //! Everything runs on Tauri's (Tokio) async runtime; nothing here blocks.
 
-use crate::{Shared, PET_LABEL};
-use serde_json::json;
+use crate::Shared;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::{Mutex, OnceLock};
-use tauri::{AppHandle, Emitter, Monitor};
+use tauri::{AppHandle, Monitor};
 use zbus::Connection;
 
 const SERVICE: &str = "io.github.WuwaTappo";
@@ -87,8 +86,7 @@ impl Cursor {
 		}
 		// The pet's top-left in the same logical coordinates, kept current while it is dragged.
 		let Some((left, top)) = crate::wayland::origin() else { return true };
-		self.shared.pet.lock().unwrap().tracking_cursor = true;
-		let _ = self.app.emit_to(PET_LABEL, "cursor", json!({ "x": x - left, "y": y - top }));
+		crate::pet::feed_cursor(&self.app, &self.shared, x - left, y - top);
 		// The reply tells the script the app is still alive.
 		true
 	}

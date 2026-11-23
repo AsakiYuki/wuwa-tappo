@@ -1,11 +1,12 @@
 //! Linux tray as a StatusNotifierItem (ksni). Tauri's own tray goes through libappindicator, which
 //! never reports clicks on the icon; this one does, so a click opens the studio like the Electron
-//! app. The menu comes from the same `tray_items` as the Tauri tray.
+//! app. The menu comes from the same `tray::items` as the Tauri tray.
 //!
 //! ksni's blocking API drives its own Tokio runtime, which must not be entered from another
 //! runtime's thread (Tauri's async commands), so every call into it runs on a plain thread.
 
-use crate::{tray_action, tray_items, Shared, TrayAction};
+use crate::tray::{self, TrayAction};
+use crate::Shared;
 use ksni::blocking::{Handle, TrayMethods};
 use ksni::menu::{CheckmarkItem, StandardItem};
 use std::sync::OnceLock;
@@ -23,7 +24,7 @@ impl PetTray {
 	/// Runs a menu action off ksni's thread: the action may update the tray, which waits for it.
 	fn run(&self, action: TrayAction) {
 		let (app, shared) = (self.app.clone(), self.shared.clone());
-		std::thread::spawn(move || tray_action(&app, &shared, action));
+		std::thread::spawn(move || tray::action(&app, &shared, action));
 	}
 }
 
@@ -51,7 +52,7 @@ impl ksni::Tray for PetTray {
 
 	fn menu(&self) -> Vec<ksni::MenuItem<Self>> {
 		let mut menu = Vec::new();
-		for item in tray_items(&self.shared) {
+		for item in tray::items(&self.shared) {
 			if item.separator_before {
 				menu.push(ksni::MenuItem::Separator);
 			}
