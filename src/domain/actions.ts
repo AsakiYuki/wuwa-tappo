@@ -1,4 +1,4 @@
-import type { CatalogItem, CollectionState, HistoryEntry, Rarity, SynthesisOptions } from "../types.js"
+import type { CatalogItem, CollectionState, HistoryEntry, Rarity, SynthesisOptions } from "./types.js"
 import { RARITIES } from "./constants.js"
 import { localDateKey } from "./state.js"
 

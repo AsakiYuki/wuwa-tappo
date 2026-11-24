@@ -1,15 +1,15 @@
 /*
- * The Tauri port's game logic: the same domain code as the Electron main process, bundled by
- * vite.backend.mts into one script that src-tauri runs in QuickJS (src-tauri/src/backend.rs).
+ * The app's game logic (src/domain), bundled by vite.backend.mts into one script that src-tauri
+ * runs in QuickJS (src-tauri/src/backend.rs).
  * Rust owns windows, files and saving; this owns the collection state.
  *
  * Every function takes and returns strings or plain values, so the Rust side never has to map
  * JavaScript objects. Errors from commands are returned as `{ ok: false, error }`, never thrown.
  */
-import { registerTap } from "../node/domain/actions.js"
-import { canPlayEmote, importedState, isKnownSave, patchSettings, STATE_COMMANDS } from "../node/domain/commands.js"
-import { initial, normalize } from "../node/domain/state.js"
-import type { CatalogItem, CollectionState } from "../node/types.js"
+import { registerTap } from "../domain/actions.js"
+import { canPlayEmote, importedState, isKnownSave, patchSettings, STATE_COMMANDS } from "../domain/commands.js"
+import { initial, normalize } from "../domain/state.js"
+import type { CatalogItem, CollectionState } from "../domain/types.js"
 
 // QuickJS has no structuredClone; the state is plain JSON data, so a JSON round trip is equivalent.
 globalThis.structuredClone ??= (<T>(value: T): T => JSON.parse(JSON.stringify(value))) as typeof structuredClone
@@ -17,7 +17,7 @@ globalThis.structuredClone ??= (<T>(value: T): T => JSON.parse(JSON.stringify(va
 let items: CatalogItem[] = []
 let state: CollectionState
 
-/** Every item is unlocked when a profile is opened, as in the Electron app (src/node/main.ts). */
+/** Every item is unlocked when a profile is opened. */
 function unlockEverything(next: CollectionState) {
 	for (const item of items) if (!next.owned[item.id]) next.owned[item.id] = 1
 	return next

@@ -13,7 +13,7 @@ use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, Physical
 const SIZE: (f64, f64) = (1100.0, 756.0);
 const MIN_SIZE: (f64, f64) = (680.0, 468.0);
 const ZOOM_STEP: f64 = 1.1;
-/// Delay before navigating a studio that has just loaded, as in src/node/commands.ts.
+/// Delay before navigating a studio that has just loaded.
 const NAVIGATE_AFTER_LOAD: Duration = Duration::from_millis(300);
 
 type Bounds = (PhysicalPosition<i32>, PhysicalSize<u32>);

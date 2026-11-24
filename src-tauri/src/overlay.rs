@@ -6,7 +6,7 @@
 //!   made override-redirect, which they leave alone.
 //! - Windows: a fullscreen app may be topmost as well, and the last one raised wins, so the pet is
 //!   raised again while one is in front.
-//! - macOS: the pet may join other apps' fullscreen spaces, above their windows (as in Electron).
+//! - macOS: the pet may join other apps' fullscreen spaces, above their windows.
 
 use crate::{layer_pet, setting_bool, settings, wayland_session, window, Shared, PET_LABEL};
 #[cfg(not(target_os = "macos"))]
@@ -211,7 +211,7 @@ mod platform {
 
 	/// NSWindowCollectionBehavior: canJoinAllSpaces | fullScreenAuxiliary.
 	const JOIN_FULLSCREEN_SPACES: usize = 1 << 0 | 1 << 8;
-	/// Electron's "screen-saver" level, above fullscreen apps and the menu bar.
+	/// NSScreenSaverWindowLevel, above fullscreen apps and the menu bar.
 	const SCREEN_SAVER_LEVEL: isize = 1000;
 
 	fn selector(name: &CStr) -> *const c_void {

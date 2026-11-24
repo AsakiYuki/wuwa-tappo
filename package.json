@@ -7,29 +7,22 @@
 		"name": "Asaki Yuki",
 		"email": "noreply@asakiyuki.com"
 	},
-	"desktopName": "com.asakiyuki.wuwa-tappo",
 	"description": "Wuwa Tappo - Desktop Companion",
-	"main": "runtime/main.js",
 	"scripts": {
 		"start": "node scripts/start.cjs",
-		"start:electron": "node scripts/start.cjs --electron",
 		"start:nix": "nix-shell --run 'bun start'",
-		"node:build": "node scripts/clean-runtime.cjs && node scripts/build-mac-gamepad.cjs && node scripts/build-win-gamepad.cjs && tsc -p tsconfig.node.json",
 		"renderer:build": "vite build && node scripts/write-renderer-pages.cjs && node scripts/npm-run.cjs renderer:typecheck",
-		"test": "node scripts/npm-run.cjs node:build && node --test runtime/test.js",
-		"test:ui": "node scripts/npm-run.cjs node:build renderer:build && node scripts/test-ui.cjs",
+		"test": "node scripts/clean-runtime.cjs && tsc -p tsconfig.test.json && node --test runtime/test.js",
 		"build:nix": "nix-shell --run 'bun run build'",
-		"build": "node scripts/build.cjs",
-		"postinstall": "node node_modules/electron/install.js",
+		"build": "node scripts/build-mac-gamepad.cjs && node scripts/build-win-gamepad.cjs && tauri build",
 		"renderer:typecheck": "node scripts/typecheck-renderer.cjs",
 		"assets:thumbnails": "node scripts/shrink-thumbnails.cjs",
 		"format": "prettier --write \"src/**/*.{ts,vue}\" \"scripts/**/*.cjs\" vite.config.mts"
 	},
 	"devDependencies": {
 		"@tauri-apps/cli": "2.12.6",
+		"@types/node": "^24.19.2",
 		"@vitejs/plugin-vue": "^6.0.11",
-		"electron": "45.0.0",
-		"electron-builder": "26.18.0",
 		"prettier": "^3.9.10",
 		"sass": "^1.107.1",
 		"typescript": "^7.0.2",
@@ -38,116 +31,6 @@
 		"vue-tsc": "^3.3.14"
 	},
 	"dependencies": {
-		"uiohook-napi": "1.5.5",
 		"vue": "^3.5.45"
-	},
-	"overrides": {
-		"minimatch": "^11.0.3"
-	},
-	"build": {
-		"appId": "com.asakiyuki.wuwa-tappo",
-		"productName": "Wuwa Tappo",
-		"directories": {
-			"output": "dist"
-		},
-		"files": [
-			"runtime/**/*",
-			"renderer-build/**/*",
-			"assets/**/*",
-			"package.json"
-		],
-		"asarUnpack": [
-			"**/*.node",
-			"assets/bin/*"
-		],
-		"npmRebuild": false,
-		"electronFuses": {
-			"runAsNode": false,
-			"enableNodeOptionsEnvironmentVariable": false,
-			"enableNodeCliInspectArguments": false,
-			"enableEmbeddedAsarIntegrityValidation": true,
-			"onlyLoadAppFromAsar": true,
-			"resetAdHocDarwinSignature": true
-		},
-		"mac": {
-			"target": [
-				"dmg",
-				"zip"
-			],
-			"category": "public.app-category.utilities",
-			"icon": "assets/appicon.icns",
-			"identity": null,
-			"hardenedRuntime": true,
-			"gatekeeperAssess": false,
-			"entitlements": "build/entitlements.mac.plist",
-			"entitlementsInherit": "build/entitlements.mac.inherit.plist",
-			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
-		},
-		"dmg": {
-			"contents": [
-				{
-					"x": 130,
-					"y": 220
-				},
-				{
-					"x": 410,
-					"y": 220,
-					"type": "link",
-					"path": "/Applications"
-				}
-			],
-			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
-		},
-		"linux": {
-			"target": [
-				"deb",
-				"rpm",
-				"AppImage",
-				"tar.gz"
-			],
-			"category": "Utility",
-			"maintainer": "Asaki Yuki <noreply@asakiyuki.com>",
-			"executableName": "wuwa-tappo",
-			"syncDesktopName": true,
-			"desktop": {
-				"entry": {
-					"Icon": "wuwa-tappo"
-				}
-			},
-			"extraFiles": [
-				{
-					"from": "assets/appicon.png",
-					"to": "appicon.png"
-				}
-			],
-			"icon": "assets/appicon.png",
-			"artifactName": "wuwa-tappo-${version}-${arch}.${ext}"
-		},
-		"win": {
-			"target": [
-				"nsis",
-				"portable"
-			],
-			"icon": "assets/appicon.ico",
-			"executableName": "wuwa-tappo",
-			"extraFiles": [
-				{
-					"from": "assets/appicon.png",
-					"to": "appicon.png"
-				}
-			]
-		},
-		"nsis": {
-			"oneClick": false,
-			"perMachine": false,
-			"allowToChangeInstallationDirectory": true,
-			"createDesktopShortcut": true,
-			"createStartMenuShortcut": true,
-			"shortcutName": "Wuwa Tappo",
-			"artifactName": "wuwa-tappo-${version}-${arch}-setup.${ext}"
-		},
-		"portable": {
-			"artifactName": "wuwa-tappo-${version}-${arch}-portable.${ext}"
-		}
 	}
 }

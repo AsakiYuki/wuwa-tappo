@@ -1,11 +1,8 @@
-//! Tauri port of Wuwa Tappo: the desktop pet and the studio (collection, draws, synthesis, presets,
-//! settings), with the same Vue renderer as the Electron app.
+//! Wuwa Tappo: the desktop pet and the studio (collection, draws, synthesis, presets, settings).
 //!
-//! `bridge.js` re-creates Electron's `window.petAPI` on Tauri's IPC, so the pages run unchanged.
-//! The game logic is the Electron app's own TypeScript, run in QuickJS (`backend.rs`); the Rust side
-//! owns windows (`pet.rs`, `studio.rs`), input (`input.rs`), the tray (`tray.rs`) and saving (here).
-//! The save is the Electron app's collection.json, so both apps share one collection (run only one of
-//! them at a time).
+//! The pages are Vue (src/renderer) and talk to this side through `window.petAPI` (`bridge.js`). The
+//! game logic is TypeScript (src/domain), run in QuickJS (`backend.rs`); the Rust side owns windows
+//! (`pet.rs`, `studio.rs`), input (`input.rs`), the tray (`tray.rs`) and saving (`storage.rs`, here).
 //!
 //! Input: rdev (keyboard/mouse hook) on Windows and Linux, a CGEventTap on macOS (`macos_input.rs`),
 //! evdev on Linux (also works on Wayland, and reads controllers), and the controller watchers on
@@ -14,7 +11,7 @@
 //! Linux runs natively on Wayland when available: the pet is then a layer-shell surface
 //! (`wayland.rs`), since Wayland windows cannot place themselves or stay on top.
 //!
-//! Not ported: autostart. Hover-fade with passthrough on Wayland works on KDE only (`kwin_cursor.rs`):
+//! Hover-fade with passthrough on Wayland works on KDE only (`kwin_cursor.rs`):
 //! Wayland gives apps no global cursor position.
 
 mod backend;
@@ -251,7 +248,7 @@ pub fn run() {
 			overlay::start(&handle, &shared);
 			tray::create(&handle, &shared)?;
 			input::start(&handle, &shared);
-			// A fresh profile opens the studio, as in the Electron app.
+			// A fresh profile opens the studio.
 			let state = shared.backend.lock().unwrap().state();
 			let first_run =
 				state["draws"] == json!(0) && state["presets"].as_array().is_none_or(|presets| presets.is_empty());

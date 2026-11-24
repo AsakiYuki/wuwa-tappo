@@ -1,4 +1,4 @@
-//! The pages' IPC: `petAPI.init()` and every `petAPI.command(name, argument)` (src/node/commands.ts).
+//! The pages' IPC: `petAPI.init()` and every `petAPI.command(name, argument)`.
 
 use crate::{
 	broadcast_state, input, pet, refresh_cache, save_now, setting_bool, settings, status, studio, Shared, CATALOG_JSON,
@@ -8,7 +8,7 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_dialog::DialogExt;
 
-/// The pet window may only open the studio, play emotes and report clicks (src/node/main.ts).
+/// The pet window may only open the studio, play emotes and report clicks.
 const PET_COMMANDS: [&str; 3] = ["tap", "emote", "open"];
 /// Saves are ~30 KB; anything far larger is not one, and is not read into memory.
 const MAX_IMPORT_BYTES: u64 = 8 * 1024 * 1024;

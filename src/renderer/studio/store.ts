@@ -187,20 +187,4 @@ export function connectStudio() {
 		state.value = payload.state
 		if (payload.status.warning) toast(payload.status.warning)
 	})
-
-	window.__studioTest = () => ({
-		page: page.value,
-		type: inventoryType.value,
-		// Plain copy: reactive proxies cannot be structured-cloned back to the main process.
-		filters: { ...inventoryFilters.value },
-		replaceSlot: replaceSlot.value,
-		owned: Object.values(state.value?.owned ?? {}).filter(count => count > 0).length,
-		draws: state.value?.draws,
-		count: state.value?.count,
-		visibleCards: document.querySelectorAll("#inventory .item-card").length,
-		loadedCards: inventoryItems.value.length,
-		filterCount: document.querySelectorAll("#filterBar .select-item").length,
-		groupCount: document.querySelectorAll("#inventory .atlas-group").length,
-		errors: [],
-	})
 }

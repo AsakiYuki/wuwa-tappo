@@ -1,5 +1,4 @@
-//! Maps rdev keys to the names uiohook-napi's `UiohookKey` uses, which the renderer expects
-//! (src/node/input-keymaps.ts, src/renderer/pet/lib/keys.ts).
+//! Maps rdev keys to the names the renderer expects (src/renderer/pet/lib/keys.ts).
 
 use rdev::{Button, Key};
 
@@ -68,7 +67,7 @@ pub fn key_name(key: Key) -> String {
 	name.to_string()
 }
 
-/// Same rule as `keyboardSide` in src/node/input-keymaps.ts.
+/// The hand a key belongs to.
 pub fn keyboard_side(key: &str) -> &'static str {
 	let single_left = key.len() == 1 && "QWERTASDFGZXCVB12345".contains(key);
 	let left = single_left

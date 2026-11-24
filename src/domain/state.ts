@@ -1,4 +1,4 @@
-import type { CatalogItem, CollectionState, HistoryEntry, ItemType, Preset, RawCollection, Settings } from "../types.js"
+import type { CatalogItem, CollectionState, HistoryEntry, ItemType, Preset, RawCollection, Settings } from "./types.js"
 import { DEFAULTS } from "./constants.js"
 
 export const MAX_PRESETS = 12

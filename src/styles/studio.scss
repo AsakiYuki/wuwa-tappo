@@ -71,7 +71,6 @@ h3 {
 	right: 80px;
 	top: 0;
 	height: 42px;
-	-webkit-app-region: drag;
 }
 .page {
 	position: absolute;
@@ -809,7 +808,6 @@ dialog {
 	top: 14px;
 	display: flex;
 	gap: 5px;
-	-webkit-app-region: no-drag;
 
 	button {
 		width: 29px;
@@ -895,7 +893,6 @@ dialog {
 .resize-handle {
 	position: absolute;
 	pointer-events: auto;
-	-webkit-app-region: no-drag;
 }
 .resize-n,
 .resize-s {

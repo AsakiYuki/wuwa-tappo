@@ -76,7 +76,7 @@ const KEYBOARD_KEYCODE: u32 = 9;
 
 const CAPS_LOCK_CODE: i64 = 57;
 /// Device-dependent modifier bits (IOKit's NX_DEVICE*KEYMASK): which side is held, which the
-/// device-independent flags do not tell. Fn has no uiohook name and is skipped.
+/// device-independent flags do not tell. Fn has no name in the renderer and is skipped.
 fn modifier_bit(code: i64) -> Option<u64> {
 	Some(match code {
 		59 => 0x0001, // left control
@@ -91,7 +91,7 @@ fn modifier_bit(code: i64) -> Option<u64> {
 	})
 }
 
-/// Virtual key codes (HIToolbox kVK_*) to the names uiohook-napi uses, like `keys::key_name`.
+/// Virtual key codes (HIToolbox kVK_*) to the same names as `keys::key_name`.
 fn key_name(code: i64) -> &'static str {
 	match code {
 		0 => "A", 11 => "B", 8 => "C", 2 => "D", 14 => "E", 3 => "F", 5 => "G", 4 => "H", 34 => "I",

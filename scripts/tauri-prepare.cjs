@@ -7,7 +7,7 @@ const npmRun = require("./npm-run.cjs")
  * Stages the frontend the Tauri app embeds (src-tauri/frontend):
  *   web/     the Vite build (renderer-build), whose pages load images from ../assets/
  *   assets/  the catalog's images, so those relative paths resolve
- *   backend.js  the shared game logic (src/backend), embedded into the Rust binary
+ *   backend.js  the game logic (src/backend), embedded into the Rust binary
  * Pass --skip-build to reuse an existing renderer-build.
  */
 
@@ -24,15 +24,7 @@ for (const dir of ASSET_DIRS) {
 	fs.cpSync(path.join(projectRoot, "assets", dir), path.join(out, "assets", dir), { recursive: true })
 }
 
-// Tauri's IPC goes through its own origins, which the pages' CSP (written for Electron) blocks.
-const IPC_ORIGINS = "ipc: http://ipc.localhost"
-for (const page of ["pet.html", "studio.html"]) {
-	const file = path.join(out, "web", page)
-	const html = fs.readFileSync(file, "utf8").replace("connect-src 'none'", `connect-src ${IPC_ORIGINS}`)
-	fs.writeFileSync(file, html)
-}
-
-// The shared game logic, which the Rust side embeds and runs in QuickJS (src-tauri/src/backend.rs).
+// The game logic, which the Rust side embeds and runs in QuickJS (src-tauri/src/backend.rs).
 execFileSync(
 	process.execPath,
 	[

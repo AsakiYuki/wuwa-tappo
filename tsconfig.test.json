@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "Node16",
     "moduleResolution": "Node16",
-    "rootDir": "src/node",
+    "rootDir": "src/domain",
     "outDir": "runtime",
     "strict": false,
     "noUnusedLocals": true,
@@ -12,5 +12,5 @@
     "esModuleInterop": true,
     "types": ["node"]
   },
-  "include": ["src/node/**/*.ts"]
+  "include": ["src/domain/**/*.ts"]
 }

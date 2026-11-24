@@ -1,6 +1,6 @@
 //! Linux tray as a StatusNotifierItem (ksni). Tauri's own tray goes through libappindicator, which
-//! never reports clicks on the icon; this one does, so a click opens the studio like the Electron
-//! app. The menu comes from the same `tray::items` as the Tauri tray.
+//! never reports clicks on the icon; this one does, so a click opens the studio.
+//! The menu comes from the same `tray::items` as the Tauri tray.
 //!
 //! ksni's blocking API drives its own Tokio runtime, which must not be entered from another
 //! runtime's thread (Tauri's async commands), so every call into it runs on a plain thread.

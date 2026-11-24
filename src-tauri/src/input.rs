@@ -28,7 +28,7 @@ pub(crate) fn start(app: &AppHandle, shared: &Shared) {
 	});
 }
 
-/// Same wording as the Electron app's input status (src/node/input-manager.ts).
+/// The input status shown in the studio.
 pub(crate) fn hook_status(shared: &Shared) -> String {
 	if shared.devices.keyboard.load(Ordering::Relaxed) {
 		return "Global input connected (evdev)".into();
@@ -67,7 +67,7 @@ pub(crate) fn handle(app: &AppHandle, shared: &Shared, key: String, down: bool, 
 			let group = gamepad::trigger_group(&key);
 			let same_trigger_held =
 				group.is_some() && state.pressed.iter().any(|held| held != &key && gamepad::trigger_group(held) == group);
-			// Ctrl/Meta+Alt+1…5 plays the emote in that slot (src/node/input-manager.ts).
+			// Ctrl/Meta+Alt+1…5 plays the emote in that slot.
 			let modifiers = ["Ctrl", "CtrlRight", "Meta", "MetaRight"].iter().any(|held| state.pressed.contains(*held))
 				&& ["Alt", "AltRight"].iter().any(|held| state.pressed.contains(*held));
 			let slot = EMOTE_HOTKEYS.iter().position(|hotkey| *hotkey == key);

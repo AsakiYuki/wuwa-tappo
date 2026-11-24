@@ -37,7 +37,6 @@ function createEmotionMotion() {
 	const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches
 	let frame = 0
 	let previous = performance.now()
-	let ticks = 0
 
 	function forget(button: HTMLButtonElement, state: MotionState) {
 		clearTimeout(state.releaseTimer)
@@ -122,7 +121,6 @@ function createEmotionMotion() {
 
 	function tick(now: number) {
 		frame = 0
-		ticks++
 		const dt = Math.min((now - previous) / 1000, 0.028)
 		previous = now
 		for (const [button, state] of states) {
@@ -199,12 +197,6 @@ function createEmotionMotion() {
 	return {
 		bind,
 		reduce,
-		get ticks() {
-			return ticks
-		},
-		get animating() {
-			return frame !== 0
-		},
 	}
 }
 

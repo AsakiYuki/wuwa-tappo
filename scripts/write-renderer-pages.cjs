@@ -7,7 +7,8 @@ const securityPolicy = [
 	"img-src 'self' data:",
 	"style-src 'self' 'unsafe-inline'",
 	"script-src 'self'",
-	"connect-src 'none'",
+	// Tauri's IPC goes through its own origins.
+	"connect-src ipc: http://ipc.localhost",
 ].join("; ")
 
 for (const page of ["pet", "studio"]) {

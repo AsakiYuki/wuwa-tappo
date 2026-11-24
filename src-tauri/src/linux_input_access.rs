@@ -1,6 +1,5 @@
 //! The tray's "Fix Input Permissions": grants this user read access to /dev/input after an explicit
-//! warning, like the Electron app (src/node/main.ts). evdev rescans every second, so the pet reacts
-//! as soon as the access is granted.
+//! warning. evdev rescans every second, so the pet reacts as soon as the access is granted.
 
 use std::os::unix::fs::{MetadataExt, PermissionsExt};
 use std::path::{Path, PathBuf};

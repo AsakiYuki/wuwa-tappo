@@ -1,5 +1,5 @@
-// Injected before the page's own scripts: re-creates Electron's `window.petAPI` (src/node/preload.ts)
-// on top of Tauri's IPC, so the Vue renderer runs unchanged in both the pet and the studio window.
+// Injected before the page's own scripts: `window.petAPI` (PetAPI in src/domain/types.ts) on top of
+// Tauri's IPC, for both the pet and the studio window.
 ;(() => {
 	const tauri = () => window.__TAURI__
 	const invoke = (cmd, args) => tauri().core.invoke(cmd, args)
@@ -23,9 +23,8 @@
 		setHoverArea: area => void invoke("set_hover_area", { area }),
 	}
 
-	// The studio's title bar uses `-webkit-app-region: drag`, which only Electron understands; here
-	// pressing it and moving the pointer a few pixels starts a native window drag. Starting on the
-	// press itself would hand the pointer to the window manager, and the page's double-click
+	// Pressing the studio's title bar and moving the pointer a few pixels starts a native window drag.
+	// Starting on the press itself would hand the pointer to the window manager, and the page's double-click
 	// (maximize) would never arrive.
 	const DRAG_REGION = ".panel-drag"
 	const DRAG_THRESHOLD = 4

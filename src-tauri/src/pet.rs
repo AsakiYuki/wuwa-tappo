@@ -13,7 +13,7 @@ use tauri::{
 	AppHandle, Emitter, LogicalPosition, LogicalSize, PhysicalPosition, WebviewUrl, Window, WebviewWindow, WebviewWindowBuilder,
 };
 
-/// Window sizes match src/node/window-manager.ts.
+/// Window sizes in logical pixels, with and without the keyboard.
 const SIZE_KEYBOARD: (f64, f64) = (320.0, 350.0);
 const SIZE_COMPACT: (f64, f64) = (225.0, 215.0);
 const CORNER_MARGIN: (f64, f64) = (24.0, 12.0);
@@ -160,7 +160,7 @@ pub(crate) fn apply_settings(app: &AppHandle, shared: &Shared, previous: Option<
 			let _ = window.set_ignore_cursor_events(setting_bool(&settings, "passthrough", false));
 		}
 		let changed = |key: &str| previous.is_some_and(|previous| previous[key] != settings[key]);
-		// The keyboard is laid out at load, so toggling it reloads the page (like Electron).
+		// The keyboard is laid out at load, so toggling it reloads the page.
 		if changed("showKeyboard") {
 			let _ = window.reload();
 		}

@@ -11,7 +11,7 @@
 //! click-through of the pet therefore go through this module rather than Tauri's window API.
 //!
 //! Positions stay in the save's format (`petPosition`, the window's top-left in logical pixels), so
-//! the X11 and Electron builds put the pet in the same place.
+//! an X11 session puts the pet in the same place.
 //!
 //! GTK may only be used on the main thread; public functions dispatch there unless noted.
 
@@ -23,7 +23,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::Mutex;
 use tauri::{AppHandle, Monitor, WebviewWindow};
 
-/// Same corner as the Electron app (src/node/window-manager.ts).
+/// Same corner as on other platforms (`pet.rs`).
 const CORNER_MARGIN: (f64, f64) = (24.0, 12.0);
 
 static WAYLAND: AtomicBool = AtomicBool::new(false);

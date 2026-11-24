@@ -3,8 +3,7 @@ import { fileURLToPath } from "node:url"
 import { defineConfig } from "vite"
 
 /*
- * Bundles the shared game logic (src/backend) into one plain script for the Tauri port, which runs
- * it in QuickJS. Written next to the staged frontend; see scripts/tauri-prepare.cjs.
+ * Bundles the game logic (src/backend) into one plain script, which the app runs in QuickJS. Written next to the staged frontend; see scripts/tauri-prepare.cjs.
  */
 
 const projectRoot = fileURLToPath(new URL(".", import.meta.url))

@@ -1,31 +1,30 @@
-# Tauri port
+# The app
 
-A Tauri v2 (system WebView) build of Wuwa Tappo: the desktop pet **and the studio** (collection,
-atlas, synthesis, chests, presets, settings). The Vue pages render unchanged: `bridge.js` re-creates
-Electron's `window.petAPI` on Tauri's IPC.
+Wuwa Tappo on Tauri v2 (system WebView): the desktop pet and the studio (collection, atlas, synthesis,
+chests, presets, settings). The Vue pages (`src/renderer`) talk to the Rust side through
+`window.petAPI`, which `bridge.js` provides on Tauri's IPC.
 
-**Game logic is shared, not rewritten.** The Electron app's own TypeScript (`src/node/domain`) is
-bundled by `vite.backend.mts` into `frontend/backend.js` and run in QuickJS (`src/backend.rs`), so
-draws, pity, synthesis, equipping, presets and tap counting behave exactly as in Electron.
+**Game logic** is TypeScript (`src/domain`: draws, pity, synthesis, equipping, presets and tap
+counting), bundled by `vite.backend.mts` into `frontend/backend.js` and run in QuickJS
+(`src/backend.rs`).
 
-**Shared save.** It loads and writes the Electron app's `collection.json` the same way (temp file,
-`.bak`, rename; a corrupt save is copied aside). Run only one of the two apps at a time; a second
-launch of the Tauri app just brings the running one's studio forward.
+**Save.** `collection.json` in the OS config directory, written through a temp file, `.bak` and rename;
+a corrupt save is copied aside. A second launch just brings the running app's studio forward.
 
 Covered: transparent frameless always-on-top pet off the taskbar, click-through with cursor
 forwarding (hover-fade), dragging (position is saved), the studio window (frameless: drag, resize
 edges, maximize, zoom; closing it destroys it, which frees its web process and decoded images),
-import/export dialogs, the Electron tray menu (collection, show/reset pet, mouse passthrough, input
+import/export dialogs, the tray menu (collection, show/reset pet, mouse passthrough, input
 on/off, pressed keys on/off, Linux input-permission fix, exit; a click on the icon opens the studio,
 on Linux through a StatusNotifierItem), global keyboard/mouse input (rdev; on Linux also evdev, which works on Wayland; on macOS a CGEventTap), Ctrl/Meta+Alt+1…5 emote shortcuts, and
 controllers (XInput watcher on Windows, evdev on Linux, IOKit watcher on macOS).
 
-Not covered: launch at startup (the setting is saved but registers nothing), KWin hover-fade.
+Not covered: launch at startup (the setting is saved but registers nothing).
 
 ## Run
 
-`bun start` (or `npm start`) builds and runs it on Windows, Linux and macOS; `bun start -- --electron`
-runs the Electron app instead.
+`bun start` (or `npm start`) builds and runs it on Windows, Linux and macOS;
+`bun run build` packages it.
 
 Windows needs either the MSVC C++ build tools, or the GNU toolchain with MinGW
 (`rustup toolchain install stable-x86_64-pc-windows-gnu` and `scoop install mingw`); `start.cjs`

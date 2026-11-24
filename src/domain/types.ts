@@ -108,20 +108,8 @@ export interface SynthesisOptions {
 	mode?: SynthesisMode
 }
 
-export interface SavedState {
-	raw: RawCollection
-	file: string
-	mtime: number
-}
-
-export interface ProfileResult {
-	state: CollectionState
-	warning: string
-	migratedFrom?: string
-}
-
 /* ------------------------------------------------------------------ */
-/* IPC contract shared by the main process, preload and renderers.     */
+/* IPC contract between the app (src-tauri) and its pages.             */
 /* ------------------------------------------------------------------ */
 
 export type HandSide = "left" | "right"
@@ -169,8 +157,8 @@ export interface CursorMessage {
 	x: number
 	y: number
 	/**
-	 * Whether the cursor is over the pet's hover area, when the sender already hit-tested it (the
-	 * Tauri app, which then only sends changes); otherwise the page tests `x`/`y` itself.
+	 * Whether the cursor is over the pet's hover area, once the app knows that area (it then only
+	 * sends changes); until then the page tests `x`/`y` itself.
 	 */
 	hovered?: boolean | null
 }

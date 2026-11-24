@@ -1,4 +1,4 @@
-import type { Rarity, Settings } from "../types.js"
+import type { Rarity, Settings } from "./types.js"
 
 const RARITIES: Rarity[] = ["common", "uncommon", "rare", "epic"]
 const DEFAULTS: Settings = {

@@ -2,14 +2,12 @@ const { execFileSync, spawn } = require("node:child_process")
 const fs = require("node:fs")
 const os = require("node:os")
 const path = require("node:path")
-const npmRun = require("./npm-run.cjs")
 
 /*
  * `npm start` / `bun start`: builds and launches the app for the host OS.
- *   Windows, Linux, macOS   Tauri (src-tauri), unless --electron is passed
- * On NixOS, it re-runs itself inside shell.nix (Rust toolchain, WebKitGTK, Electron) when not already
- * in a nix shell, so plain `bun start` works as well as `bun start:nix`.
- * On Linux, Tauri runs natively on Wayland when the session has it; pass --x11 to use XWayland.
+ * On NixOS, it re-runs itself inside shell.nix (Rust toolchain, WebKitGTK) when not already in a nix
+ * shell, so plain `bun start` works as well as `bun start:nix`.
+ * On Linux, the app runs natively on Wayland when the session has it; pass --x11 to use XWayland.
  * Other arguments go to the app.
  */
 
@@ -18,18 +16,16 @@ const platform = process.platform
 
 // Platform flags from the old start:mac/linux/win scripts are meaningless here (the app can only run
 // on the host OS), so ignore them.
-const ignoredFlags = new Set(["--mac", "--darwin", "--linux", "--win", "--windows", "--electron", "--tauri", "--x11"])
+const ignoredFlags = new Set(["--mac", "--darwin", "--linux", "--win", "--windows", "--tauri", "--x11"])
 const rawArgs = process.argv.slice(2)
 const extraArgs = rawArgs.filter(arg => !ignoredFlags.has(arg))
-const useTauri = !rawArgs.includes("--electron")
 
 const platformName = { win32: "Windows", darwin: "macOS", linux: "Linux" }[platform] || platform
 
 // On NixOS outside a nix shell, the app is started again inside one; runAndExit forwards its exit code.
 if (!reenterNixShell()) {
-	console.log(`Starting on ${platformName} (${useTauri ? "Tauri" : "Electron"})`)
-	if (useTauri) startTauri()
-	else startElectron()
+	console.log(`Starting on ${platformName}`)
+	startTauri()
 }
 
 /**
@@ -58,8 +54,6 @@ function runAndExit(command, args, options) {
 	})
 }
 
-/* --------------------------------- Tauri --------------------------------- */
-
 function startTauri() {
 	const cargo = findCargo()
 	if (!cargo) {
@@ -83,7 +77,7 @@ function startTauri() {
 	}
 	if (platform === "linux" && rawArgs.includes("--x11")) {
 		// Native Wayland is the default (the pet becomes a layer-shell surface); --x11 runs through
-		// XWayland instead, like the Electron build.
+		// XWayland instead.
 		env.GDK_BACKEND = "x11"
 	}
 	const toolchainArgs = []
@@ -158,27 +152,4 @@ function findMingwBin() {
 		"C:\\msys64\\mingw64\\bin",
 	]
 	return dirs.find(dir => dir && fs.existsSync(path.join(dir, "dlltool.exe"))) || null
-}
-
-/* -------------------------------- Electron ------------------------------- */
-
-function startElectron() {
-	if (platform === "linux") {
-		try {
-			execFileSync(process.execPath, [path.join(__dirname, "register-dev-desktop.cjs")], {
-				cwd: projectRoot,
-				stdio: "inherit",
-			})
-		} catch (error) {
-			console.warn("Could not register dev desktop shortcut:", error)
-		}
-	}
-
-	npmRun("node:build", projectRoot)
-	npmRun("renderer:build", projectRoot)
-
-	const env = { ...process.env }
-	delete env.ELECTRON_RUN_AS_NODE
-	const args = [...(platform === "linux" ? ["--ozone-platform=x11"] : []), ".", ...extraArgs]
-	runAndExit(require("electron"), args, { env })
 }

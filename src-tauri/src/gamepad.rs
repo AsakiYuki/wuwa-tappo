@@ -1,4 +1,4 @@
-//! Controller input through the watchers the Electron app also runs (src/node/input-manager.ts):
+//! Controller input through small watcher programs:
 //! XInput on Windows (src/native/win-gamepad-watcher.c) and IOKit HID on macOS
 //! (src/native/mac-gamepad-watcher.c). Linux controllers are read through evdev instead
 //! (`evdev.rs`), which shares the button names below.
@@ -12,7 +12,7 @@ use std::process::{Command, Stdio};
 
 const WATCHER: &str = if cfg!(windows) { "win-gamepad-watcher.exe" } else { "mac-gamepad-watcher" };
 
-/// Linux evdev button codes the watcher reports (LINUX_GAMEPAD_BUTTONS in src/node/input-keymaps.ts).
+/// Linux evdev button codes the watcher reports.
 pub fn button_name(code: u32) -> String {
 	let name = match code {
 		288 => "Trigger",
@@ -51,15 +51,14 @@ pub fn button_name(code: u32) -> String {
 	name.to_string()
 }
 
-/// Same rule as `gamepadSide` in src/node/input-keymaps.ts.
+/// The hand a controller button belongs to.
 pub fn side(key: &str) -> &'static str {
 	let button = key.rsplit(':').next().unwrap_or(key);
 	let left = button.starts_with("DPad") || button.starts_with("LeftTriggerAxis") || matches!(button, "L1" | "L2" | "L3");
 	if left { "left" } else { "right" }
 }
 
-/// Analog and digital triggers of one pad report the same press; grouping them lets only one count
-/// (`gamepadTriggerGroup` in src/node/input-keymaps.ts).
+/// Analog and digital triggers of one pad report the same press; grouping them lets only one count.
 pub fn trigger_group(key: &str) -> Option<String> {
 	let (pad, button) = key.split_once(':')?;
 	if !pad.starts_with("Gamepad") {

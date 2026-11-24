@@ -7,9 +7,6 @@ declare global {
 
 	interface Window {
 		petAPI: PetAPI
-		/** QA hooks read by src/node/qa.ts. */
-		__petTest?: () => Record<string, unknown>
-		__studioTest?: () => Record<string, unknown>
 	}
 }
 

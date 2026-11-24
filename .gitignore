@@ -1,15 +1,9 @@
 node_modules/
-data/
-dist/
 renderer-build/
 runtime/
-qa-output/
-qa-data-*/
 *.log
 *.tmp
 *.bak
-!build/
-!build/**
 result
 result-*
 .DS_Store

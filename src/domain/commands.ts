@@ -1,11 +1,10 @@
-import type { CatalogItem, CollectionState, RawCollection, Settings } from "../types.js"
+import type { CatalogItem, CollectionState, RawCollection, Settings } from "./types.js"
 import { draw, equip, replaceEmote, synthesize } from "./actions.js"
 import { MAX_PRESETS, newPresetId, normalize, presetName, settings } from "./state.js"
 
 /*
- * Collection commands shared by both shells: the Electron main process (src/node/commands.ts) and
- * the Tauri port, which runs this file through QuickJS (src/backend). They only touch the state;
- * windows, dialogs, files and saving stay with each shell.
+ * Collection commands, run by the app through QuickJS (src/backend). They only touch the state;
+ * windows, dialogs, files and saving are the Rust side's (src-tauri).
  */
 
 type StateCommand = (state: CollectionState, items: CatalogItem[], argument: any) => unknown
@@ -71,7 +70,7 @@ export function importedState(raw: unknown, items: CatalogItem[], current: Colle
 	return state
 }
 
-/** Applies a settings patch; returns the previous settings so the shell can react to what changed. */
+/** Applies a settings patch; returns the previous settings so the app can react to what changed. */
 export function patchSettings(state: CollectionState, patch: Partial<Settings>): Settings {
 	const previous = state.settings
 	const next = settings({ ...previous, ...patch })

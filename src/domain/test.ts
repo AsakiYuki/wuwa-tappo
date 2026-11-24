@@ -2,18 +2,12 @@ import { test } from "node:test"
 import assert from "node:assert/strict"
 import fs from "node:fs"
 import path from "node:path"
-import * as core from "./core.js"
-import * as storage from "./storage.js"
-import os from "node:os"
-import {
-	getLinuxAutoStartExecutable,
-	getLoginItemExecutable,
-	setLinuxAutoStart,
-	stableLauncherPath,
-} from "./autostart.js"
-import { findExecutable, findSystemExecutable, isRootControlled } from "./linux-tools.js"
-import { STATE_COMMANDS, canPlayEmote, importedState, isKnownSave, patchSettings } from "./domain/commands.js"
-import { hoverScript } from "./kwin-hover-fade.js"
+import * as actions from "./actions.js"
+import { STATE_COMMANDS, canPlayEmote, importedState, isKnownSave, patchSettings } from "./commands.js"
+import { RARITIES } from "./constants.js"
+import { initial, normalize, settings } from "./state.js"
+
+const core = { ...actions, RARITIES, initial, normalize, settings }
 const PROJECT_ROOT = path.resolve(__dirname, "..")
 const catalog = JSON.parse(fs.readFileSync(path.join(PROJECT_ROOT, "assets", "catalog.json"), "utf8"))
 const items = catalog.items
@@ -32,112 +26,6 @@ test("Windows controller watcher is bundled as a 64-bit console executable", () 
 	const pe = binary.readUInt32LE(0x3c)
 	assert.equal(binary.toString("latin1", pe, pe + 4), "PE\0\0")
 	assert.equal(binary.readUInt16LE(pe + 4), 0x8664, "x64 machine type")
-})
-test("Windows launch-at-startup points portable builds at the original .exe", () => {
-	assert.equal(
-		getLoginItemExecutable({
-			platform: "win32",
-			executablePath: "C:\\Users\\test\\AppData\\Local\\Temp\\2abc\\wuwa-tappo.exe",
-			portableExecutable: "D:\\Games\\wuwa-tappo-portable.exe",
-		}),
-		"D:\\Games\\wuwa-tappo-portable.exe",
-	)
-	assert.equal(
-		getLoginItemExecutable({
-			platform: "win32",
-			executablePath: "C:\\Program Files\\Wuwa Tappo\\wuwa-tappo.exe",
-		}),
-		"C:\\Program Files\\Wuwa Tappo\\wuwa-tappo.exe",
-	)
-	assert.equal(
-		getLoginItemExecutable({
-			platform: "darwin",
-			executablePath: "/Applications/Wuwa Tappo.app/Contents/MacOS/Wuwa Tappo",
-			portableExecutable: "/ignored",
-		}),
-		"/Applications/Wuwa Tappo.app/Contents/MacOS/Wuwa Tappo",
-	)
-})
-test("Linux auto-start uses the AppImage file or the development launcher", () => {
-	const dataHome = "/home/test/.local/share"
-	assert.equal(
-		getLinuxAutoStartExecutable({
-			isPackaged: true,
-			appImagePath: "/home/test/Wuwa Tappo.AppImage",
-			executablePath: "/tmp/.mount-app/usr/bin/wuwa-tappo",
-			dataHome,
-		}),
-		"/home/test/Wuwa Tappo.AppImage",
-	)
-	assert.equal(
-		getLinuxAutoStartExecutable({
-			isPackaged: false,
-			executablePath: "/nix/store/electron",
-			dataHome,
-		}),
-		path.join(dataHome, "wuwa-tappo-dev", "launch.sh"),
-	)
-})
-test("Linux auto-start prefers a distribution launcher, through its stable profile path", () => {
-	const common = {
-		isPackaged: false,
-		executablePath: "/nix/store/aaa-electron/bin/electron",
-		dataHome: "/home/test/.local/share",
-	}
-	const launcher = "/nix/store/bbb-wuwa-tappo-1.0.8/bin/wuwa-tappo"
-	assert.equal(getLinuxAutoStartExecutable({ ...common, launcher }), launcher)
-	assert.equal(
-		getLinuxAutoStartExecutable({ ...common, launcher, stableLauncher: "/run/current-system/sw/bin/wuwa-tappo" }),
-		"/run/current-system/sw/bin/wuwa-tappo",
-	)
-})
-test("A Nix store launcher resolves to the profile symlink that points at it", () => {
-	if (process.platform === "win32") return
-	const root = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-launcher-"))
-	try {
-		const store = path.join(root, "store-bin")
-		const profile = path.join(root, "profile-bin")
-		const other = path.join(root, "other-bin")
-		for (const directory of [store, profile, other]) fs.mkdirSync(directory)
-		const real = path.join(store, "wuwa-tappo")
-		fs.writeFileSync(real, "#!/bin/sh\n", { mode: 0o755 })
-		fs.symlinkSync(real, path.join(profile, "wuwa-tappo"))
-		fs.writeFileSync(path.join(other, "wuwa-tappo"), "#!/bin/sh\n", { mode: 0o755 })
-
-		assert.equal(
-			findExecutable("wuwa-tappo", [other, profile].join(path.delimiter)),
-			path.join(other, "wuwa-tappo"),
-		)
-		// Only store paths are swapped, and only for a PATH entry that is this very launcher.
-		assert.equal(stableLauncherPath(real, profile), null)
-		const storeLauncher = "/nix/store/" + path.relative("/", real)
-		assert.equal(stableLauncherPath(storeLauncher, other), null)
-		assert.equal(findExecutable("missing-tool", profile), null)
-	} finally {
-		fs.rmSync(root, { recursive: true, force: true })
-	}
-})
-test("Linux launch-at-startup creates and removes an XDG autostart entry", () => {
-	const configDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-autostart-"))
-	const entry = path.join(configDirectory, "autostart", "wuwa-tappo.desktop")
-	try {
-		setLinuxAutoStart(true, configDirectory, "/opt/Wuwa Tappo/wuwa-tappo")
-		assert.equal(
-			fs.readFileSync(entry, "utf8"),
-			[
-				"[Desktop Entry]",
-				"Type=Application",
-				"Name=Wuwa Tappo",
-				'Exec="/opt/Wuwa Tappo/wuwa-tappo"',
-				"Terminal=false",
-				"",
-			].join("\n"),
-		)
-		setLinuxAutoStart(false, configDirectory, "/opt/Wuwa Tappo/wuwa-tappo")
-		assert.equal(fs.existsSync(entry), false)
-	} finally {
-		fs.rmSync(configDirectory, { recursive: true, force: true })
-	}
 })
 test("Starts with the classic Rover pair, Abby, and eight base emotes", () => {
 	const s = core.initial(items)
@@ -493,97 +381,6 @@ test("Replace a chosen slot when five emotes are equipped; equipped emotes swap 
 	assert.throws(() => core.replaceEmote(s, items, "emote:missing", 1))
 	assert.equal(JSON.stringify(s), before)
 })
-test("Upgrading migrates and backs up the portable save; later installs reuse it", async () => {
-	const root = fs.mkdtempSync(path.join(PROJECT_ROOT, "qa-data-unit-"))
-	try {
-		const legacy = path.join(root, "old"),
-			dataDir = path.join(root, "profile")
-		fs.mkdirSync(path.join(legacy, "data"), { recursive: true })
-		const s = core.initial(items)
-		core.draw(s, items, 10, () => 0.95)
-		s.count = 521
-		s.settings.autoStart = true
-		fs.writeFileSync(path.join(legacy, "data/collection.json"), JSON.stringify(s))
-		const first = storage.initProfile({ dataDir, portableDir: legacy, items })
-		assert.deepEqual(first.state, s)
-		assert(first.migratedFrom)
-		assert.equal(fs.readdirSync(path.join(dataDir, "migration-backups")).length, 1)
-		const write = storage.createWriter(path.join(dataDir, "collection.json"))
-		first.state.count = 522
-		await write(first.state)
-		const second = storage.initProfile({
-			dataDir,
-			portableDir: path.join(root, "new-version"),
-			items,
-		})
-		assert.equal(second.state.count, 522)
-		assert.deepEqual(second.state.owned, s.owned)
-		assert.equal(second.migratedFrom, undefined)
-		assert.equal(JSON.parse(fs.readFileSync(path.join(legacy, "data/collection.json"), "utf8")).count, 521)
-	} finally {
-		if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-")) throw Error("Unsafe cleanup")
-		fs.rmSync(root, { recursive: true })
-	}
-})
-test("A fresh install finds the old Downloads save and preserves draws, favorites, and presets", () => {
-	const root = fs.mkdtempSync(path.join(PROJECT_ROOT, "qa-data-unit-"))
-	try {
-		const downloads = path.join(root, "Downloads"),
-			legacy = path.join(downloads, "WuwaTappo-Offline-42keys-v1.0.2", "WuwaTappo-Offline-1.0.2", "data")
-		fs.mkdirSync(legacy, { recursive: true })
-		const s = core.initial(items)
-		s.draws = 450
-		s.favorites = [s.character]
-		s.presets = [
-			{
-				id: "old",
-				name: "Old Outfit",
-				character: s.character,
-				accessory: s.accessory,
-				emotes: s.emotes,
-			},
-		]
-		s.settings.autoStart = true
-		fs.writeFileSync(path.join(legacy, "collection.json"), JSON.stringify(s))
-		const migrated = storage.initProfile({
-			dataDir: path.join(root, "profile"),
-			portableDir: path.join(downloads, "new"),
-			searchRoots: [downloads],
-			items,
-		})
-		// A save found by searching Downloads is not trusted to register a login item.
-		assert.deepEqual(migrated.state, { ...s, settings: { ...s.settings, autoStart: false } })
-	} finally {
-		if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-")) throw Error("Unsafe cleanup")
-		fs.rmSync(root, { recursive: true })
-	}
-})
-test("Queued saves complete in order and do not overwrite newer state", async () => {
-	const root = fs.mkdtempSync(path.join(PROJECT_ROOT, "qa-data-unit-"))
-	try {
-		const file = path.join(root, "collection.json"),
-			write = storage.createWriter(file),
-			s = core.initial(items),
-			jobs = []
-		for (let i = 0; i < 20; i++) {
-			s.count = i
-			jobs.push(write(s))
-		}
-		await Promise.all(jobs)
-		assert.equal(storage.readSave(file).raw.count, 19)
-		assert.equal(storage.readSave(file + ".bak").raw.count, 18)
-	} finally {
-		if (!root.startsWith(PROJECT_ROOT + path.sep + "qa-data-unit-")) throw Error("Unsafe cleanup")
-		fs.rmSync(root, { recursive: true })
-	}
-})
-test("The KWin hover-fade script is valid JavaScript and embeds the hover area", () => {
-	const area = { left: 0.1, top: 0.2, right: 0.9, bottom: 1 }
-	const script = hoverScript(area)
-	assert.doesNotThrow(() => new Function(script))
-	assert.ok(script.includes(JSON.stringify(area)))
-})
-
 test("Custom key labels are bounded in count and length", () => {
 	const many = Object.fromEntries(Array.from({ length: 1000 }, (_, index) => [`Key${index}`, "x".repeat(500)]))
 	const labels = core.settings({ keyLabels: { ...many, ["k".repeat(100)]: "long" } }).keyLabels
@@ -684,19 +481,4 @@ test("The pet's screen index and saved position are bounded", () => {
 	)
 	assert.equal(state.settings.monitor, 32)
 	assert.deepEqual(state.settings.petPosition, { x: 100_000, y: -100_000 })
-})
-
-test("Programs run as root are only taken from root-owned system directories, never $PATH", () => {
-	if (process.platform !== "linux") return
-	const directory = fs.mkdtempSync(path.join(os.tmpdir(), "wuwa-planted-"))
-	try {
-		const planted = path.join(directory, "setfacl")
-		fs.writeFileSync(planted, "#!/bin/sh\n", { mode: 0o755 })
-		assert.equal(isRootControlled(planted), false)
-		assert.equal(findSystemExecutable("setfacl", [directory]), null, "a planted copy is ignored")
-		const sh = findSystemExecutable("sh")
-		assert.ok(sh && path.isAbsolute(sh) && isRootControlled(sh), "real system programs are found")
-	} finally {
-		fs.rmSync(directory, { recursive: true, force: true })
-	}
 })

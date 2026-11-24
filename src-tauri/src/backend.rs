@@ -1,5 +1,5 @@
-//! The shared game logic (src/backend, bundled by vite.backend.mts) running in QuickJS, so the
-//! Tauri port draws, synthesises, equips and counts taps exactly like the Electron app.
+//! The game logic (src/backend, bundled by vite.backend.mts) running in QuickJS: draws, synthesis,
+//! equipping, presets and tap counting.
 //!
 //! Values cross the boundary as strings and numbers only; JSON is parsed on the Rust side.
 

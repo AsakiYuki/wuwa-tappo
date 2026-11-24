@@ -1,4 +1,4 @@
-// The renderer shares the main process's domain and IPC types so both sides stay in sync.
+// The renderer shares the game logic's types and the IPC contract, so both sides stay in sync.
 export type {
 	AppStatus,
 	CatalogFilters,
@@ -18,4 +18,4 @@ export type {
 	ResizeEdge,
 	Settings,
 	SynthesisMode,
-} from "../../node/types"
+} from "../../domain/types"

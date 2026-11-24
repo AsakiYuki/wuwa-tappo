@@ -91,10 +91,8 @@ The pet reacts to keys typed into *any* window, so it needs to see global input:
 
 - 🪟 **Native Wayland:** where the compositor supports wlr-layer-shell (KDE Plasma, Hyprland,
   Sway, …) the pet stays above windows and out of the taskbar. On GNOME it is a normal window.
-- 🔷 **KDE Plasma 5/6:** hover-fade with passthrough works through a small KWin script
-  (needs `qdbus`, `qdbus6` or `qdbus-qt6`).
+- 🔷 **KDE Plasma 5/6:** hover-fade with passthrough works through a small KWin script.
 - 👣 **GNOME:** the tray icon needs the *AppIndicator and KStatusNotifierItem Support* extension.
-- 🧱 **X11:** install `wmctrl` (or `xprop`) so the pet stays off the taskbar on every window manager.
 
 <a id="nixos"></a>
 
@@ -131,9 +129,6 @@ Or install it system-wide with the NixOS module:
 For Home Manager or a plain profile, add `wuwa-tappo.overlays.default` and install
 `pkgs.wuwa-tappo`, or use `wuwa-tappo.packages.${system}.default` directly.
 
-> [!NOTE]
-> The Nix package is still the Electron build.
-
 ## 🛠️ Development
 
 **You need:** [Node.js](https://nodejs.org) 18+ (or [Bun](https://bun.sh)) and
@@ -156,16 +151,14 @@ npm install
 npm start          # or: bun start
 ```
 
-`npm start` builds the renderer and runs the Tauri app on every OS.
+`npm start` builds the renderer and runs the app on every OS.
 
 | Command | What it does |
 | --- | --- |
-| `npm start` | ▶️ Run the Tauri app |
+| `npm start` | ▶️ Run the app |
 | `npm start -- --x11` | 🐧 Run through XWayland instead of native Wayland |
-| `npm run start:electron` | ⚡ Run the older Electron app |
-| `npm test` | 🧪 Test the shared game logic |
-| `npm run test:ui` | 🖼️ UI checks (Electron) |
-| `npx @tauri-apps/cli@2 build` | 📦 Package the Tauri app for this OS |
+| `npm test` | 🧪 Test the game logic |
+| `npm run build` | 📦 Package the app for this OS |
 
 > [!TIP]
 > During development, macOS asks for Input Monitoring for your **terminal**, not for the app.
@@ -185,17 +178,16 @@ GitHub release.
 
 ```text
 src/
-├── renderer/     🎨 Vue 3 pages: the pet and the studio (shared by both apps)
-├── node/domain/  🎲 Game logic: draws, pity, synthesis, presets (shared by both apps)
-├── node/         ⚡ Electron main process
+├── renderer/     🎨 Vue 3 pages: the pet and the studio
+├── domain/       🎲 Game logic: draws, pity, synthesis, presets
+├── backend/      🔌 Entry point the app runs the game logic through
 └── native/       🎮 Controller watchers (XInput, IOKit)
-src-tauri/        🦀 Tauri app: windows, input, tray, saving
+src-tauri/        🦀 The Tauri app: windows, input, tray, saving
 assets/           🖼️ Characters, accessories, emotes, catalog
 ```
 
-The Tauri app runs the **same** TypeScript game logic as Electron (bundled into QuickJS) and reads and
-writes the same `collection.json`, so your collection carries over between the two. Run only one
-at a time. More in [src-tauri/README.md](src-tauri/README.md).
+The game logic is TypeScript, bundled into one script that the Rust side runs in QuickJS. Your
+collection is saved in `collection.json`. More in [src-tauri/README.md](src-tauri/README.md).
 
 ## 📜 License
 

@@ -58,7 +58,7 @@ jobs:
             libx11-dev libxtst-dev libxi-dev libgtk-layer-shell-dev patchelf
 
       - run: npm ci
-      # The shared game logic (src/node/domain), which the Tauri app runs in QuickJS.
+      # The game logic (src/domain), which the app runs in QuickJS.
       - run: npm test
 
       # The controller watchers are packaged: compile them from source, never ship the prebuilt ones.

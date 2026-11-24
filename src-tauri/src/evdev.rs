@@ -1,6 +1,4 @@
 //! Linux global input through evdev (/dev/input/event*): keyboards, mice, touchpads and controllers.
-//! A port of the evdev reader in src/node/input-manager.ts, with the same device detection, key
-//! names and axis thresholds, so the renderer sees identical events from either app.
 //!
 //! Unlike the X11 hook (rdev), evdev sees every key press on Wayland too. It needs read access to
 //! the devices: controllers usually have it already (logind `uaccess`), keyboards and mice need

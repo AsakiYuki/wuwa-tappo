@@ -1,4 +1,4 @@
-//! The tray: the Electron tray's items (src/node/main.ts), shown by Tauri's tray on Windows and macOS
+//! The tray, shown by Tauri's tray on Windows and macOS
 //! and by a StatusNotifierItem on Linux (`linux_tray.rs`), with Tauri's as the fallback there.
 
 #[cfg(target_os = "linux")]
@@ -44,7 +44,7 @@ pub fn items(shared: &Shared) -> Vec<TrayItem> {
 		// Quick to turn off before sharing the screen: the keys shown include typed passwords.
 		item(TrayAction::PressedKeys, "Show Pressed Keys", Some(setting_bool(&settings, "showPressedKeys", true)), false),
 	];
-	// Offered only while global input is missing, like Electron's one-click fix.
+	// Offered only while global input is missing.
 	if cfg!(target_os = "linux") && !shared.devices.keyboard.load(Ordering::Relaxed) {
 		items.push(item(TrayAction::FixInput, "⚡ Fix Input Permissions (Linux)", None, false));
 	}

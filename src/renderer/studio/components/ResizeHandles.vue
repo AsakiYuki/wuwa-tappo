@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { RESIZE_EDGES } from "../../../node/types"
+import { RESIZE_EDGES } from "../../../domain/types"
 import type { ResizeEdge } from "../../shared/types"
 
 /** Frameless windows need their own edge handles; each reports pointer deltas to the main process. */

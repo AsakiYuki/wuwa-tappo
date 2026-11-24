@@ -27,7 +27,6 @@ const settings = computed(() => state.value?.settings)
 
 const face = ref<1 | 2>(1)
 const activeKeys = shallowRef<ReadonlySet<string>>(new Set())
-const inputSerial = ref(0)
 const menuOpen = ref(false)
 const menuPinned = ref(false)
 const cursorHovered = ref(false)
@@ -72,7 +71,6 @@ const rootClass = computed(() => ({
 
 function handleInput(event: InputMessage) {
 	if (event.countedTap) counter.recordTap(event.key)
-	inputSerial.value = event.serial
 	if (state.value) {
 		state.value = {
 			...state.value,
@@ -157,21 +155,6 @@ onMounted(() => {
 onBeforeUnmount(() => {
 	window.clearInterval(blinkTimer)
 	window.clearTimeout(menuTimer)
-})
-
-window.__petTest = () => ({
-	character: state.value?.character,
-	count: String(state.value?.count ?? 0),
-	serial: inputSerial.value,
-	action: hand.action.value,
-	face: face.value,
-	loaded: ["head", "body"].every(id => {
-		const image = document.getElementById(id) as HTMLImageElement | null
-		return Boolean(image?.complete && image.naturalWidth > 0)
-	}),
-	bubble: Boolean(document.querySelector("#bubble img")),
-	keys: document.querySelectorAll(".key").length,
-	tilt: getComputedStyle(document.querySelector(".keyboard-plane")!).transform,
 })
 </script>
 
