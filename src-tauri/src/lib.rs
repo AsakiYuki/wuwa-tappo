@@ -32,6 +32,7 @@ mod linux_input_access;
 mod linux_tray;
 #[cfg(target_os = "macos")]
 mod macos_input;
+mod overlay;
 mod pet;
 mod storage;
 mod studio;
@@ -247,6 +248,7 @@ pub fn run() {
 			let handle = app.handle().clone();
 			save_now(&handle, &shared);
 			pet::create(&handle, &shared)?;
+			overlay::start(&handle, &shared);
 			tray::create(&handle, &shared)?;
 			input::start(&handle, &shared);
 			// A fresh profile opens the studio, as in the Electron app.

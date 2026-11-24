@@ -3,8 +3,8 @@
 #[cfg(target_os = "linux")]
 use crate::{kwin_cursor, wayland};
 use crate::{
-	broadcast_state, layer_pet, page_scripts, pointer_delta, refresh_cache, save_later, save_now, setting_bool, setting_f64,
-	settings, tray, wayland_session, window, Shared, PET_LABEL,
+	broadcast_state, layer_pet, overlay, page_scripts, pointer_delta, refresh_cache, save_later, save_now, setting_bool,
+	setting_f64, settings, tray, wayland_session, window, Shared, PET_LABEL,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -82,6 +82,7 @@ pub(crate) fn create(app: &AppHandle, shared: &Shared) -> tauri::Result<WebviewW
 	let settings = settings(shared);
 	let (width, height) = size(&settings);
 	let position = position(app, &settings, (width, height), false);
+	let always_on_top = setting_bool(&settings, "alwaysOnTop", true);
 	let window = WebviewWindowBuilder::new(app, PET_LABEL, WebviewUrl::App("web/pet.html".into()))
 		.title("Wuwa Tappo")
 		.inner_size(width, height)
@@ -91,15 +92,15 @@ pub(crate) fn create(app: &AppHandle, shared: &Shared) -> tauri::Result<WebviewW
 		.shadow(false)
 		.resizable(false)
 		.skip_taskbar(true)
-		.always_on_top(setting_bool(&settings, "alwaysOnTop", true))
+		.always_on_top(always_on_top)
 		.visible_on_all_workspaces(true)
 		.focused(false)
 		// macOS: the first click on the (never focused) pet reaches the page instead of only
 		// activating the window, so it can be dragged and tapped right away.
 		.accept_first_mouse(true)
-		// On Wayland it must stay unmapped until it has become a layer surface. Elsewhere it is shown
-		// at once: a window created hidden keeps a stale position in Tauri on X11.
-		.visible(!wayland_session())
+		// On Wayland it must stay unmapped until it has become a layer surface, and on X11 until it is
+		// override-redirect (`overlay.rs`), if it is to be on top.
+		.visible(!(wayland_session() || cfg!(target_os = "linux") && always_on_top))
 		.initialization_script(page_scripts())
 		.build()?;
 	#[cfg(target_os = "linux")]
@@ -111,6 +112,9 @@ pub(crate) fn create(app: &AppHandle, shared: &Shared) -> tauri::Result<WebviewW
 			return Ok(window);
 		}
 		window.show()?;
+	} else if let Ok(gtk_window) = window.gtk_window() {
+		// Tauri panics when asked for click-through on a window that has no native one yet.
+		gtk::prelude::WidgetExt::realize(&gtk_window);
 	}
 	let _ = window.set_size(LogicalSize::new(width, height));
 	window.set_ignore_cursor_events(setting_bool(&settings, "passthrough", false))?;
@@ -150,7 +154,9 @@ pub(crate) fn apply_settings(app: &AppHandle, shared: &Shared, previous: Option<
 			#[cfg(target_os = "linux")]
 			wayland::set_passthrough(app, setting_bool(&settings, "passthrough", false));
 		} else {
-			let _ = window.set_always_on_top(setting_bool(&settings, "alwaysOnTop", true));
+			let always_on_top = setting_bool(&settings, "alwaysOnTop", true);
+			let _ = window.set_always_on_top(always_on_top);
+			overlay::apply(app, always_on_top);
 			let _ = window.set_ignore_cursor_events(setting_bool(&settings, "passthrough", false));
 		}
 		let changed = |key: &str| previous.is_some_and(|previous| previous[key] != settings[key]);
