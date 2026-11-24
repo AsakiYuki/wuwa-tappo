@@ -14,6 +14,7 @@
 //! Hover-fade with passthrough on Wayland works on KDE only (`kwin_cursor.rs`):
 //! Wayland gives apps no global cursor position.
 
+mod autostart;
 mod backend;
 mod commands;
 #[cfg(target_os = "linux")]
@@ -240,6 +241,8 @@ pub fn run() {
 				devices: Arc::new(InputDevices::default()),
 			});
 			refresh_cache(&shared);
+			// Keep the login entry pointing at this copy of the app (it may have moved or updated).
+			autostart::refresh(setting_bool(&shared.state.lock().unwrap().settings, "autoStart", false));
 			app.manage(shared.clone());
 
 			let handle = app.handle().clone();

@@ -1,7 +1,7 @@
 //! The pages' IPC: `petAPI.init()` and every `petAPI.command(name, argument)`.
 
 use crate::{
-	broadcast_state, input, pet, refresh_cache, save_now, setting_bool, settings, status, studio, Shared, CATALOG_JSON,
+	autostart, broadcast_state, input, pet, refresh_cache, save_now, setting_bool, settings, status, studio, Shared, CATALOG_JSON,
 	PET_LABEL, SAVE_FAILED,
 };
 use serde_json::{json, Value};
@@ -146,12 +146,18 @@ fn finish_state_command(app: &AppHandle, shared: &Shared, name: &str, reply: &Va
 	if reply["ok"] != json!(true) {
 		return reply.clone();
 	}
+	let mut autostart_error = None;
 	match name {
 		"settings" => {
+			let previous = reply.get("previousSettings");
+			autostart_error = sync_autostart(shared, previous.map(|previous| setting_bool(previous, "autoStart", false)));
 			refresh_cache(shared);
-			pet::apply_settings(app, shared, reply.get("previousSettings"));
+			pet::apply_settings(app, shared, previous);
 		}
+		// A reset turns auto-start off; an import keeps the current choice. Either way the entry is
+		// brought in line with the setting.
 		"import-data" | "reset-data" => {
+			autostart_error = sync_autostart(shared, None);
 			refresh_cache(shared);
 			pet::apply_settings(app, shared, None);
 			pet::place(app, shared, name == "reset-data");
@@ -160,8 +166,29 @@ fn finish_state_command(app: &AppHandle, shared: &Shared, name: &str, reply: &Va
 	}
 	let saved = save_now(app, shared);
 	broadcast_state(app, &refresh_cache(shared));
-	let warning = if saved { String::new() } else { SAVE_FAILED.to_string() };
+	let warning = match (autostart_error, saved) {
+		(Some(error), _) => error,
+		(None, false) => SAVE_FAILED.to_string(),
+		(None, true) => String::new(),
+	};
 	json!({ "ok": true, "result": reply["result"], "warning": warning })
+}
+
+/// Registers or removes the login entry to match the "autoStart" setting. `previous` is the value
+/// before the change, when known; nothing is touched if it did not change. If the OS refuses, the
+/// setting goes back to `previous` (so the switch shows what is really registered) and the error
+/// is returned for the page to show.
+fn sync_autostart(shared: &Shared, previous: Option<bool>) -> Option<String> {
+	let enabled = setting_bool(&shared.backend.lock().unwrap().state()["settings"], "autoStart", false);
+	if previous == Some(enabled) {
+		return None;
+	}
+	let error = autostart::set(enabled).err()?;
+	eprintln!("autostart: {error}");
+	if let Some(previous) = previous {
+		let _ = shared.backend.lock().unwrap().command("settings", &json!({ "autoStart": previous }));
+	}
+	Some(format!("Could not change Launch at Startup: {error}"))
 }
 
 /// Changes a boolean setting (from the tray), saves it and syncs every window.

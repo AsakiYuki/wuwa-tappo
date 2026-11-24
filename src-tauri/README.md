@@ -19,7 +19,11 @@ on/off, pressed keys on/off, Linux input-permission fix, exit; a click on the ic
 on Linux through a StatusNotifierItem), global keyboard/mouse input (rdev; on Linux also evdev, which works on Wayland; on macOS a CGEventTap), Ctrl/Meta+Alt+1…5 emote shortcuts, and
 controllers (XInput watcher on Windows, evdev on Linux, IOKit watcher on macOS).
 
-Not covered: launch at startup (the setting is saved but registers nothing).
+Launch at startup (`autostart.rs`) registers the app for the current user only: a value under
+`HKCU\…\CurrentVersion\Run` on Windows, a LaunchAgent in `~/Library/LaunchAgents` on macOS, and an XDG
+autostart entry in `~/.config/autostart` on Linux (an AppImage registers the image itself; a Nix install
+registers `wuwa-tappo` from PATH, so updates keep working). Turning the setting off, or resetting the data,
+removes the entry.
 
 ## Run
 
