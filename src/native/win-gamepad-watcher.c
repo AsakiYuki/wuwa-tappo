@@ -91,10 +91,19 @@ static void update_buttons(int pad, Slot* slot, WORD buttons, BOOL leftTrigger, 
     slot->rightTrigger = rightTrigger;
 }
 
+/* Older SDK headers lack it; available on Windows 8+ (and 7 with KB2533623). */
+#ifndef LOAD_LIBRARY_SEARCH_SYSTEM32
+#define LOAD_LIBRARY_SEARCH_SYSTEM32 0x00000800
+#endif
+
+/*
+ * XInput comes from System32 only. A plain LoadLibrary searches the watcher's own folder first, so
+ * a DLL dropped next to it (a per-user install is writable) would be loaded instead.
+ */
 static XInputGetStateFn load_xinput(void) {
     const char* libraries[] = { "xinput1_4.dll", "xinput1_3.dll", "xinput9_1_0.dll" };
     for (size_t i = 0; i < sizeof(libraries) / sizeof(libraries[0]); i++) {
-        HMODULE module = LoadLibraryA(libraries[i]);
+        HMODULE module = LoadLibraryExA(libraries[i], NULL, LOAD_LIBRARY_SEARCH_SYSTEM32);
         if (!module) continue;
         XInputGetStateFn getState = (XInputGetStateFn)(void*)GetProcAddress(module, "XInputGetState");
         if (getState) return getState;
