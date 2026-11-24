@@ -1,127 +1,135 @@
 {
   lib,
-  stdenv,
-  buildNpmPackage,
+  rustPlatform,
+  fetchNpmDeps,
+  npmHooks,
   nodejs,
-  electron,
-  makeWrapper,
+  pkg-config,
+  wrapGAppsHook3,
   makeDesktopItem,
   copyDesktopItems,
-  autoPatchelfHook,
-  wmctrl,
+  dbus,
+  glib-networking,
+  gtk-layer-shell,
+  gtk3,
+  libayatana-appindicator,
+  librsvg,
+  libsoup_3,
+  openssl,
+  webkitgtk_4_1,
   xorg,
   # Top-level names in current nixpkgs; the xorg.* fallbacks keep older releases working.
   libx11 ? xorg.libX11,
-  libxrandr ? xorg.libXrandr,
+  libxi ? xorg.libXi,
   libxtst ? xorg.libXtst,
-  libxt ? xorg.libXt,
-  xprop ? xorg.xprop,
 }:
 
 let
   packageJson = lib.importJSON ../package.json;
+  tauriConfig = lib.importJSON ../src-tauri/tauri.conf.json;
   fs = lib.fileset;
   root = ../.;
-  # Only what the build reads, so unrelated edits (docs, CI, dist/) do not trigger rebuilds.
+  # Only what the build reads, so unrelated edits (docs, CI) do not trigger rebuilds.
   src = fs.toSource {
     inherit root;
     fileset = fs.unions [
       ../package.json
       ../package-lock.json
+      ../asset-manifest.json
       ../assets
       ../src
       ../scripts
       ../tsconfig.json
-      ../tsconfig.node.json
+      ../tsconfig.test.json
       ../vite.config.mts
+      ../vite.backend.mts
+      ../src-tauri/Cargo.toml
+      ../src-tauri/Cargo.lock
+      ../src-tauri/build.rs
+      ../src-tauri/bridge.js
+      ../src-tauri/capabilities
+      ../src-tauri/src
+      ../src-tauri/tauri.conf.json
+      ../src-tauri/tauri.linux.conf.json
     ];
   };
-  uiohookArch =
-    {
-      x86_64-linux = "linux-x64";
-      aarch64-linux = "linux-arm64";
-    }
-    .${stdenv.hostPlatform.system}
-      or (throw "wuwa-tappo: unsupported system ${stdenv.hostPlatform.system}");
 in
-buildNpmPackage {
+rustPlatform.buildRustPackage {
   pname = "wuwa-tappo";
   inherit (packageJson) version;
-  inherit src nodejs;
+  inherit src;
+
+  cargoRoot = "src-tauri";
+  buildAndTestSubdir = "src-tauri";
+  cargoLock.lockFile = ../src-tauri/Cargo.lock;
+  # What `tauri build` enables: serve the embedded pages instead of a development server.
+  buildFeatures = [ "tauri/custom-protocol" ];
 
   # Update after changing package-lock.json: set to lib.fakeHash, build, and copy the hash from the error.
   # (importNpmLock cannot be used: it breaks the `typescript-vue` npm alias.)
-  npmDepsHash = "sha256-z2S35nhEc9cwlI9gIYSaQYOMniDwZMCwY/wNf0Uh3F4=";
-
-  # Install scripts would download Electron (the nixpkgs one is used instead); uiohook-napi ships
-  # prebuilt addons, so nothing else needs them.
+  npmDeps = fetchNpmDeps {
+    name = "wuwa-tappo-npm-deps";
+    inherit src;
+    hash = "sha256-JycS5ZeuLO1c+EFPMkdVjrg4VTzYKX0hZwS7gDjpLeM=";
+  };
   npmRebuildFlags = [ "--ignore-scripts" ];
 
   env.BUILD_VERSION = packageJson.version;
 
   nativeBuildInputs = [
-    makeWrapper
+    nodejs
+    npmHooks.npmConfigHook
+    pkg-config
+    wrapGAppsHook3
     copyDesktopItems
-    autoPatchelfHook
   ];
-  # uiohook-napi's prebuilt addon links against these X11 libraries.
   buildInputs = [
+    dbus
+    glib-networking
+    gtk-layer-shell
+    gtk3
+    librsvg
+    libsoup_3
     libx11
-    libxrandr
+    libxi
     libxtst
-    libxt
+    openssl
+    webkitgtk_4_1
   ];
 
-  buildPhase = ''
-    runHook preBuild
-    npm run node:build
-    npm run renderer:build
-    runHook postBuild
+  # The pages and the game logic, which the binary embeds.
+  preBuild = ''
+    node scripts/tauri-prepare.cjs
   '';
 
-  installPhase = ''
-    runHook preInstall
+  doCheck = true;
+  preCheck = ''
+    npm test
+  '';
+  # These look at who owns system files, which is not root in the build sandbox.
+  checkFlags = map (test: "--skip=linux_input_access::tests::" + test) [
+    "executables_outside_root_controlled_directories_are_refused"
+    "system_executables_resolve_to_root_owned_files"
+  ];
 
-    app=$out/share/wuwa-tappo
-    mkdir -p $app/node_modules
-    cp -r runtime renderer-build assets package.json $app/
-    # Vue is bundled into renderer-build by Vite; the main process only loads uiohook-napi.
-    cp -r node_modules/{uiohook-napi,node-gyp-build} $app/node_modules/
-
-    # macOS / Windows controller watchers, other platforms' addons and addon sources are unused here.
-    rm -rf $app/assets/bin
-    find $app/node_modules/uiohook-napi/prebuilds -mindepth 1 -maxdepth 1 ! -name ${uiohookArch} -exec rm -rf {} +
-    rm -rf $app/node_modules/uiohook-napi/{libuiohook,src}
-
+  postInstall = ''
     install -Dm644 assets/appicon.png $out/share/icons/hicolor/256x256/apps/wuwa-tappo.png
+  '';
 
-    # --ozone-platform=x11: global input hooks and transparent click-through windows need X11/XWayland.
-    # WUWA_TAPPO_LAUNCHER: lets launch-at-startup point at this wrapper instead of the bare Electron.
-    # wmctrl/xprop are appended to PATH so system versions win. pkexec and setfacl (input access)
-    # are never taken from PATH: the app runs them as root, so it only uses root-owned system copies.
-    makeWrapper ${lib.getExe electron} $out/bin/wuwa-tappo \
-      --add-flags --ozone-platform=x11 \
-      --add-flags $app \
-      --set WUWA_TAPPO_LAUNCHER $out/bin/wuwa-tappo \
-      --suffix PATH : ${
-        lib.makeBinPath [
-          wmctrl
-          xprop
-        ]
-      }
-
-    runHook postInstall
+  # Loaded at run time, for the tray where no StatusNotifierItem host is running.
+  preFixup = ''
+    gappsWrapperArgs+=(--prefix LD_LIBRARY_PATH : ${lib.makeLibraryPath [ libayatana-appindicator ]})
   '';
 
   desktopItems = [
     (makeDesktopItem {
-      name = packageJson.desktopName;
-      desktopName = packageJson.build.productName;
+      name = tauriConfig.identifier;
+      desktopName = tauriConfig.productName;
       comment = packageJson.description;
-      exec = "wuwa-tappo %U";
+      exec = "wuwa-tappo";
       icon = "wuwa-tappo";
       categories = [ "Utility" ];
-      startupWMClass = packageJson.desktopName;
+      startupWMClass = "wuwa-tappo";
       terminal = false;
     })
   ];
