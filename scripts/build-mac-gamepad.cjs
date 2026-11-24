@@ -6,6 +6,8 @@ const projectRoot = path.resolve(__dirname, "..")
 const srcFile = path.join(projectRoot, "src", "native", "mac-gamepad-watcher.c")
 const outDir = path.join(projectRoot, "assets", "bin")
 const outFile = path.join(outDir, "mac-gamepad-watcher")
+// --strict (release builds): fail instead of shipping a single-architecture or prebuilt watcher.
+const strict = process.argv.includes("--strict")
 
 if (process.platform !== "darwin") {
 	// On non-macOS platforms, skip compilation
@@ -54,6 +56,10 @@ try {
 	sign()
 	console.log("mac-gamepad-watcher compiled successfully at:", outFile)
 } catch (error) {
+	if (strict) {
+		console.error("Could not compile the universal mac-gamepad-watcher:", error.message)
+		process.exit(1)
+	}
 	console.warn("Failed to compile universal binary, trying host arch only...", error.message)
 	try {
 		execFileSync("clang", ["-O2", "-framework", "IOKit", "-framework", "CoreFoundation", srcFile, "-o", outFile], {
