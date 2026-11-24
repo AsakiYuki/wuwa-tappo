@@ -1,7 +1,7 @@
 [package]
 name = "wuwa-tappo"
 version = "0.1.0"
-description = "Wuwa Tappo - Tauri prototype of the pet window"
+description = "Wuwa Tappo - Desktop Companion"
 edition = "2021"
 publish = false
 
