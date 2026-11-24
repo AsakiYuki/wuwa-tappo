@@ -51,6 +51,7 @@ let
       ../src-tauri/src
       ../src-tauri/tauri.conf.json
       ../src-tauri/tauri.linux.conf.json
+      ../src-tauri/vendor
     ];
   };
 in

@@ -35,6 +35,11 @@ gtk-layer-shell = { version = "0.8", features = ["v0_6"] }
 # Hover-fade on KDE Wayland: KWin sends the cursor position over D-Bus. Same zbus as ksni.
 zbus = { version = "5", default-features = false, features = ["tokio"] }
 
+# glib 0.18.5 with the fix for RUSTSEC-2024-0429 (GHSA-wrw7-89jp-8q8g), which was only released in
+# 0.20; Tauri's GTK 3 bindings need 0.18. Drop it once they move on. See vendor/glib/PATCHES.md.
+[patch.crates-io]
+glib = { path = "vendor/glib" }
+
 [profile.release]
 codegen-units = 1
 lto = true
