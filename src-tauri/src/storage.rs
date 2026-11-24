@@ -1,5 +1,4 @@
-//! collection.json, shared with the Electron app and handled the same way (src/node/storage.ts):
-//! the current save, else its backup, else a fresh collection; a corrupt save is copied aside and
+//! collection.json: the current save, else its backup, else a fresh collection; a corrupt save is copied aside and
 //! never overwritten unseen. Writes go to a temp file, keep a .bak of the previous save, then rename.
 
 use crate::backend::Backend;
@@ -20,7 +19,7 @@ fn with_suffix(file: &Path, suffix: &str) -> PathBuf {
 }
 
 impl Store {
-	/// Electron's `appData` is the OS config directory (~/.config, %APPDATA%, Application Support).
+	/// In the OS config directory (~/.config, %APPDATA%, Application Support).
 	pub fn new() -> Option<Self> {
 		let directory = dirs::config_dir()?.join("wuwa-tappo");
 		Some(Store { file: directory.join("collection.json"), writing: Mutex::new(()) })
@@ -62,5 +61,49 @@ impl Store {
 			Err(error) => return Err(error),
 		}
 		std::fs::rename(&temp, &self.file)
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	/// A store in an empty folder of its own, with a fresh collection.
+	fn store(name: &str) -> (Store, Backend) {
+		let directory = std::env::temp_dir().join(format!("wuwa-tappo-{name}-{}", std::process::id()));
+		let _ = std::fs::remove_dir_all(&directory);
+		let store = Store { file: directory.join("collection.json"), writing: Mutex::new(()) };
+		(store, Backend::new(crate::CATALOG_JSON).unwrap())
+	}
+
+	#[test]
+	fn saving_keeps_the_previous_save_which_replaces_an_unreadable_one() {
+		let (store, backend) = store("backup");
+		assert_eq!(store.load(&backend), "", "a fresh profile is no warning");
+		backend.set_pet_position(12.0, 34.0);
+		store.save(&backend.state_json()).unwrap();
+		backend.set_pet_position(56.0, 78.0);
+		store.save(&backend.state_json()).unwrap();
+		assert!(!with_suffix(&store.file, ".tmp").exists());
+
+		let position = || backend.state()["settings"]["petPosition"]["x"].as_f64();
+		assert_eq!(store.load(&backend), "");
+		assert_eq!(position(), Some(56.0));
+		std::fs::write(&store.file, "{").unwrap();
+		assert_eq!(store.load(&backend), "Restored collection from backup");
+		assert_eq!(position(), Some(12.0));
+		std::fs::remove_dir_all(store.directory()).unwrap();
+	}
+
+	#[test]
+	fn an_unreadable_save_without_a_backup_is_kept_aside() {
+		let (store, backend) = store("damaged");
+		std::fs::create_dir_all(store.directory()).unwrap();
+		std::fs::write(&store.file, "not a save").unwrap();
+		assert!(store.load(&backend).contains("could not be read"));
+		let copies = std::fs::read_dir(store.directory()).unwrap().flatten();
+		let kept = copies.filter(|entry| entry.file_name().to_string_lossy().contains(".damaged-")).count();
+		assert_eq!(kept, 1);
+		std::fs::remove_dir_all(store.directory()).unwrap();
 	}
 }
