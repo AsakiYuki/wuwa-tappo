@@ -5,7 +5,7 @@
 //! keeps every image the studio decoded (hundreds of MB once the atlas was scrolled through) for as
 //! long as it lives. Reopening loads the page again, which takes a moment.
 
-use crate::{page_scripts, wayland_session, window, Shared, STUDIO_LABEL};
+use crate::{page_scripts, pointer_delta, wayland_session, window, Shared, STUDIO_LABEL};
 use std::time::Duration;
 use tauri::webview::PageLoadEvent;
 use tauri::{AppHandle, Emitter, LogicalSize, Manager, PhysicalPosition, PhysicalSize, WebviewUrl, WebviewWindow, WebviewWindowBuilder, WindowEvent};
@@ -193,21 +193,22 @@ pub(crate) fn resize_studio_edge(
 		return;
 	}
 	shared.state.lock().unwrap().studio.restore = None;
-	let (dx, dy) = ((dx * scale).round() as i32, (dy * scale).round() as i32);
-	let (mut x, mut y, mut width, mut height) = (position.x, position.y, size.width as i32, size.height as i32);
+	let (dx, dy) = (pointer_delta(dx, scale), pointer_delta(dy, scale));
+	let (mut x, mut y) = (position.x, position.y);
+	let (mut width, mut height) = (i32::try_from(size.width).unwrap_or(i32::MAX), i32::try_from(size.height).unwrap_or(i32::MAX));
 	if edge.contains('e') {
-		width += dx;
+		width = width.saturating_add(dx);
 	}
 	if edge.contains('s') {
-		height += dy;
+		height = height.saturating_add(dy);
 	}
 	if edge.contains('w') {
-		x += dx;
-		width -= dx;
+		x = x.saturating_add(dx);
+		width = width.saturating_sub(dx);
 	}
 	if edge.contains('n') {
-		y += dy;
-		height -= dy;
+		y = y.saturating_add(dy);
+		height = height.saturating_sub(dy);
 	}
 	let bounds = (PhysicalPosition::new(x, y), PhysicalSize::new(width.max(1) as u32, height.max(1) as u32));
 	set_bounds(&studio, fit(&monitor, bounds));

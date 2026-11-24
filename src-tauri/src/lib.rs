@@ -109,6 +109,13 @@ pub(crate) fn window(app: &AppHandle, label: &str) -> Option<WebviewWindow> {
 	app.get_webview_window(label)
 }
 
+/// A pointer delta from a page (CSS pixels) in physical pixels. Deltas beyond any screen are
+/// clamped, so window arithmetic on them cannot overflow `i32`.
+pub(crate) fn pointer_delta(css_pixels: f64, scale: f64) -> i32 {
+	const MAX_CSS_PIXELS: f64 = 100_000.0;
+	(css_pixels.clamp(-MAX_CSS_PIXELS, MAX_CSS_PIXELS) * scale).round() as i32
+}
+
 /// A native Wayland session (not XWayland).
 pub(crate) fn wayland_session() -> bool {
 	#[cfg(target_os = "linux")]
@@ -268,4 +275,19 @@ pub fn run() {
 			}
 		}
 	});
+}
+
+#[cfg(test)]
+mod tests {
+	use super::pointer_delta;
+
+	#[test]
+	fn pointer_deltas_are_clamped_so_window_arithmetic_cannot_overflow() {
+		assert_eq!(pointer_delta(3.4, 2.0), 7);
+		assert_eq!(pointer_delta(1e300, 2.0), 200_000);
+		assert_eq!(pointer_delta(-f64::MAX, 4.0), -400_000);
+		// The studio's edge resize adds and subtracts these from i32 coordinates.
+		assert!(i32::MAX.checked_sub(pointer_delta(-1e300, 4.0)).is_none());
+		assert_eq!(i32::MAX.saturating_sub(pointer_delta(-1e300, 4.0)), i32::MAX);
+	}
 }

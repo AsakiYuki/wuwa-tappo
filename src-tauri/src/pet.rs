@@ -3,8 +3,8 @@
 #[cfg(target_os = "linux")]
 use crate::{kwin_cursor, wayland};
 use crate::{
-	broadcast_state, layer_pet, page_scripts, refresh_cache, save_later, save_now, setting_bool, setting_f64, settings,
-	tray, wayland_session, window, Shared, PET_LABEL,
+	broadcast_state, layer_pet, page_scripts, pointer_delta, refresh_cache, save_later, save_now, setting_bool, setting_f64,
+	settings, tray, wayland_session, window, Shared, PET_LABEL,
 };
 use serde::Deserialize;
 use serde_json::{json, Value};
@@ -292,7 +292,10 @@ pub(crate) fn move_pet(app: AppHandle, sender: Window, shared: tauri::State<Shar
 		return;
 	}
 	let (Ok(position), Ok(scale)) = (window.outer_position(), window.scale_factor()) else { return };
-	let next = PhysicalPosition::new(position.x + (dx * scale).round() as i32, position.y + (dy * scale).round() as i32);
+	let next = PhysicalPosition::new(
+		position.x.saturating_add(pointer_delta(dx, scale)),
+		position.y.saturating_add(pointer_delta(dy, scale)),
+	);
 	let _ = window.set_position(next);
 	let logical = next.to_logical::<f64>(scale);
 	shared.backend.lock().unwrap().set_pet_position(logical.x, logical.y);
