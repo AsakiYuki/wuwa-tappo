@@ -15,10 +15,9 @@ launch of the Tauri app just brings the running one's studio forward.
 Covered: transparent frameless always-on-top pet off the taskbar, click-through with cursor
 forwarding (hover-fade), dragging (position is saved), the studio window (frameless: drag, resize
 edges, maximize, zoom; closing it destroys it, which frees its web process and decoded images),
-import/export dialogs, the Electron tray menu (collection, show/reset
-pet, mouse passthrough, input on/off, Linux input-permission fix, exit; a click on the icon opens the
-studio, on Linux through a StatusNotifierItem), global keyboard/mouse input (rdev; on Linux also
-evdev, which works on Wayland; on macOS a CGEventTap), Ctrl/Meta+Alt+1…5 emote shortcuts, and
+import/export dialogs, the Electron tray menu (collection, show/reset pet, mouse passthrough, input
+on/off, pressed keys on/off, Linux input-permission fix, exit; a click on the icon opens the studio,
+on Linux through a StatusNotifierItem), global keyboard/mouse input (rdev; on Linux also evdev, which works on Wayland; on macOS a CGEventTap), Ctrl/Meta+Alt+1…5 emote shortcuts, and
 controllers (XInput watcher on Windows, evdev on Linux, IOKit watcher on macOS).
 
 Not covered: launch at startup (the setting is saved but registers nothing), KWin hover-fade.

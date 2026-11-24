@@ -166,7 +166,7 @@ fn finish_state_command(app: &AppHandle, shared: &Shared, name: &str, reply: &Va
 
 /// Changes a boolean setting (from the tray), saves it and syncs every window.
 pub(crate) fn toggle_setting(app: &AppHandle, shared: &Shared, key: &str) {
-	let enabled = !setting_bool(&settings(shared), key, key == "inputEnabled");
+	let enabled = !setting_bool(&settings(shared), key, key != "passthrough");
 	let reply = shared.backend.lock().unwrap().command("settings", &json!({ key: enabled }));
 	finish_state_command(app, shared, "settings", &reply);
 }

@@ -204,7 +204,7 @@ class WuwaTappoApplication {
 		this.broadcastState()
 	}
 
-	private toggleSetting(key: "passthrough" | "inputEnabled") {
+	private toggleSetting(key: "passthrough" | "inputEnabled" | "showPressedKeys") {
 		this.changeSettings(settings => {
 			settings[key] = !settings[key]
 		})
@@ -294,6 +294,13 @@ class WuwaTappoApplication {
 				type: "checkbox",
 				checked: settings.inputEnabled,
 				click: () => this.toggleSetting("inputEnabled"),
+			},
+			{
+				// Quick to turn off before sharing the screen: the keys shown include typed passwords.
+				label: "Show Pressed Keys",
+				type: "checkbox",
+				checked: settings.showPressedKeys,
+				click: () => this.toggleSetting("showPressedKeys"),
 			},
 		]
 		const permissionFix = this.inputPermissionMenuItem()

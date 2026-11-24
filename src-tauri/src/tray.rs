@@ -19,6 +19,7 @@ pub enum TrayAction {
 	ShowPet,
 	Passthrough,
 	Input,
+	PressedKeys,
 	FixInput,
 	Quit,
 }
@@ -40,6 +41,8 @@ pub fn items(shared: &Shared) -> Vec<TrayItem> {
 		item(TrayAction::ShowPet, "Show Pet / Reset to Screen Corner", None, false),
 		item(TrayAction::Passthrough, "Mouse Passthrough", Some(setting_bool(&settings, "passthrough", false)), false),
 		item(TrayAction::Input, "Enable Keyboard and Mouse Input", Some(setting_bool(&settings, "inputEnabled", true)), false),
+		// Quick to turn off before sharing the screen: the keys shown include typed passwords.
+		item(TrayAction::PressedKeys, "Show Pressed Keys", Some(setting_bool(&settings, "showPressedKeys", true)), false),
 	];
 	// Offered only while global input is missing, like Electron's one-click fix.
 	if cfg!(target_os = "linux") && !shared.devices.keyboard.load(Ordering::Relaxed) {
@@ -58,6 +61,7 @@ pub fn action(app: &AppHandle, shared: &Shared, action: TrayAction) {
 		TrayAction::ShowPet => pet::reset(app, shared),
 		TrayAction::Passthrough => commands::toggle_setting(app, shared, "passthrough"),
 		TrayAction::Input => commands::toggle_setting(app, shared, "inputEnabled"),
+		TrayAction::PressedKeys => commands::toggle_setting(app, shared, "showPressedKeys"),
 		#[cfg(target_os = "linux")]
 		TrayAction::FixInput => crate::linux_input_access::grant(app.clone()),
 		#[cfg(target_os = "macos")]

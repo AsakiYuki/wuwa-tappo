@@ -65,7 +65,8 @@ const SWITCHES: SwitchSpec[] = [
 		key: "showPressedKeys",
 		title: "Show Pressed Keys",
 		tab: "bubbles",
-		description: "Highlight keyboard keys while they are being held.",
+		description:
+			"Show the keys you press. Turn it off before sharing your screen: passwords you type are shown too.",
 	},
 	{
 		key: "showMouseBubbles",
