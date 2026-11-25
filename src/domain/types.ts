@@ -222,6 +222,8 @@ export interface RoomMembersEvent {
 	members: RoomSocketMember[]
 	/** The logged-in user's own id (their pet is not drawn again as a remote one). */
 	selfId: number
+	/** Whether the room is public, once the server has said; null until then. */
+	isPublic: boolean | null
 }
 
 export type RoomStatusEvent =

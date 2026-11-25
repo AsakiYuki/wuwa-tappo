@@ -23,6 +23,8 @@ export interface OnlineUser {
 	userId: string
 	/** The account's numeric `id`, which the room socket identifies members by (original: `userInfo.id`). */
 	id: number | null
+	/** oom_no: the room the server still has this account in (empty for none). */
+	roomNo: string
 	nickname: string
 	/** `player_type` as sent; the original client only special-cases 2 and its meaning is unknown. */
 	playerType: number | null
@@ -46,6 +48,7 @@ export function parseUser(raw: unknown): OnlineUser | null {
 	return {
 		userId: String(id).slice(0, 32),
 		id: typeof record.id === "number" && Number.isSafeInteger(record.id) && record.id > 0 ? record.id : null,
+		roomNo: cleanRoomNumber(typeof record.room_no === "string" || typeof record.room_no === "number" ? String(record.room_no) : "") ?? "",
 		nickname: nickname || "Rover",
 		playerType: Number.isInteger(record.player_type) ? (record.player_type as number) : null,
 		totalClicks: parseCount(record.total_click_count),

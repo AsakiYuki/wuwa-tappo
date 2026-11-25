@@ -538,6 +538,8 @@ test("Server users are validated and click balances never go negative or overflo
 	assert.equal(parseUser({ user_id: "  " }), null)
 	assert.equal(parseUser({ cuid: "C1", puid: "P1", player_id: 700000001, nickname: "N" })?.userId, "700000001", "a passport account has no user_id")
 	assert.equal(parseUser({ cuid: "C1", nickname: "N" })?.userId, "C1")
+	assert.equal(parseUser({ user_id: 1, room_no: "AB12" })?.roomNo, "AB12", "the room the account is still in")
+	assert.equal(parseUser({ user_id: 1, room_no: "no way!" })?.roomNo, "")
 	const user = parseUser({
 		id: 77,
 		user_id: 123456789,
@@ -549,6 +551,7 @@ test("Server users are validated and click balances never go negative or overflo
 	assert.deepEqual(user, {
 		userId: "123456789",
 		id: 77,
+		roomNo: "",
 		nickname: "Rover",
 		playerType: 2,
 		totalClicks: 1500,

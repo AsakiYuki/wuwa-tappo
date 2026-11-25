@@ -134,6 +134,7 @@ async function fetchUser() {
 	if (!parsed) throw unexpected("account")
 	user.value = parsed
 	spentClicks.value = 0
+	await adoptRoom()
 }
 
 /** Loads the account for a session that already exists (after a restart, or when online mode is turned on). */
@@ -179,6 +180,7 @@ export function login(uid: string, code: string) {
 		if (parsed) {
 			user.value = parsed
 			spentClicks.value = 0
+			await adoptRoom()
 		} else {
 			await fetchUser()
 		}
@@ -262,8 +264,36 @@ async function connectRoom(roomNo: string) {
 	else roomLink.value = "connecting"
 }
 
+/**
+ * The server still has this account in a room (it was left open, or the app restarted): take that room
+ * up again, as the original does at login and on code 80003. False if there is none.
+ */
+async function adoptRoom(): Promise<boolean> {
+	const roomNo = user.value?.roomNo
+	if (!roomNo) return false
+	if (room.value?.roomNo !== roomNo) {
+		room.value = { roomNo, isPublic: room.value?.isPublic ?? true, members: [] }
+		await connectRoom(roomNo)
+	}
+	return true
+}
+
 async function enter(endpoint: string, body: unknown) {
-	const parsed = parseRoom(await call("POST", endpoint, body))
+	let reply: unknown
+	try {
+		reply = await call("POST", endpoint, body)
+	} catch (error) {
+		// 80003: still in a room. Not a failure: that room is the one to be in.
+		if (errorCode(error instanceof Error ? error.message : String(error)) === 80003) {
+			await fetchUser()
+			if (await adoptRoom()) {
+				roomNotice.value = `You are already in room ${room.value?.roomNo}`
+				return
+			}
+		}
+		throw error
+	}
+	const parsed = parseRoom(reply)
 	if (!parsed) throw unexpected("room")
 	room.value = parsed
 	await connectRoom(parsed.roomNo)
@@ -297,6 +327,8 @@ export function leaveRoom() {
 
 online.onRoomMembers(event => {
 	roomMembers.value = event.members
+	const current = room.value
+	if (current && event.isPublic !== null && current.isPublic !== event.isPublic) room.value = { ...current, isPublic: event.isPublic }
 })
 
 online.onRoomStatus(event => {

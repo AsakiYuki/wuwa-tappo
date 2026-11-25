@@ -110,6 +110,8 @@ fn desktop_entries<'a>(value: &'a Value, out: &mut Vec<&'a Value>, depth: u8) {
 #[derive(Default)]
 pub(super) struct Roster {
 	pub members: Vec<Member>,
+	/// The room's public flag (m answer's p), once known.
+	pub public: Option<bool>,
 }
 
 impl Roster {
@@ -344,7 +346,7 @@ static LAST: Mutex<(Vec<Member>, i64)> = Mutex::new((Vec::new(), 0));
 
 fn emit_roster(app: &AppHandle, shared: &Shared, roster: &Roster, self_id: i64) {
 	*LAST.lock().unwrap() = (roster.members.clone(), self_id);
-	let _ = app.emit("room-members", json!({ "members": roster.members, "selfId": self_id }));
+	let _ = app.emit("room-members", json!({ "members": roster.members, "selfId": self_id, "isPublic": roster.public }));
 	sync_window(app, shared, &roster.members, self_id);
 }
 
@@ -481,6 +483,11 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 								return Outcome::Ended { reason: "failed", message: "The server's room snapshot was not in the expected format".into() };
 							}
 							connection.roster.snapshot(&snapshot["m"]);
+							connection.roster.public = match snapshot["p"].as_i64() {
+								Some(0) => Some(false),
+								Some(1) => Some(true),
+								_ => None,
+							};
 							was_ready = true;
 							emit_status(app, &Status::Connected);
 							emit_roster(app, shared, &connection.roster, connection.self_id);
