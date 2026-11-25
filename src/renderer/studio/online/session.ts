@@ -319,7 +319,14 @@ async function enter(endpoint: string, body: unknown) {
 		throw error
 	}
 	const parsed = parseRoom(reply)
-	if (!parsed) throw unexpected("room")
+	if (!parsed) {
+		// The server may have put this account in a room without naming it in the reply: its account says which.
+		await fetchUser()
+		if (await adoptRoom()) return
+		const keys =
+			reply && typeof reply === "object" ? Object.keys(reply).slice(0, 8).join(", ") || "no fields" : typeof reply
+		throw new Error(`The server's room reply had no room number (it held: ${keys})`)
+	}
 	room.value = parsed
 	await connectRoom(parsed.roomNo)
 }

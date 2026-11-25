@@ -607,8 +607,9 @@ test("UID, confirmation code and redeem code input is checked before it is sent"
 
 test("Rooms are parsed strictly and room numbers are checked before joining", () => {
 	assert.equal(parseRoom({ members: [] }), null, "no room_no")
-	assert.equal(parseRoom({ room_no: "A1", members: "x" }), null)
-	assert.equal(parseRoom({ room_no: "A1", members: new Array(65).fill({}) }), null)
+	assert.deepEqual(parseRoom({ room_no: "A1", members: "x" }), { roomNo: "A1", isPublic: true, members: [] })
+	assert.deepEqual(parseRoom({ room_no: "A1", members: null }), { roomNo: "A1", isPublic: true, members: [] })
+	assert.equal(parseRoom({ room_no: "A1", members: new Array(65).fill({}) })?.members.length, 64)
 	assert.deepEqual(parseRoom({ room_no: 4821, is_public: false, members: [{ user_id: 7, nickname: " " }, null] }), {
 		roomNo: "4821",
 		isPublic: false,

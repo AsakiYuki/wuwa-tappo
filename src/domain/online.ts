@@ -128,10 +128,11 @@ export function parseRoom(raw: unknown): OnlineRoom | null {
 	const record = raw as Record<string, unknown>
 	const number = record.room_no
 	if ((typeof number !== "string" && typeof number !== "number") || String(number).trim() === "") return null
-	if (record.members !== undefined && (!Array.isArray(record.members) || record.members.length > MAX_ROOM_MEMBERS))
-		return null
+	// The original only needs `room_no` from these replies (the member list comes from the room socket),
+	// so a member list that is missing, null or odd is dropped instead of failing the whole reply.
+	const list = Array.isArray(record.members) ? record.members.slice(0, MAX_ROOM_MEMBERS) : []
 	const members: RoomMember[] = []
-	for (const member of (record.members as unknown[] | undefined) ?? []) {
+	for (const member of list as unknown[]) {
 		const entry = (member ?? {}) as Record<string, unknown>
 		members.push({
 			userId:
