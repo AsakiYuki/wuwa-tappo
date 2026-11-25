@@ -3,9 +3,33 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import path from "node:path"
 import * as actions from "./actions.js"
-import { STATE_COMMANDS, canPlayEmote, importedState, isKnownSave, patchSettings } from "./commands.js"
+import {
+	OFFLINE_ONLY_COMMANDS,
+	STATE_COMMANDS,
+	assertOffline,
+	canPlayEmote,
+	importedState,
+	isKnownSave,
+	patchSettings,
+} from "./commands.js"
 import { RARITIES } from "./constants.js"
 import { initial, normalize, settings } from "./state.js"
+import {
+	cleanRedeemCode,
+	clickBalance,
+	itemForAsset,
+	isValidCode,
+	isValidUid,
+	cleanRoomNumber,
+	parseChestResult,
+	appearanceBody,
+	parsePresetList,
+	parseRoom,
+	parseCount,
+	parseBag,
+	parseUser,
+} from "./online.js"
+import { applyBag, loadOnlineProfile, saveBoth, shareSettings } from "./profile.js"
 
 const core = { ...actions, RARITIES, initial, normalize, settings }
 const PROJECT_ROOT = path.resolve(__dirname, "..")
@@ -481,4 +505,214 @@ test("The pet's screen index and saved position are bounded", () => {
 	)
 	assert.equal(state.settings.monitor, 32)
 	assert.deepEqual(state.settings.petPosition, { x: 100_000, y: -100_000 })
+})
+
+test("Online mode is off by default and an imported save never turns it on", () => {
+	const current = core.initial(items)
+	assert.equal(current.settings.onlineMode, false)
+	assert.equal(core.settings({ onlineMode: "yes" as any }).onlineMode, false, "only a boolean counts")
+	const imported = importedState({ version: 2, owned: {}, settings: { onlineMode: true } }, items, current)
+	assert.equal(imported.settings.onlineMode, false)
+	current.settings.onlineMode = true
+	const kept = importedState({ version: 2, owned: {}, settings: { onlineMode: false } }, items, current)
+	assert.equal(kept.settings.onlineMode, true, "the current choice is kept either way")
+	assert.equal(patchSettings(current, { onlineMode: false }).onlineMode, true)
+	assert.equal(current.settings.onlineMode, false)
+})
+
+test("Offline-only commands are refused in online mode and work offline", () => {
+	const state = core.initial(items)
+	state.settings.onlineMode = true
+	for (const name of OFFLINE_ONLY_COMMANDS) assert.throws(() => assertOffline(state, name), /online mode/, name)
+	for (const name of ["equip", "favorite", "settings", "preset-save", "emote-replace"]) assertOffline(state, name)
+	state.settings.onlineMode = false
+	for (const name of OFFLINE_ONLY_COMMANDS) assertOffline(state, name)
+	STATE_COMMANDS["unlock-all"](state, items, null)
+	assert.equal(
+		items.every(item => state.owned[item.id] > 0),
+		true,
+	)
+})
+
+test("Server users are validated and click balances never go negative or overflow", () => {
+	assert.equal(parseUser(null), null)
+	assert.equal(parseUser({ nickname: "x" }), null, "no id at all")
+	assert.equal(parseUser({ user_id: "  " }), null)
+	assert.equal(
+		parseUser({ cuid: "C1", puid: "P1", player_id: 700000001, nickname: "N" })?.userId,
+		"700000001",
+		"a passport account has no user_id",
+	)
+	assert.equal(parseUser({ cuid: "C1", nickname: "N" })?.userId, "C1")
+	assert.equal(parseUser({ user_id: 1, room_no: "AB12" })?.roomNo, "AB12", "the room the account is still in")
+	assert.equal(parseUser({ user_id: 1, room_no: "no way!" })?.roomNo, "")
+	const user = parseUser({
+		id: 77,
+		user_id: 123456789,
+		nickname: "  ",
+		total_click_count: "1500",
+		total_click_consume: -4,
+		player_type: 2,
+	})!
+	assert.deepEqual(user, {
+		userId: "123456789",
+		id: 77,
+		roomNo: "",
+		nickname: "Rover",
+		playerType: 2,
+		totalClicks: 1500,
+		consumedClicks: 0,
+	})
+	assert.equal(parseCount("abc"), 0)
+	assert.equal(parseCount(1e300), Number.MAX_SAFE_INTEGER)
+	assert.equal(clickBalance(user, 500, 30), 1030)
+	assert.equal(clickBalance({ ...user, consumedClicks: 2000 }, 0, 0), 0, "overspent is zero, not negative")
+	assert.equal(
+		clickBalance({ ...user, totalClicks: Number.MAX_SAFE_INTEGER }, 0, Number.MAX_SAFE_INTEGER),
+		Number.MAX_SAFE_INTEGER,
+	)
+	assert.equal(clickBalance(null, 0, 99), 0, "no balance without an account")
+})
+
+test("Chest results are parsed strictly and matched to the catalog by asset id", () => {
+	assert.equal(parseChestResult({ rewards: "nope" }), null)
+	assert.equal(parseChestResult({ rewards: [{ id: "1" }] }), null, "ids must be integers")
+	const known = items[5]
+	const result = parseChestResult({
+		rewards: [
+			{ id: known.assetId, name: "N", type: "emote", rarity: "rare" },
+			{ id: -1, name: "?" },
+		],
+		remaining_clicks: 12,
+	})!
+	assert.equal(result.remainingClicks, 12)
+	assert.equal(itemForAsset(items, result.rewards[0].assetId), known)
+	assert.equal(itemForAsset(items, result.rewards[1].assetId), undefined)
+	assert.equal(parseChestResult({ rewards: [] })!.remainingClicks, null)
+	assert.equal(parseChestResult({ rewards: new Array(101).fill({ id: 1 }) }), null)
+})
+
+test("UID, confirmation code and redeem code input is checked before it is sent", () => {
+	assert.equal(isValidUid(" 101234567 "), true)
+	assert.equal(isValidUid("12345678"), false)
+	assert.equal(isValidUid("1234567890123456"), false, "too long to stay exact as a number")
+	assert.equal(isValidUid("12345678a"), false)
+	assert.equal(isValidCode("012345"), true)
+	assert.equal(isValidCode("12345"), false)
+	assert.equal(cleanRedeemCode("  ABC-123 "), "ABC-123")
+	assert.equal(cleanRedeemCode("two words"), null)
+	assert.equal(cleanRedeemCode(""), null)
+	assert.equal(cleanRedeemCode("x".repeat(65)), null)
+})
+
+test("Rooms are parsed strictly and room numbers are checked before joining", () => {
+	assert.equal(parseRoom({ members: [] }), null, "no room_no")
+	assert.deepEqual(parseRoom({ room_no: "A1", members: "x" }), { roomNo: "A1", isPublic: true, members: [] })
+	assert.deepEqual(parseRoom({ room_no: "A1", members: null }), { roomNo: "A1", isPublic: true, members: [] })
+	assert.equal(parseRoom({ room_no: "A1", members: new Array(65).fill({}) })?.members.length, 64)
+	assert.deepEqual(parseRoom({ room_no: 4821, is_public: false, members: [{ user_id: 7, nickname: " " }, null] }), {
+		roomNo: "4821",
+		isPublic: false,
+		members: [
+			{ userId: "7", nickname: "Rover" },
+			{ userId: "", nickname: "Rover" },
+		],
+	})
+	assert.equal(cleanRoomNumber(" ab12 "), "ab12")
+	assert.equal(cleanRoomNumber("../x"), null)
+	assert.equal(cleanRoomNumber(""), null)
+})
+
+test("Server presets are parsed like the original client and appearance bodies are bounded", () => {
+	assert.equal(parsePresetList({}), null)
+	assert.equal(parsePresetList(new Array(201).fill({})), null)
+	assert.deepEqual(
+		parsePresetList([
+			{
+				preset_id: 9,
+				character_asset_id: "12",
+				accessory_asset_id: 0,
+				emotes: [{ asset_id: 5, asset_name: "Wave", x: 1 }, { asset_id: -1 }],
+			},
+			{ character_asset_id: 0 },
+			null,
+			{ id: 3, character_asset_id: 4, accessory_asset_id: 8, emotes: null },
+			{ character_asset_id: 6 },
+		]),
+		[
+			{
+				presetId: 9,
+				characterAssetId: 12,
+				accessoryAssetId: null,
+				emotes: [{ assetId: 5, name: "Wave", x: 1, y: null }],
+			},
+			{ presetId: 3, characterAssetId: 4, accessoryAssetId: 8, emotes: null },
+			{ presetId: 4, characterAssetId: 6, accessoryAssetId: null, emotes: null },
+		],
+	)
+	assert.equal(appearanceBody(0, null, []), null)
+	assert.deepEqual(appearanceBody(2, null, [3, 3, -1, 4]), {
+		character_asset_id: 2,
+		accessory_asset_id: 0,
+		emote_asset_ids: [3, 4],
+	})
+})
+
+test("The online profile is a collection of its own; the bag decides what it owns", () => {
+	const offline = core.initial(items)
+	for (const item of items) offline.owned[item.id] = 1
+	const online = core.initial(items)
+	shareSettings(offline, online)
+	assert.throws(() => applyBag(online, items, []), /online mode/)
+
+	offline.settings.onlineMode = true
+	const extra = items.find(item => item.type === "character" && !item.starter)!
+	applyBag(online, items, [
+		{ assetId: extra.assetId, count: 3 },
+		{ assetId: 999999, count: 1 },
+		{ assetId: -4, count: 1 },
+	])
+	assert.equal(online.owned[extra.id], 3)
+	assert.equal(Object.keys(online.owned).length, 11 + 1, "the starters and the one item the bag lists")
+	assert(Object.keys(offline.owned).length > 800, "the offline collection is untouched")
+	assert.equal(online.settings, offline.settings, "the settings are the one thing shared")
+
+	online.character = extra.id
+	const saved = JSON.parse(saveBoth(offline, online))
+	assert.equal(saved.online.character, extra.id)
+	assert.equal(saved.online.settings, undefined, "the profile does not keep a second copy of the settings")
+	assert.equal(Object.keys(saved.owned).length, Object.keys(offline.owned).length)
+	const again = loadOnlineProfile(saved, items)
+	assert.equal(again.owned[extra.id], 3)
+	assert.equal(again.character, extra.id)
+	assert.equal(
+		loadOnlineProfile({ version: 2, owned: {} }, items).character,
+		core.initial(items).character,
+		"a save without a profile gets a fresh one",
+	)
+
+	applyBag(online, items, [])
+	assert.equal(online.character, core.initial(items).character, "an item the bag no longer lists is unequipped")
+	assert.equal(online.owned[extra.id], undefined)
+})
+
+test("The bag is read whatever way it is grouped, and an unknown shape never empties the profile", () => {
+	const grouped = [
+		{
+			rarity: "rare",
+			appearances: [
+				{ asset_id: 12, asset_name: "a" },
+				{ asset_id: "13", num: 4 },
+			],
+		},
+		{ rarity: "epic", appearances: { x: { id: 14 } } },
+	]
+	assert.deepEqual(parseBag(grouped), [
+		{ assetId: 12, count: 1 },
+		{ assetId: 13, count: 4 },
+		{ assetId: 14, count: 1 },
+	])
+	assert.deepEqual(parseBag({ list: [{ asset_id: 5, count: 2 }] }), [{ assetId: 5, count: 2 }])
+	assert.deepEqual(parseBag([]), [], "an empty bag is a bag")
+	assert.equal(parseBag({ message: "x".repeat(300) }), null, "a big reply without an item is not a bag")
 })

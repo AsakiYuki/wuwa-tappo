@@ -1,5 +1,6 @@
 import type { CatalogItem, CollectionState, RawCollection, Settings } from "./types.js"
 import { draw, equip, replaceEmote, synthesize } from "./actions.js"
+import { applyBag, type BagEntry } from "./profile.js"
 import { MAX_PRESETS, newPresetId, normalize, presetName, settings } from "./state.js"
 
 /*
@@ -8,6 +9,14 @@ import { MAX_PRESETS, newPresetId, normalize, presetName, settings } from "./sta
  */
 
 type StateCommand = (state: CollectionState, items: CatalogItem[], argument: any) => unknown
+
+/** Offline-only commands: the online account has its own chests, and nothing is unlocked or reset locally. */
+export const OFFLINE_ONLY_COMMANDS = ["draw", "synthesize", "unlock-all", "import-data", "reset-data"] as const
+
+export function assertOffline(state: CollectionState, name: string) {
+	if (state.settings.onlineMode && (OFFLINE_ONLY_COMMANDS as readonly string[]).includes(name))
+		throw new Error("Not available in online mode")
+}
 
 export const STATE_COMMANDS: Record<string, StateCommand> = {
 	draw: (state, items, count: number) => draw(state, items, count),
@@ -48,6 +57,12 @@ export const STATE_COMMANDS: Record<string, StateCommand> = {
 		state.presets = state.presets.filter(preset => preset.id !== id)
 	},
 
+	/** Online mode: the account's bag becomes what the online profile owns (see profile.ts). */
+	"online-bag": (state, items, entries: BagEntry[]) => {
+		if (!Array.isArray(entries) || entries.length > 5000) throw new Error("The bag is not a list")
+		applyBag(state, items, entries)
+	},
+
 	"unlock-all"(state, items) {
 		for (const item of items) state.owned[item.id] = Math.max(1, state.owned[item.id] || 0)
 	},
@@ -60,13 +75,14 @@ export function isKnownSave(raw: unknown): raw is RawCollection {
 }
 
 /**
- * The state an imported save becomes. A save file must never register a login item on its own, so
- * the current auto-start choice is kept.
+ * The state an imported save becomes. A save file must never register a login item or switch on
+ * network access on its own, so the current auto-start and online-mode choices are kept.
  */
 export function importedState(raw: unknown, items: CatalogItem[], current: CollectionState): CollectionState {
 	if (!isKnownSave(raw)) throw new Error("This file is not a valid Wuwa Tappo save")
 	const state = normalize(raw, items)
 	state.settings.autoStart = current.settings.autoStart
+	state.settings.onlineMode = current.settings.onlineMode
 	return state
 }
 

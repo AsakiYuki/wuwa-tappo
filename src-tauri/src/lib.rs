@@ -30,6 +30,7 @@ mod linux_input_access;
 mod linux_tray;
 #[cfg(target_os = "macos")]
 mod macos_input;
+mod online;
 mod overlay;
 mod pet;
 mod storage;
@@ -86,6 +87,7 @@ pub struct Core {
 	pub(crate) state: Mutex<AppState>,
 	pub(crate) backend: Mutex<Backend>,
 	pub(crate) store: Store,
+	pub(crate) online: online::Online,
 	save_scheduled: AtomicBool,
 	pub(crate) devices: Arc<InputDevices>,
 }
@@ -165,7 +167,7 @@ pub(crate) fn broadcast_status(app: &AppHandle, shared: &Shared) {
 }
 
 pub(crate) fn save_now(app: &AppHandle, shared: &Shared) -> bool {
-	let content = shared.backend.lock().unwrap().state_json();
+	let content = shared.backend.lock().unwrap().save_json();
 	match shared.store.save(&content) {
 		Ok(()) => true,
 		Err(error) => {
@@ -190,23 +192,65 @@ pub(crate) fn save_later(app: &AppHandle, shared: &Shared) {
 	});
 }
 
+/// Receives `wuwa-buddy://` links: the one that launched this copy, and later ones (macOS delivers
+/// them as events; Windows and Linux start a second copy, which the single-instance plugin forwards).
+fn login_links(app: &AppHandle, shared: &Shared) {
+	use tauri_plugin_deep_link::DeepLinkExt;
+	let links = app.deep_link();
+	// Windows and Linux installs register the scheme themselves; this also covers a build run from source.
+	#[cfg(any(windows, target_os = "linux"))]
+	if let Err(error) = links.register(online::LOGIN_SCHEME) {
+		eprintln!("online: could not register the {} link: {error}", online::LOGIN_SCHEME);
+	}
+	let (handle, state) = (app.clone(), shared.clone());
+	links.on_open_url(move |event| {
+		for url in event.urls() {
+			online::handle_login_url(&handle, &state, url.as_str());
+		}
+	});
+	if let Ok(Some(urls)) = links.get_current() {
+		for url in urls {
+			online::handle_login_url(app, shared, url.as_str());
+		}
+	}
+}
+
 /* ---------------------------------- run ---------------------------------- */
 
 pub fn run() {
 	let app = tauri::Builder::default()
 		// Must be the first plugin. A second launch brings this one's pet and studio forward
 		// instead of running a second copy that would overwrite the same save.
-		.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+		.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
 			if let Some(shared) = app.try_state::<Shared>() {
 				let shared = shared.inner().clone();
+				// A login callback also arrives as an argument of the second launch (Windows, Linux).
+				if let Some(url) = args.iter().find(|argument| argument.starts_with(online::LOGIN_SCHEME)) {
+					online::handle_login_url(app, &shared, url);
+					return;
+				}
 				pet::show(app);
 				studio::show(app, &shared, None);
 			}
 		}))
+		.plugin(tauri_plugin_deep_link::init())
 		.plugin(tauri_plugin_dialog::init())
 		.invoke_handler(tauri::generate_handler![
 			commands::init,
 			commands::command,
+			online::online_request,
+			online::online_status,
+			online::online_login_start,
+			online::online_login_choose,
+			online::online_login_switch,
+			online::online_room_connect,
+			online::online_room_leave,
+			online::online_room_changed,
+			online::online_room_show_member,
+			online::online_room_snapshot,
+			online::online_room_looks,
+			online::online_room_member,
+			online::online_login_cancel,
 			pet::move_pet,
 			pet::end_pet_drag,
 			pet::set_hover_area,
@@ -236,6 +280,7 @@ pub fn run() {
 					studio: studio::StudioState::default(),
 				}),
 				backend: Mutex::new(backend),
+				online: online::Online::new(store.directory()),
 				store,
 				save_scheduled: AtomicBool::new(false),
 				devices: Arc::new(InputDevices::default()),
@@ -251,6 +296,7 @@ pub fn run() {
 			overlay::start(&handle, &shared);
 			tray::create(&handle, &shared)?;
 			input::start(&handle, &shared);
+			online::start_chests(&handle, &shared);
 			// A fresh profile opens the studio.
 			let state = shared.backend.lock().unwrap().state();
 			let first_run =
@@ -259,6 +305,7 @@ pub fn run() {
 				studio::show(&handle, &shared, None);
 			}
 			pet::start_cursor_feed(&handle, &shared);
+			login_links(&handle, &shared);
 			Ok(())
 		})
 		.build(tauri::generate_context!())
@@ -272,6 +319,8 @@ pub fn run() {
 		if let RunEvent::Exit = event {
 			#[cfg(target_os = "linux")]
 			kwin_cursor::stop();
+			// Tell the room goodbye first, so the others see this user go offline right away.
+			online::room_shutdown();
 			if let Some(shared) = app.try_state::<Shared>() {
 				save_now(app, &shared);
 			}

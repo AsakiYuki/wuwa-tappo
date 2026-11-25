@@ -94,6 +94,9 @@ pub(crate) fn show(app: &AppHandle, shared: &Shared, page: Option<String>) {
 		.center()
 		.decorations(false)
 		.transparent(true)
+		// No native shadow: on Windows an undecorated window gets a DWM shadow and border drawn around
+		// its whole rectangle, which shows as a grey outline around the page's rounded corners.
+		.shadow(false)
 		.resizable(true)
 		.accept_first_mouse(true)
 		// Shown right away: it is transparent, so nothing shows before the page paints. A window

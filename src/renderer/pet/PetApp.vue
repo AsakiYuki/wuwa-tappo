@@ -3,6 +3,8 @@ import { computed, onBeforeUnmount, onMounted, ref, shallowRef, useTemplateRef }
 import { assetPath } from "../shared/assets"
 import type { CatalogItem, CollectionState, CursorMessage, InputMessage } from "../shared/types"
 import BubbleLayer from "./components/BubbleLayer.vue"
+import ChestBubbles from "./components/ChestBubbles.vue"
+import { useChests } from "./composables/useChests"
 import EmoteMenu from "./components/EmoteMenu.vue"
 import PetKeyboard from "./components/PetKeyboard.vue"
 import { useBubbles } from "./composables/useBubbles"
@@ -40,6 +42,12 @@ let lastMouseInputAt = 0
 const counter = useCounter(state)
 const hand = useHandAction(state)
 const { bubbles, pushEmote, pushKey, remove: removeBubble } = useBubbles(() => settings.value?.bubbleLifetime ?? 1)
+const chests = useChests(
+	api,
+	// Like the original: the countdowns always show with "Always Show Chest", else while the pet is hovered.
+	computed(() => (settings.value?.showChest ?? true) || cursorHovered.value || menuOpen.value),
+	message => pushKey(message),
+)
 const drag = usePetDrag(state, pressedAt => {
 	const handledByInputHook = settings.value.inputEnabled && lastMouseInputAt >= pressedAt - HOOK_CLICK_WINDOW_MS
 	if (!handledByInputHook) hand.tap("left")
@@ -193,6 +201,7 @@ onBeforeUnmount(() => {
 					@done="removeBubble"
 				/>
 			</div>
+			<ChestBubbles :bubbles="chests.bubbles.value" :busy="chests.busy.value" @open="chests.open" />
 			<div id="petName" hidden>{{ character?.name ?? "" }}</div>
 			<EmoteMenu
 				:emote-ids="state.emotes"
@@ -211,8 +220,8 @@ onBeforeUnmount(() => {
 					<button
 						v-if="settings.showChest"
 						id="openChest"
-						title="Unlimited Chests"
-						@click="api.command('open', 'draw')"
+						:title="settings.onlineMode ? 'Online Chests' : 'Unlimited Chests'"
+						@click="api.command('open', settings.onlineMode ? 'online' : 'draw')"
 					/>
 					<button id="openStudio" class="settings-btn" title="Open Studio" @click="api.command('open')" />
 				</div>

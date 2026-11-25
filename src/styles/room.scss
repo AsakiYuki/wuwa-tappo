@@ -1,0 +1,112 @@
+// The overlay beside the pet window (src/renderer/room): the other room members' pets, bottom-aligned,
+// the nearest one next to the pet. The window is 720 x 170 CSS pixels (OVERLAY_SIZE in room.rs).
+
+$stage: 200px;
+$scale: 0.55;
+$slot: $stage * $scale;
+
+html,
+body {
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	overflow: hidden;
+	background: transparent;
+	font-family: var(--font-main), "Microsoft YaHei", sans-serif;
+	user-select: none;
+	pointer-events: none;
+}
+
+#roomRoot {
+	display: flex;
+	flex-direction: row-reverse;
+	align-items: flex-end;
+	justify-content: flex-start;
+	gap: 6px;
+	width: 100%;
+	height: 100%;
+	padding: 0 8px 6px;
+	box-sizing: border-box;
+}
+
+.remote-pet {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: $slot;
+	flex: none;
+}
+
+.remote-stage {
+	position: relative;
+	width: $slot;
+	height: $slot;
+
+	// The same 200 x 200 stage as the pet, shrunk from its top-left corner.
+	> img {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: $stage;
+		height: $stage;
+		transform-origin: top left;
+		scale: $scale;
+		pointer-events: none;
+	}
+
+	.remote-head {
+		z-index: 1;
+	}
+
+	.remote-body {
+		z-index: 2;
+	}
+
+	.remote-accessory {
+		z-index: 3;
+	}
+}
+
+.remote-emote {
+	z-index: 4;
+	left: 50% !important;
+	top: -4px !important;
+	width: 56px !important;
+	height: 56px !important;
+	margin-left: -28px;
+	scale: 1 !important;
+	animation: remote-emote 2.6s ease-out forwards;
+}
+
+@keyframes remote-emote {
+	0% {
+		opacity: 0;
+		translate: 0 12px;
+	}
+	12% {
+		opacity: 1;
+		translate: 0 0;
+	}
+	85% {
+		opacity: 1;
+	}
+	100% {
+		opacity: 0;
+		translate: 0 -16px;
+	}
+}
+
+.remote-name {
+	max-width: $slot + 20px;
+	margin-top: -6px;
+	padding: 1px 10px;
+	border-radius: 10px;
+	background: rgba(80, 52, 36, 0.78);
+	color: #fff4dc;
+	font-size: 12px;
+	line-height: 18px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

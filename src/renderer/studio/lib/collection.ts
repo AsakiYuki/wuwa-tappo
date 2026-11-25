@@ -1,7 +1,8 @@
 import type { CatalogItem, CollectionState, ItemType, Rarity, SynthesisMode } from "../../shared/types"
 import { RARITIES } from "./constants"
 
-export type StudioPage = "collection" | "atlas" | "draw" | "synthesis" | "presets" | "settings" | "keyboard-labels"
+export type StudioPage =
+	"collection" | "atlas" | "draw" | "synthesis" | "presets" | "settings" | "keyboard-labels" | "online"
 export type InventoryType = "all" | ItemType
 export type FilterKey = "series" | "role" | "rarity"
 export type InventoryFilters = Record<FilterKey, string>

@@ -81,9 +81,9 @@ mod tests {
 		let (store, backend) = store("backup");
 		assert_eq!(store.load(&backend), "", "a fresh profile is no warning");
 		backend.set_pet_position(12.0, 34.0);
-		store.save(&backend.state_json()).unwrap();
+		store.save(&backend.save_json()).unwrap();
 		backend.set_pet_position(56.0, 78.0);
-		store.save(&backend.state_json()).unwrap();
+		store.save(&backend.save_json()).unwrap();
 		assert!(!with_suffix(&store.file, ".tmp").exists());
 
 		let position = || backend.state()["settings"]["petPosition"]["x"].as_f64();

@@ -88,7 +88,11 @@ export function setInventoryFilter(key: keyof InventoryFilters, value: string) {
 	inventoryScrollReset.value++
 }
 
+/** Pages that only exist offline (local draws and synthesis). */
+const OFFLINE_PAGES: StudioPage[] = ["draw", "synthesis"]
+
 export function navigate(next: StudioPage) {
+	if (state.value?.settings.onlineMode && OFFLINE_PAGES.includes(next)) next = "online"
 	replaceSlot.value = null
 	page.value = next
 	setInventoryType("all")
@@ -173,7 +177,11 @@ export async function draw(count: 1 | 10) {
 /* -------------------------------- wiring ------------------------------- */
 
 export function connectStudio() {
-	api.onState(next => (state.value = next))
+	api.onState(next => {
+		state.value = next
+		if (page.value === "online" && !next.settings.onlineMode) navigate("settings")
+		if (next.settings.onlineMode && OFFLINE_PAGES.includes(page.value)) navigate("online")
+	})
 	api.onStatus(status => {
 		hookStatus.value = status.hook
 		if (status.warning) toast(status.warning)

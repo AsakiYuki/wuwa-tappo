@@ -21,9 +21,16 @@ rdev = "0.5"
 dirs = "6"
 tauri-plugin-dialog = "2"
 # One running app: two would overwrite each other's save. A second launch shows the studio instead.
-tauri-plugin-single-instance = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+# `wuwa-buddy://auth/callback`: how the browser login hands its result back (online/login.rs).
+tauri-plugin-deep-link = "2"
+url = "2"
 # Runs the TypeScript game logic (src/backend).
 rquickjs = { version = "0.9", features = ["parallel"] }
+# Online mode's HTTP client (online.rs): blocking, rustls, no async runtime of its own.
+ureq = "3"
+# The room socket (online/room.rs): WebSocket client with TLS (rustls, the same provider as ureq).
+tungstenite = { version = "0.26", default-features = false, features = ["handshake", "rustls-tls-webpki-roots"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # StatusNotifierItem tray: unlike libappindicator (Tauri's tray), it reports clicks on the icon.

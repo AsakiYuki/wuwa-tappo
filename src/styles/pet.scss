@@ -405,3 +405,67 @@ button {
 		transform: translate(-50%, -50%) translate(var(--bubble-ox), calc(var(--bubble-oy) - 32px)) scale(1.1);
 	}
 }
+
+.chest-bubbles {
+	position: absolute;
+	right: 4px;
+	top: 34%;
+	z-index: 13;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 6px;
+	pointer-events: none;
+}
+
+.chest-bubble {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 52px;
+	height: 28px;
+	padding: 0 10px;
+	border-radius: 999px;
+	border: 2px solid #532d12;
+	background: linear-gradient(180deg, #fff4d6, #ffd26f);
+	color: #532d12;
+	font-size: 13px;
+	font-weight: 900;
+	letter-spacing: 0.06em;
+	font-variant-numeric: tabular-nums;
+	box-shadow:
+		0 6px 16px #532d1252,
+		inset 0 1px 0 rgba(255, 255, 255, 0.9);
+	filter: drop-shadow(0 4px 8px #0005);
+}
+
+.chest-bubble.ready {
+	height: 34px;
+	padding: 0 8px;
+	cursor: pointer;
+	pointer-events: auto;
+	animation: chest-ready 1.4s ease-in-out infinite;
+
+	img {
+		display: block;
+		width: 28px;
+		height: 24px;
+		object-fit: contain;
+	}
+
+	&:disabled {
+		cursor: progress;
+		opacity: 0.6;
+		animation: none;
+	}
+}
+
+@keyframes chest-ready {
+	0%,
+	100% {
+		transform: translateY(0);
+	}
+	50% {
+		transform: translateY(-3px);
+	}
+}

@@ -1,14 +1,26 @@
 <script setup lang="ts">
 import type { StudioPage } from "../lib/collection"
-import { command, navigate, page } from "../store"
+import { computed } from "vue"
+import { command, navigate, page, state } from "../store"
 
-const tabs: Array<{ page: StudioPage; icon: string; label: string }> = [
+const SHARED_TABS: Array<{ page: StudioPage; icon: string; label: string }> = [
 	{ page: "collection", icon: "bag", label: "Bag" },
 	{ page: "atlas", icon: "atlas", label: "Atlas" },
+]
+/** Local draws and synthesis exist only offline; online mode has the server's chests instead. */
+const OFFLINE_TABS: Array<{ page: StudioPage; icon: string; label: string }> = [
 	{ page: "synthesis", icon: "exchange", label: "Synthesis" },
 	{ page: "draw", icon: "room", label: "Chests" },
-	{ page: "settings", icon: "setting", label: "Settings" },
 ]
+const ONLINE_TAB = { page: "online" as StudioPage, icon: "room", label: "Multiplayer" }
+const SETTINGS_TAB = { page: "settings" as StudioPage, icon: "setting", label: "Settings" }
+
+/** Online mode swaps the local Synthesis and Chests tabs for the Online tab. */
+const tabs = computed(() => [
+	...SHARED_TABS,
+	...(state.value?.settings.onlineMode ? [ONLINE_TAB] : OFFLINE_TABS),
+	SETTINGS_TAB,
+])
 
 /** Sub-pages keep their parent tab highlighted. */
 const PARENT_TAB: Partial<Record<StudioPage, StudioPage>> = {

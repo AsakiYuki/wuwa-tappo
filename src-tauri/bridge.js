@@ -18,9 +18,32 @@
 		onEmote: listen("emote"),
 		onStatus: listen("status"),
 		onCursor: listen("cursor"),
+		onChestClock: listen("chest-clock"),
+		onChestOpened: listen("chest-opened"),
 		resizeWindow: (edge, dx, dy) => void invoke("resize_studio_edge", { edge, dx, dy }),
 		move: (dx, dy) => void invoke("move_pet", { dx, dy }),
 		setHoverArea: area => void invoke("set_hover_area", { area }),
+		// Online mode (src-tauri/src/online.rs). Only the studio may call these.
+		online: {
+			request: (method, endpoint, body) => invoke("online_request", { method, endpoint, body: body ?? null }),
+			status: () => invoke("online_status"),
+			loginStart: lang => invoke("online_login_start", { lang: lang ?? null }),
+			loginChoose: index => invoke("online_login_choose", { index }),
+			roomConnect: (roomNo, selfId) => invoke("online_room_connect", { roomNo, selfId }),
+			roomLeave: () => invoke("online_room_leave"),
+			roomChanged: () => invoke("online_room_changed"),
+			roomSnapshot: () => invoke("online_room_snapshot"),
+			roomLooks: (character, accessory) => invoke("online_room_looks", { character, accessory }),
+			roomShowMember: (userId, shown) => invoke("online_room_show_member", { userId, shown }),
+			roomMember: (action, userId) => invoke("online_room_member", { action, userId }),
+			onRoomError: listen("room-error"),
+			onRoomMembers: listen("room-members"),
+			onRoomStatus: listen("room-status"),
+			onRoomEmote: listen("room-emote"),
+			loginSwitch: () => invoke("online_login_switch"),
+			loginCancel: () => invoke("online_login_cancel"),
+			onLogin: listen("online-login"),
+		},
 	}
 
 	// Pressing the studio's title bar and moving the pointer a few pixels starts a native window drag.

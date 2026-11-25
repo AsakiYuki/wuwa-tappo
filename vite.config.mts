@@ -27,6 +27,7 @@ export default defineConfig({
 			input: {
 				pet: resolve(projectRoot, "src/renderer/pet/main.ts"),
 				studio: resolve(projectRoot, "src/renderer/studio/main.ts"),
+				room: resolve(projectRoot, "src/renderer/room/main.ts"),
 			},
 			output: {
 				entryFileNames: "assets/[name].js",

@@ -25,6 +25,12 @@ autostart entry in `~/.config/autostart` on Linux (an AppImage registers the ima
 registers `wuwa-tappo` from PATH, so updates keep working). Turning the setting off, or resetting the data,
 removes the entry.
 
+**Online mode** (`online.rs`) is the only network access, and only while the `onlineMode` setting is on:
+`petAPI.online.request(method, endpoint, body)` accepts a fixed list of routes, adds the stored login
+token (`online.json`, mode 0600 on Unix) and returns only the reply's data, never the token. The
+studio's `src/renderer/studio/online/` validates every reply (`src/domain/online.ts`) and rejects what
+it does not recognise.
+
 ## Run
 
 `bun start` (or `npm start`) builds and runs it on Windows, Linux and macOS;

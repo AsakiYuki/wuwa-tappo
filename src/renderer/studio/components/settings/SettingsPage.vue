@@ -232,10 +232,24 @@ const selectValue = (event: Event) => (event.target as HTMLSelectElement).value
 						</SettingRow>
 						<SettingRow title="Collection Data" description="Unlock every item or start over.">
 							<div class="setting-content">
-								<button id="unlockAll" class="setting-btn" type="button" @click="unlockAll">
+								<button
+									id="unlockAll"
+									class="setting-btn"
+									type="button"
+									:disabled="settings.onlineMode"
+									:title="settings.onlineMode ? 'Not available in online mode' : ''"
+									@click="unlockAll"
+								>
 									Unlock All
 								</button>
-								<button id="resetData" class="setting-btn" type="button" @click="resetData">
+								<button
+									id="resetData"
+									class="setting-btn"
+									type="button"
+									:disabled="settings.onlineMode"
+									:title="settings.onlineMode ? 'Not available in online mode' : ''"
+									@click="resetData"
+								>
 									Reset
 								</button>
 							</div>
@@ -246,7 +260,15 @@ const selectValue = (event: Event) => (event.target as HTMLSelectElement).value
 						>
 							<div class="setting-content">
 								<button class="setting-btn" type="button" @click="exportData">Export Data</button>
-								<button class="setting-btn" type="button" @click="importData">Import Data</button>
+								<button
+									class="setting-btn"
+									type="button"
+									:disabled="settings.onlineMode"
+									:title="settings.onlineMode ? 'Not available in online mode' : ''"
+									@click="importData"
+								>
+									Import Data
+								</button>
 							</div>
 						</SettingRow>
 					</div>

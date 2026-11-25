@@ -44,9 +44,14 @@ impl Backend {
 		self.call("load", (text.to_string(),)).unwrap_or(false)
 	}
 
-	/// The whole state as pretty JSON, exactly what is written to collection.json.
+	/// The collection in use (the online profile while online mode is on) as pretty JSON, what the pages see.
 	pub fn state_json(&self) -> String {
 		self.call("state", ()).expect("backend state")
+	}
+
+	/// Both collections as pretty JSON, exactly what is written to collection.json.
+	pub fn save_json(&self) -> String {
+		self.call("save", ()).expect("backend save")
 	}
 
 	pub fn state(&self) -> Value {

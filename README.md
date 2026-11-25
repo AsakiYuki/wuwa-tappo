@@ -53,6 +53,7 @@ chests to open, outfits to collect.
 | 👻 **Mouse passthrough** | Click straight through the pet; it fades when the cursor is over it |
 | 🎮 **Controllers** | XInput on Windows, IOKit on macOS, evdev on Linux |
 | 🖥️ **Multi-monitor** | Cycle the pet between screens |
+| 🌐 **Online mode** | Optional: log in with your UID to spend clicks on server chests and redeem codes (off by default) |
 
 ## 📥 Download
 
@@ -128,6 +129,26 @@ Or install it system-wide with the NixOS module:
 
 For Home Manager or a plain profile, add `wuwa-tappo.overlays.default` and install
 `pkgs.wuwa-tappo`, or use `wuwa-tappo.packages.${system}.default` directly.
+
+## 🌐 Online mode
+
+Everything above works offline, and offline stays the default. **Settings → General → Online Mode**
+adds an *Online* tab that talks to the Kuro Games Wuwa Tappo server: UID login (a confirmation code
+arrives in the game) or Kuro account login in the browser (the page returns through a `wuwa-buddy://` link), chests paid with clicks, redeem codes and rooms. Turning it off removes the
+tab and stops all network access; your `collection.json` is never changed by online mode, and an
+imported save cannot switch it on.
+
+- The login token lives in `online.json` next to the save (not inside it, so Export Data never
+  includes it). Pages never see it.
+- Taps made while logged in are counted as clicks the server has not seen yet; they are reported when
+  you log out.
+- The routes, the host and the chest prices were taken from a decompiled client and have **not**
+  been checked against live traffic. To check them, start the app with `WUWA_TAPPO_ONLINE_SAMPLES=1`:
+  each server reply is then saved to `online-samples/` in the save folder (login replies are
+  skipped). Samples contain account data, so look before sharing one.
+- Not merged yet, because the decompiled client does not show the reply formats: syncing the server's
+  bag, appearance, presets, favorites and synthesis into the studio (their routes and parsers exist, the
+  pages do not use them yet), and the realtime room socket ([docs/room-protocol.md](docs/room-protocol.md)).
 
 ## 🛠️ Development
 
