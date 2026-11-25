@@ -20,7 +20,7 @@ use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
-use std::sync::atomic::{AtomicU8, Ordering};
+use std::sync::atomic::{AtomicU8, AtomicUsize, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, LogicalSize, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
@@ -324,6 +324,8 @@ fn set_read_timeout(socket: &mut Socket, timeout: Duration) {
 /// Engine.IO 3 (the client pings, the server connects the namespace itself); 4 is the fallback should the
 /// server turn out to speak only that. A connection that dies before the room answered switches it.
 static EIO: AtomicU8 = AtomicU8::new(3);
+/// Room connections still running; the app waits for them to say goodbye when it quits.
+static RUNNING: AtomicUsize = AtomicUsize::new(0);
 
 fn socket_url(token: &str, room_no: &str, eio: u8) -> Result<url::Url, String> {
 	let host = API_HOST.replacen("https://", "wss://", 1);
@@ -345,6 +347,12 @@ fn open(url: &url::Url) -> Result<Socket, String> {
 	let (mut socket, _) = client_tls_with_config(request, stream, None, None).map_err(|error| format!("The room connection failed: {error}"))?;
 	set_read_timeout(&mut socket, POLL);
 	Ok(socket)
+}
+
+/// Socket.IO's own goodbye (41), then the WebSocket's, so the server marks this user offline at once.
+fn goodbye(socket: &mut Socket) {
+	let _ = send(socket, "41".into());
+	let _ = socket.close(None);
 }
 
 fn send(socket: &mut Socket, text: String) -> Result<(), String> {
@@ -465,7 +473,7 @@ fn session_with(connection: &mut Connection, commands: &Receiver<Command>, eio: 
 
 	loop {
 		if !is_current(connection.generation) {
-			let _ = socket.close(None);
+			goodbye(&mut socket);
 			return Outcome::Replaced;
 		}
 		loop {
@@ -487,7 +495,7 @@ fn session_with(connection: &mut Connection, commands: &Receiver<Command>, eio: 
 					emit_event!(Pending::Leave, "rl", json!({ "r": connection.room_no }));
 				}
 				Ok(Command::Leave) | Ok(Command::Close) | Err(TryRecvError::Disconnected) => {
-					let _ = socket.close(None);
+					goodbye(&mut socket);
 					return if leaving_since.is_some() || !was_ready { Outcome::Ended { reason: "left", message: String::new() } } else { Outcome::Replaced };
 				}
 				Err(TryRecvError::Empty) => break,
@@ -495,7 +503,7 @@ fn session_with(connection: &mut Connection, commands: &Receiver<Command>, eio: 
 		}
 		// A goodbye the server never answers still ends the room for this user.
 		if pending.iter().any(|(_, kind, asked)| *kind == Pending::Leave && asked.elapsed() > ACK_TIMEOUT) {
-			let _ = socket.close(None);
+			goodbye(&mut socket);
 			return Outcome::Ended { reason: "left", message: String::new() };
 		}
 		pending.retain(|(_, _, asked)| asked.elapsed() <= ACK_TIMEOUT);
@@ -552,7 +560,7 @@ fn session_with(connection: &mut Connection, commands: &Receiver<Command>, eio: 
 				let (_, kind, _) = pending.remove(at);
 				match kind {
 					Pending::Leave => {
-						let _ = socket.close(None);
+						goodbye(&mut socket);
 						return Outcome::Ended { reason: "left", message: String::new() };
 					}
 					Pending::Snapshot => match ack_result(&data) {
@@ -602,7 +610,7 @@ fn session_with(connection: &mut Connection, commands: &Receiver<Command>, eio: 
 			}
 			Packet::Event { name, data } => {
 				if let Some(outcome) = handle_event(connection, &name, &data) {
-					let _ = socket.close(None);
+					goodbye(&mut socket);
 					return outcome;
 				}
 			}
@@ -765,7 +773,11 @@ pub(super) fn connect(app: &AppHandle, shared: &Shared, room_no: &str, self_id: 
 		handle.generation
 	};
 	let (app, shared, room_no) = (app.clone(), shared.clone(), room_no.to_string());
-	std::thread::spawn(move || run(app, shared, generation, room_no, self_id, receiver));
+	RUNNING.fetch_add(1, Ordering::SeqCst);
+	std::thread::spawn(move || {
+		run(app, shared, generation, room_no, self_id, receiver);
+		RUNNING.fetch_sub(1, Ordering::SeqCst);
+	});
 	Ok(())
 }
 
@@ -793,6 +805,17 @@ pub(crate) fn disconnect(app: &AppHandle, shared: &Shared) {
 		handle.generation += 1;
 	}
 	emit_roster(app, shared, &Roster::default(), 0);
+}
+
+/// The app is quitting: closes the room connection properly (so the others see this user go offline) and waits a moment for it.
+pub(crate) fn shutdown() {
+	if let Some(old) = ROOM.lock().unwrap().commands.take() {
+		let _ = old.send(Command::Close);
+	}
+	let until = Instant::now() + Duration::from_millis(1500);
+	while RUNNING.load(Ordering::SeqCst) > 0 && Instant::now() < until {
+		std::thread::sleep(Duration::from_millis(20));
+	}
 }
 
 /// Settings changed: online mode off ends the room; "only show my pet" hides or shows the others.

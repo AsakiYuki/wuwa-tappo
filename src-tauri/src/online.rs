@@ -439,7 +439,7 @@ pub(crate) async fn online_request(
 
 pub(crate) use chest::{open as chest_open, snapshot as chest_clock, start as start_chests};
 pub(crate) use login::{handle_url as handle_login_url, SCHEME as LOGIN_SCHEME};
-pub(crate) use room::{apply_settings as apply_room_settings, emote as room_emote, follow_pet as follow_room_pet, tap as room_tap};
+pub(crate) use room::{shutdown as room_shutdown, apply_settings as apply_room_settings, emote as room_emote, follow_pet as follow_room_pet, tap as room_tap};
 
 /// The members of the room as last published; the overlay window asks for it when it opens, since the
 /// event that created it was sent before its page could listen.

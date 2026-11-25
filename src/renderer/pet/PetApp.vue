@@ -44,7 +44,8 @@ const hand = useHandAction(state)
 const { bubbles, pushEmote, pushKey, remove: removeBubble } = useBubbles(() => settings.value?.bubbleLifetime ?? 1)
 const chests = useChests(
 	api,
-	computed(() => settings.value?.showChest ?? true),
+	// Like the original: the countdowns always show with "Always Show Chest", else while the pet is hovered.
+	computed(() => (settings.value?.showChest ?? true) || cursorHovered.value || menuOpen.value),
 	message => pushKey(message),
 )
 const drag = usePetDrag(state, pressedAt => {

@@ -319,6 +319,8 @@ pub fn run() {
 		if let RunEvent::Exit = event {
 			#[cfg(target_os = "linux")]
 			kwin_cursor::stop();
+			// Tell the room goodbye first, so the others see this user go offline right away.
+			online::room_shutdown();
 			if let Some(shared) = app.try_state::<Shared>() {
 				save_now(app, &shared);
 			}
