@@ -150,7 +150,9 @@ fn read_envelope(status: u16, body: &str) -> Result<Value, String> {
 	let code = envelope["code"].as_i64().unwrap_or(i64::from(status));
 	if code != 0 && code != 200 {
 		let message = envelope["message"].as_str().or(envelope["msg"].as_str()).unwrap_or("");
-		return Err(if message.is_empty() { format!("Error code: {code}") } else { message.chars().take(200).collect() });
+		// The code and HTTP status go with the message, so "Access forbidden" can be traced to a request.
+		let message: String = message.chars().take(200).collect();
+		return Err(if message.is_empty() { format!("Error code: {code} (HTTP {status})") } else { format!("{message} (code {code}, HTTP {status})") });
 	}
 	Ok(envelope)
 }
@@ -198,7 +200,8 @@ fn send(route: &Route, token: Option<&str>, body: &str) -> Result<(u16, String),
 }
 
 fn save_sample(directory: &Path, route: &Route, body: &str) {
-	if std::env::var_os(SAMPLES_ENV).is_none() || route.token == TokenEffect::Store {
+	// A login reply that carries a token is never written down; its error replies are.
+	if std::env::var_os(SAMPLES_ENV).is_none() || (route.token == TokenEffect::Store && body.contains("\"token\"")) {
 		return;
 	}
 	let folder = directory.join("online-samples");
@@ -324,12 +327,12 @@ mod tests {
 	fn the_envelope_is_read_like_the_original_client_did() {
 		assert_eq!(read_envelope(200, r#"{"code":0,"data":{"a":1}}"#).unwrap()["data"]["a"], 1);
 		assert!(read_envelope(200, r#"{"code":200}"#).is_ok());
-		assert_eq!(read_envelope(200, r#"{"code":1001,"message":"bad code"}"#).unwrap_err(), "bad code");
-		assert_eq!(read_envelope(200, r#"{"code":1001,"msg":"old field"}"#).unwrap_err(), "old field");
-		assert_eq!(read_envelope(200, r#"{"code":7}"#).unwrap_err(), "Error code: 7");
+		assert_eq!(read_envelope(200, r#"{"code":1001,"message":"bad code"}"#).unwrap_err(), "bad code (code 1001, HTTP 200)");
+		assert_eq!(read_envelope(403, r#"{"code":403,"msg":"old field"}"#).unwrap_err(), "old field (code 403, HTTP 403)");
+		assert_eq!(read_envelope(200, r#"{"code":7}"#).unwrap_err(), "Error code: 7 (HTTP 200)");
 		assert_eq!(read_envelope(502, "<html>").unwrap_err(), "HTTP 502");
 		let long = format!(r#"{{"code":1,"message":"{}"}}"#, "x".repeat(500));
-		assert_eq!(read_envelope(200, &long).unwrap_err().len(), 200, "a hostile message is bounded");
+		assert!(read_envelope(200, &long).unwrap_err().len() < 240, "a hostile message is bounded");
 		let envelope = json!({ "code": 0, "token": "t" });
 		assert_eq!(payload(&envelope), envelope, "no data: the whole reply, as the original client did");
 	}
