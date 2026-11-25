@@ -49,6 +49,7 @@ export const STATE_COMMANDS: Record<string, StateCommand> = {
 	},
 
 	"unlock-all"(state, items) {
+		if (state.settings.onlineMode) throw new Error("Unlock All is not available in online mode")
 		for (const item of items) state.owned[item.id] = Math.max(1, state.owned[item.id] || 0)
 	},
 }

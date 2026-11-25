@@ -508,6 +508,23 @@ test("Online mode is off by default and an imported save never turns it on", () 
 	assert.equal(current.settings.onlineMode, false)
 })
 
+test("Unlock All is refused in online mode and works offline", () => {
+	const state = core.initial(items)
+	state.settings.onlineMode = true
+	assert.throws(() => STATE_COMMANDS["unlock-all"](state, items, null), /online mode/)
+	assert.equal(
+		items.every(item => state.owned[item.id]),
+		false,
+		"nothing was unlocked",
+	)
+	state.settings.onlineMode = false
+	STATE_COMMANDS["unlock-all"](state, items, null)
+	assert.equal(
+		items.every(item => state.owned[item.id] > 0),
+		true,
+	)
+})
+
 test("Server users are validated and click balances never go negative or overflow", () => {
 	assert.equal(parseUser(null), null)
 	assert.equal(parseUser({ nickname: "x" }), null, "no user_id")

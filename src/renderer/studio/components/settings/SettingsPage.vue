@@ -232,7 +232,14 @@ const selectValue = (event: Event) => (event.target as HTMLSelectElement).value
 						</SettingRow>
 						<SettingRow title="Collection Data" description="Unlock every item or start over.">
 							<div class="setting-content">
-								<button id="unlockAll" class="setting-btn" type="button" @click="unlockAll">
+								<button
+									id="unlockAll"
+									class="setting-btn"
+									type="button"
+									:disabled="settings.onlineMode"
+									:title="settings.onlineMode ? 'Not available in online mode' : ''"
+									@click="unlockAll"
+								>
 									Unlock All
 								</button>
 								<button id="resetData" class="setting-btn" type="button" @click="resetData">
