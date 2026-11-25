@@ -30,6 +30,8 @@
 			roomConnect: (roomNo, selfId) => invoke("online_room_connect", { roomNo, selfId }),
 			roomLeave: () => invoke("online_room_leave"),
 			roomChanged: () => invoke("online_room_changed"),
+			roomSnapshot: () => invoke("online_room_snapshot"),
+			roomLooks: (character, accessory) => invoke("online_room_looks", { character, accessory }),
 			roomShowMember: (userId, shown) => invoke("online_room_show_member", { userId, shown }),
 			roomMember: (action, userId) => invoke("online_room_member", { action, userId }),
 			onRoomError: listen("room-error"),

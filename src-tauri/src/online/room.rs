@@ -16,9 +16,10 @@ use super::{API_HOST, BROWSER_ORIGIN, BROWSER_USER_AGENT};
 use crate::{page_scripts, setting_bool, settings, window, Shared, PET_LABEL};
 use serde::Serialize;
 use serde_json::{json, Map, Value};
+use std::collections::HashMap;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
-use std::sync::Mutex;
+use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, LogicalSize, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
 use tungstenite::client::IntoClientRequest;
@@ -38,6 +39,10 @@ const POLL: Duration = Duration::from_millis(250);
 const RECONNECT_SECONDS: [u64; 6] = [5, 10, 20, 40, 60, 120];
 /// A request's answer (`rm`, `rd`, `rl`) is waited for this long.
 const ACK_TIMEOUT: Duration = Duration::from_secs(8);
+/// How often the taps the server has not seen are reported (`cr`).
+const CLICK_REPORT_EVERY: Duration = Duration::from_secs(30);
+/// Taps closer together than this are one `rc` for the room: nobody can tell them apart on screen.
+const TAP_SPACING: Duration = Duration::from_millis(40);
 const MAX_MEMBERS: usize = 64;
 const DEFAULT_NICKNAME: &str = "Rover";
 
@@ -55,11 +60,13 @@ pub(super) struct Member {
 	pub state: &'static str,
 	/// This user chose not to see this member's pet (the eye in the member list). Local only.
 	pub hidden: bool,
+	/// Counts the taps this member made (the rc event with a, from the server); the overlay moves a hand on each.
+	pub tap: u32,
 }
 
 impl Member {
 	fn new(id: i64) -> Self {
-		Member { id, nickname: DEFAULT_NICKNAME.into(), owner: false, online: true, character_asset_id: 0, part_asset_id: 0, state: "idle", hidden: false }
+		Member { id, nickname: DEFAULT_NICKNAME.into(), owner: false, online: true, character_asset_id: 0, part_asset_id: 0, state: "idle", hidden: false, tap: 0 }
 	}
 }
 
@@ -176,6 +183,15 @@ impl Roster {
 		desktop_entries(data, &mut entries, 0);
 		for entry in entries {
 			self.appearance(entry);
+		}
+	}
+
+	/// Members tapped: ids is the server's id|id|....
+	pub(super) fn tapped(&mut self, ids: &str) {
+		for id in ids.split('|').map(|id| id_of(&Value::String(id.trim().to_string()))).filter(|id| *id > 0) {
+			if let Some(member) = self.members.iter_mut().find(|member| member.id == id) {
+				member.tap = member.tap.wrapping_add(1);
+			}
 		}
 	}
 
@@ -337,7 +353,8 @@ fn send(socket: &mut Socket, text: String) -> Result<(), String> {
 enum Status {
 	Connecting,
 	Connected,
-	Reconnecting,
+	/// `message`: why the last attempt failed.
+	Reconnecting { message: String },
 	Ended { reason: &'static str, message: String },
 }
 
@@ -380,6 +397,8 @@ enum Pending {
 	Desktop,
 	Leave,
 	Action,
+	/// A click report (`cr`) of this many taps.
+	Clicks(u64),
 }
 
 struct Connection<'a> {
@@ -409,6 +428,7 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 	let mut leaving_since: Option<Instant> = None;
 	let mut quiet_limit = Duration::from_secs(45);
 	let mut last_heard = Instant::now();
+	let mut next_report = Instant::now();
 	let (app, shared) = (connection.app, connection.shared);
 
 	macro_rules! emit_event {
@@ -458,6 +478,14 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 			return Outcome::Ended { reason: "left", message: String::new() };
 		}
 		pending.retain(|(_, _, asked)| asked.elapsed() <= ACK_TIMEOUT);
+		// The original reports the taps the server has not seen every 30 s (`cr`).
+		if was_ready && Instant::now() >= next_report {
+			next_report = Instant::now() + CLICK_REPORT_EVERY;
+			let taps = shared.online.pending(super::total_taps(shared));
+			if taps > 0 {
+				emit_event!(Pending::Clicks(taps), "cr", json!({ "num": taps }));
+			}
+		}
 		if last_heard.elapsed() > quiet_limit {
 			return Outcome::Dropped { message: "The room connection went quiet".into(), was_ready };
 		}
@@ -508,15 +536,23 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 							emit_status(app, &Status::Connected);
 							emit_roster(app, shared, &connection.roster, connection.self_id);
 							emit_event!(Pending::Desktop, "rd", json!({ "r": connection.room_no }));
-							// Tells the room how this user looks now (the server reads it from the account).
-							if let Err(message) = send(&mut socket, format!("42{}", json!(["rc"]))) {
+							// Tells the room how this user looks (`rc { b, c }`, as `za` does in the original) and
+							// reports the taps made so far.
+							if let Err(message) = send(&mut socket, looks_event()) {
 								return Outcome::Dropped { message, was_ready };
 							}
+							next_report = Instant::now();
 						}
 						// 80007: the room no longer exists.
 						Err(80007) => return Outcome::Ended { reason: "dismissed", message: "The room no longer exists".into() },
 						Err(code) => return Outcome::Dropped { message: format!("The room snapshot failed (code {code})"), was_ready },
 					},
+					Pending::Clicks(num) => {
+						// The server has counted them; only now are they no longer this side's to report.
+						if ack_result(&data).is_ok() {
+							shared.online.claimed(num);
+						}
+					}
 					Pending::Action => {
 						if let Err(code) = ack_result(&data) {
 							let _ = app.emit("room-error", json!({ "message": format!("The server refused the request (code {code})") }));
@@ -555,7 +591,12 @@ fn handle_event(connection: &mut Connection, name: &str, data: &Value) -> Option
 		"rc" => {
 			// `{ a: "id|id" }` is somebody tapping, `{ o, a }` only a nudge; anything else carries looks.
 			let object = data.as_object()?;
-			if !(object.get("a").is_some_and(Value::is_string) || is_nudge(object)) {
+			if let Some(ids) = object.get("a").and_then(Value::as_str) {
+				// Everyone but this user: their own tap already moved their own pet.
+				let own = self_id.to_string();
+				let others: Vec<&str> = ids.split('|').filter(|id| id.trim() != own).collect();
+				connection.roster.tapped(&others.join("|"));
+			} else if !is_nudge(object) {
 				connection.roster.appearance(data);
 			}
 		}
@@ -626,7 +667,7 @@ fn run(app: AppHandle, shared: Shared, generation: u64, room_no: String, self_id
 					attempt = 0;
 				}
 				eprintln!("room: {message}");
-				emit_status(&app, &Status::Reconnecting);
+				emit_status(&app, &Status::Reconnecting { message });
 				let wait = Duration::from_secs(RECONNECT_SECONDS[attempt.min(RECONNECT_SECONDS.len() - 1)]);
 				attempt += 1;
 				let until = Instant::now() + wait;
@@ -675,8 +716,9 @@ pub(super) fn connect(app: &AppHandle, shared: &Shared, room_no: &str, self_id: 
 	if room_no.is_empty() || room_no.len() > 32 || !room_no.chars().all(|ch| ch.is_ascii_alphanumeric()) {
 		return Err("Unknown room number".into());
 	}
-	if self_id <= 0 {
-		return Err("The account has no numeric id".into());
+	// 0 is allowed: the room still works, only this user's own pet cannot be told apart from the others'.
+	if self_id < 0 {
+		return Err("The account id is not valid".into());
 	}
 	let (sender, receiver) = channel();
 	let generation = {
@@ -756,6 +798,86 @@ pub(super) fn member_action(action: &str, member: i64) -> Result<(), String> {
 		Some(commands) => commands.send(Command::Request { name, payload: json!({ "u": member }) }).map_err(|_| "The room connection is closed".to_string()),
 		None => Err("Not in a room".into()),
 	}
+}
+
+/* ------------------------- what this user tells the room ------------------------- */
+
+/// The catalog asset ids of this user's skin and accessory (0 for none), as the studio last reported them.
+static LOOKS: Mutex<(i64, i64)> = Mutex::new((0, 0));
+
+/// `rc { b, c }`: the skin and accessory (`c` left out for none); a bare `rc` while the skin is not known.
+fn looks_event() -> String {
+	let (character, accessory) = *LOOKS.lock().unwrap();
+	match (character > 0, accessory > 0) {
+		(true, true) => format!("42{}", json!(["rc", { "b": character, "c": accessory }])),
+		(true, false) => format!("42{}", json!(["rc", { "b": character }])),
+		_ => format!("42{}", json!(["rc"])),
+	}
+}
+
+/// The studio's outfit changed (or it joined a room): remembers it and, in a room, tells the others.
+pub(super) fn looks(character: i64, accessory: i64) {
+	*LOOKS.lock().unwrap() = (character.max(0), accessory.max(0));
+	if let Some(commands) = ROOM.lock().unwrap().commands.as_ref() {
+		let payload = match (character > 0, accessory > 0) {
+			(true, true) => Some(json!({ "b": character, "c": accessory })),
+			(true, false) => Some(json!({ "b": character })),
+			_ => None,
+		};
+		let _ = commands.send(Command::Emit { name: "rc", payload });
+	}
+}
+
+static LAST_TAP: Mutex<Option<Instant>> = Mutex::new(None);
+
+/// A tap of this pet: the room sees its hand move (a bare `rc`, as `syncAction` sends in the original).
+pub(crate) fn tap(shared: &Shared) {
+	if !online_enabled(shared) {
+		return;
+	}
+	{
+		let mut last = LAST_TAP.lock().unwrap();
+		if last.is_some_and(|at| at.elapsed() < TAP_SPACING) {
+			return;
+		}
+		*last = Some(Instant::now());
+	}
+	if let Some(commands) = ROOM.lock().unwrap().commands.as_ref() {
+		let _ = commands.send(Command::Emit { name: "rc", payload: None });
+	}
+}
+
+/// The catalog's asset id for an item id (`emote:1615` -> 1615), from the same catalog the pages use.
+fn asset_of(item_id: &str) -> Option<i64> {
+	static ASSETS: OnceLock<HashMap<String, i64>> = OnceLock::new();
+	ASSETS
+		.get_or_init(|| {
+			let catalog: Value = serde_json::from_str(crate::CATALOG_JSON).unwrap_or(Value::Null);
+			catalog["items"]
+				.as_array()
+				.map(|items| items.iter().filter_map(|item| Some((item["id"].as_str()?.to_string(), item["assetId"].as_i64()?))).collect::<HashMap<String, i64>>())
+				.unwrap_or_default()
+		})
+		.get(item_id)
+		.copied()
+}
+
+/// This pet played an emote: the room sees it (`re { e }`). The value is the emote's catalog asset id; the
+/// original sends the emote's own id string, which this app's catalog does not carry (unconfirmed).
+pub(crate) fn emote(shared: &Shared, item_id: &str) {
+	if !online_enabled(shared) {
+		return;
+	}
+	let Some(asset) = asset_of(item_id) else { return };
+	if let Some(commands) = ROOM.lock().unwrap().commands.as_ref() {
+		let _ = commands.send(Command::Emit { name: "re", payload: Some(json!({ "e": asset })) });
+	}
+}
+
+/// The members last published, for a page that opened after the event (the overlay window).
+pub(super) fn snapshot() -> Value {
+	let (members, self_id, public) = LAST.lock().unwrap().clone();
+	json!({ "members": members, "selfId": self_id, "isPublic": public })
 }
 
 /* ---------------------------------- window ---------------------------------- */
@@ -907,6 +1029,14 @@ mod tests {
 		assert_eq!((roster.members[1].online, roster.members[1].state), (false, "idle"));
 		roster.leave(1);
 		assert_eq!(roster.members.len(), 1);
+	}
+
+	#[test]
+	fn taps_count_for_the_members_named_and_for_nobody_else() {
+		let mut roster = Roster::default();
+		roster.snapshot(&json!([{ "u": 1 }, { "u": 2 }]));
+		roster.tapped("2|2| 1 |9|x||");
+		assert_eq!((roster.members[0].tap, roster.members[1].tap), (1, 2));
 	}
 
 	#[test]

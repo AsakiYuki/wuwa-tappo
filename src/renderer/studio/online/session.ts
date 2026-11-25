@@ -1,4 +1,4 @@
-import { computed, ref, shallowRef } from "vue"
+import { computed, ref, shallowRef, watch } from "vue"
 import {
 	appearanceBody,
 	cleanRedeemCode,
@@ -6,6 +6,7 @@ import {
 	clickBalance,
 	isValidCode,
 	isValidUid,
+	parseBag,
 	parseChestResult,
 	parsePresetList,
 	parseRoom,
@@ -17,7 +18,7 @@ import {
 } from "../../../domain/online"
 import type { OnlineLoginRole, RoomSocketMember } from "../../../domain/types"
 import type { OnlineReply } from "../../shared/types"
-import { items, state } from "../store"
+import { command, items, state } from "../store"
 import {
 	CHEST_PLACES,
 	CODE_COOLDOWN_SECONDS,
@@ -48,6 +49,8 @@ export const roomMembers = shallowRef<RoomSocketMember[]>([])
 export const roomLink = ref<"idle" | "connecting" | "connected" | "reconnecting">("idle")
 /** Why the room socket could not be used or ended, for the page to show. */
 export const roomNotice = ref("")
+/** Why the account's bag could not be loaded (the online profile then owns only the starter items). */
+export const bagNotice = ref("")
 
 /** Where a browser login stands: nothing running, waiting for the callback/server, or choosing a role. */
 export const loginStage = ref<"idle" | "browser" | "waiting" | "choose">("idle")
@@ -134,7 +137,27 @@ async function fetchUser() {
 	if (!parsed) throw unexpected("account")
 	user.value = parsed
 	spentClicks.value = 0
+	await syncBag()
 	await adoptRoom()
+}
+
+/**
+ * The online profile owns what the account's bag lists, not what the offline collection has: the bag is
+ * fetched and handed to the collection (domain/profile.ts). A failure is a notice; the profile stays as it was.
+ */
+async function syncBag() {
+	bagNotice.value = ""
+	try {
+		const entries = parseBag(await call("POST", "api/frontend/bags/list", {}))
+		if (!entries) {
+			bagNotice.value = "The server's bag reply was not in the expected format (see 'Online' in the README)"
+			return
+		}
+		const result = await command("online-bag", entries)
+		if (!result.ok) bagNotice.value = result.error || "Could not apply the bag"
+	} catch (error) {
+		bagNotice.value = error instanceof Error ? error.message : String(error)
+	}
 }
 
 /** Loads the account for a session that already exists (after a restart, or when online mode is turned on). */
@@ -253,13 +276,15 @@ async function connectRoom(roomNo: string) {
 	roomNotice.value = ""
 	const looks = currentLooks()
 	const body = looks && appearanceBody(looks.character, looks.accessory, looks.emotes)
-	if (body) await call("PUT", "api/frontend/user/me/appearance", body).catch(() => undefined)
-	const id = user.value?.id
-	if (!id) {
-		roomNotice.value = "The account reply has no numeric id, so the other members' pets cannot be shown"
-		return
+	if (body) {
+		await call("PUT", "api/frontend/user/me/appearance", body).catch(error => {
+			roomNotice.value = `Your outfit could not be saved to the account: ${error instanceof Error ? error.message : error}`
+		})
 	}
-	const reply = await online.roomConnect(roomNo, id)
+	// Told to the room as soon as the socket is ready (rc with b and c).
+	if (looks) await online.roomLooks(looks.character, looks.accessory ?? 0)
+	// Without the account's numeric id the room still works, but this user's own pet cannot be left out of the others'.
+	const reply = await online.roomConnect(roomNo, user.value?.id ?? 0)
 	if (!reply.ok) roomNotice.value = reply.error || "Could not connect to the room"
 	else roomLink.value = "connecting"
 }
@@ -351,6 +376,9 @@ online.onRoomMembers(event => {
 online.onRoomStatus(event => {
 	if (event.state !== "ended") {
 		roomLink.value = event.state
+		// Why the last attempt failed, so a room that never connects is not silent.
+		if (event.state === "reconnecting") roomNotice.value = event.message
+		else if (event.state === "connected") roomNotice.value = ""
 		return
 	}
 	roomLink.value = "idle"
@@ -361,6 +389,31 @@ online.onRoomStatus(event => {
 		if (event.reason === "dismissed" || event.reason === "kicked" || event.reason === "forced") room.value = null
 	}
 })
+
+/*
+ * What this user wears is told to the account and the room whenever it changes (the original sends
+ * `rc { b, c }` after saving the appearance). Only the online profile's outfit counts.
+ */
+let looksTimer: ReturnType<typeof setTimeout> | undefined
+async function announceLooks() {
+	const looks = currentLooks()
+	if (!loggedIn.value || !state.value?.settings.onlineMode || !looks) return
+	const body = appearanceBody(looks.character, looks.accessory, looks.emotes)
+	if (body) await call("PUT", "api/frontend/user/me/appearance", body).catch(() => undefined)
+	await online.roomLooks(looks.character, looks.accessory ?? 0)
+}
+watch(
+	() => {
+		const current = state.value
+		return current
+			? `${current.settings.onlineMode}|${current.character}|${current.accessory}|${current.emotes.join(",")}`
+			: ""
+	},
+	() => {
+		clearTimeout(looksTimer)
+		looksTimer = setTimeout(() => void announceLooks(), 600)
+	},
+)
 
 const positiveIds = (ids: number[]) => ids.every(id => Number.isSafeInteger(id) && id > 0)
 

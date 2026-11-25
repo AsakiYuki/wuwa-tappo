@@ -154,6 +154,13 @@ impl Online {
 		}
 	}
 
+	/// The server counted `taps` taps (a click report was answered): they are no longer pending.
+	fn claimed(&self, taps: u64) {
+		let mut saved = self.saved.lock().unwrap();
+		saved.baseline = saved.baseline.saturating_add(taps);
+		self.persist(&saved);
+	}
+
 	fn set_session(&self, token: Option<String>, total_taps: u64) {
 		let mut saved = self.saved.lock().unwrap();
 		saved.token = token;
@@ -430,7 +437,30 @@ pub(crate) async fn online_request(
 }
 
 pub(crate) use login::{handle_url as handle_login_url, SCHEME as LOGIN_SCHEME};
-pub(crate) use room::{apply_settings as apply_room_settings, follow_pet as follow_room_pet};
+pub(crate) use room::{apply_settings as apply_room_settings, emote as room_emote, follow_pet as follow_room_pet, tap as room_tap};
+
+/// The members of the room as last published; the overlay window asks for it when it opens, since the
+/// event that created it was sent before its page could listen.
+#[tauri::command]
+pub(crate) fn online_room_snapshot(window: tauri::Window) -> Value {
+	if window.label() != STUDIO_LABEL && window.label() != room::ROOM_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	let mut snapshot = room::snapshot();
+	snapshot["ok"] = json!(true);
+	snapshot
+}
+
+/// The studio's equipped skin and accessory (catalog asset ids, 0 for no accessory): remembered, and sent
+/// to the room as `rc { b, c }`.
+#[tauri::command]
+pub(crate) fn online_room_looks(window: tauri::Window, character: i64, accessory: i64) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	room::looks(character, accessory);
+	json!({ "ok": true })
+}
 
 /// Connects the room socket for the room the server just created or let this user into.
 #[tauri::command]

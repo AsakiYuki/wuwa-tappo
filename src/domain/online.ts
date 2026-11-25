@@ -1,3 +1,4 @@
+import type { BagEntry } from "./profile.js"
 import type { CatalogItem } from "./types.js"
 
 /*
@@ -47,7 +48,7 @@ export function parseUser(raw: unknown): OnlineUser | null {
 	const nickname = typeof record.nickname === "string" ? record.nickname.trim().slice(0, 64) : ""
 	return {
 		userId: String(id).slice(0, 32),
-		id: typeof record.id === "number" && Number.isSafeInteger(record.id) && record.id > 0 ? record.id : null,
+		id: positiveInteger(record.id),
 		roomNo:
 			cleanRoomNumber(
 				typeof record.room_no === "string" || typeof record.room_no === "number" ? String(record.room_no) : "",
@@ -248,4 +249,38 @@ export function appearanceBody(character: number, accessory: number | null, emot
 		accessory_asset_id: accessory !== null && valid(accessory) ? accessory : 0,
 		emote_asset_ids: unique,
 	}
+}
+
+/** A positive integer given as a number or as its decimal text; null for anything else. */
+function positiveInteger(value: unknown): number | null {
+	const number = typeof value === "string" && /^[0-9]{1,15}$/.test(value.trim()) ? Number(value.trim()) : value
+	return typeof number === "number" && Number.isSafeInteger(number) && number > 0 ? number : null
+}
+
+/**
+ * What the account's bag (`api/frontend/bags/list`) owns: every object with an `asset_id` (or `id`) in the
+ * reply, however it is grouped (the original groups them by rarity under `appearances`). The reply's
+ * exact shape is unconfirmed, so this walks it instead of expecting one. Null when the reply is large
+ * but nothing in it looks like an item, so a shape this does not know never empties the profile.
+ */
+export function parseBag(raw: unknown): BagEntry[] | null {
+	const found = new Map<number, number>()
+	const visit = (value: unknown, depth: number) => {
+		if (depth > 6 || !value || typeof value !== "object") return
+		if (Array.isArray(value)) {
+			for (const entry of value.slice(0, 5000)) visit(entry, depth + 1)
+			return
+		}
+		const record = value as Record<string, unknown>
+		const id = "appearances" in record ? null : positiveInteger(record.asset_id ?? record.id)
+		if (id !== null) {
+			const count = positiveInteger(record.count ?? record.num ?? record.number ?? record.quantity) ?? 1
+			found.set(id, Math.max(found.get(id) ?? 0, count))
+			return
+		}
+		for (const inner of Object.values(record)) visit(inner, depth + 1)
+	}
+	visit(raw, 0)
+	if (found.size === 0 && JSON.stringify(raw ?? null).length > 200) return null
+	return [...found].map(([assetId, count]) => ({ assetId, count }))
 }

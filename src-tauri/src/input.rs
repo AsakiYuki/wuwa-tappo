@@ -79,11 +79,14 @@ pub(crate) fn handle(app: &AppHandle, shared: &Shared, key: String, down: bool, 
 	if counted {
 		let tap = shared.backend.lock().unwrap().tap();
 		shared.state.lock().unwrap().counts = (tap["count"].clone(), tap["totalCount"].clone(), tap["dailyCount"].clone());
+		// A tap is news for the room: the others see this pet's hand move.
+		crate::online::room_tap(shared);
 		if tap["count"] == json!(0) {
 			// The counter wrapped: save right away and play the automatic emote, if any.
 			save_now(app, shared);
 			if let Some(emote) = tap["emote"].as_str() {
 				let _ = app.emit_to(PET_LABEL, "emote", emote);
+				crate::online::room_emote(shared, emote);
 			}
 		} else {
 			save_later(app, shared);
@@ -106,7 +109,8 @@ pub(crate) fn handle(app: &AppHandle, shared: &Shared, key: String, down: bool, 
 	};
 	let _ = app.emit_to(PET_LABEL, "input", message);
 	if let Some(emote) = hotkey_emote {
-		let _ = app.emit_to(PET_LABEL, "emote", emote);
+		let _ = app.emit_to(PET_LABEL, "emote", &emote);
+		crate::online::room_emote(shared, &emote);
 	}
 }
 

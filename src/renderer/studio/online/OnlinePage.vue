@@ -32,6 +32,7 @@ const {
 	roomMembers,
 	roomLink,
 	roomNotice,
+	bagNotice,
 } = session
 
 /** The server's cap on members per room (the original shows "n/20"). */
@@ -317,6 +318,7 @@ onBeforeUnmount(() => {
 					</div>
 				</div>
 
+				<p v-if="bagNotice" class="online-note">{{ bagNotice }}</p>
 				<div class="section-title"><h3>Chests</h3></div>
 				<div class="online-chests">
 					<button

@@ -27,10 +27,10 @@ After a successful call the client reconnects the socket with `rm = room_no`, wa
 | --- | --- | --- |
 | `rm` | `{ r: roomNo }`, ack | room snapshot (see below); also used to read `p` (public flag) |
 | `rd` | `{ r: roomNo }`, ack | desktop state of every member |
-| `rc` | none, or an object (this client's desktop change) | tell the room this client's appearance/state changed |
-| `re` | `{ e: emoteName }` | send an emote (inferred: `e` is an emote asset name) |
+| `rc` | none, or `{ b: skinAssetId, c?: accessoryAssetId }` | none: this client tapped (`syncAction`; the others receive `rc { a: "id|id" }` and move that pet's hand). With `b`/`c`: this client's outfit changed or it joined (`za` in the client). The catalog asset ids are the same ids `PUT api/frontend/user/me/appearance` takes |
+| `re` | `{ e: emote }` | send an emote when one is played while logged in (`Kp` -> `syncEmotion(e.id)`). The client sends its own emote id string, which this app's catalog does not carry; this app sends the catalog asset id (number), which the receiving side (`ru`) also accepts (unconfirmed for the server) |
 | `rl` | `{ r: roomNo }`, ack | leave the room |
-| `cr` | `{ num: n }`, ack | click report (inferred from the name and the `click_num` of logout) |
+| `cr` | `{ num: n }`, ack | click report: the taps the server has not seen, sent right after joining and then every 30 s (`ln`/`On` in the client); the logout's `click_num` covers the rest |
 
 Acks are `{ c: code, d: data, message?, request_id? }`; success when `c` is 0 or 200 (same rule as REST).
 
@@ -54,8 +54,7 @@ Acks are `{ c: code, d: data, message?, request_id? }`; success when `c` is 0 or
 
 ## Not understood yet
 
-- The exact shape of `rc` when this client emits it, and of `d` (desktop state) beyond being compared with a
-  local action number.
+- `d` (desktop state) beyond being compared with a local action number (`idle`/`left`/`right`).
 - Value formats of `b`, `c` (asset ids vs names: the client maps them through its appearance catalog).
 - Whether the server enforces anything beyond the token in the handshake.
 

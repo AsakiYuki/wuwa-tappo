@@ -218,6 +218,8 @@ export interface RoomSocketMember {
 	state: "idle" | "left" | "right"
 	/** This user hid this member's pet (the eye in the member list). */
 	hidden: boolean
+	/** How many taps this member has made; it goes up on each, which moves the pet's hand. */
+	tap: number
 }
 
 export interface RoomMembersEvent {
@@ -229,7 +231,8 @@ export interface RoomMembersEvent {
 }
 
 export type RoomStatusEvent =
-	| { state: "connecting" | "connected" | "reconnecting" }
+	| { state: "connecting" | "connected" }
+	| { state: "reconnecting"; message: string }
 	| { state: "ended"; reason: "left" | "dismissed" | "kicked" | "forced" | "failed"; message: string }
 
 /** An emote another member played: an asset id (number) or an asset name. */
@@ -243,6 +246,10 @@ export interface OnlineAPI {
 	roomConnect(roomNo: string, selfId: number): Promise<{ ok: boolean; error?: string }>
 	/** Leaves the room on the socket and closes it. */
 	roomLeave(): Promise<{ ok: boolean }>
+	/** The members of the room as last published, for a page that opened after the event. */
+	roomSnapshot(): Promise<{ ok: boolean; error?: string } & Partial<RoomMembersEvent>>
+	/** Remembers the equipped skin and accessory (catalog asset ids, 0 for none) and tells the room. */
+	roomLooks(character: number, accessory: number): Promise<{ ok: boolean; error?: string }>
 	/** Shows or hides one member's pet on the desktop (local only). */
 	roomShowMember(userId: number, shown: boolean): Promise<{ ok: boolean; error?: string }>
 	/** The owner's actions on another member: kick them or hand the room over. */

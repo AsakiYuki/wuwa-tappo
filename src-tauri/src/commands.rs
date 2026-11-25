@@ -99,6 +99,7 @@ fn action_command(app: &AppHandle, shared: &Shared, name: &str, argument: &Value
 				return Some(Err("Emote not owned".into()));
 			}
 			let _ = app.emit_to(PET_LABEL, "emote", id);
+			crate::online::room_emote(shared, id);
 			done
 		}
 		"recenter" => {
@@ -134,7 +135,7 @@ fn action_command(app: &AppHandle, shared: &Shared, name: &str, argument: &Value
 			let Some(path) = target.and_then(|path| path.into_path().ok()) else {
 				return Some(Ok(json!("cancelled")));
 			};
-			let content = shared.backend.lock().unwrap().state_json();
+			let content = shared.backend.lock().unwrap().save_json();
 			Some(std::fs::write(path, content).map(|_| json!("exported")).map_err(|error| error.to_string()))
 		}
 		_ => None,

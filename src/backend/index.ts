@@ -5,6 +5,9 @@
  *
  * Every function takes and returns strings or plain values, so the Rust side never has to map
  * JavaScript objects. Errors from commands are returned as `{ ok: false, error }`, never thrown.
+ *
+ * There are two collections: the offline one and the online profile (src/domain/profile.ts). The
+ * `onlineMode` setting, which both share, says which one the pages see and the commands change.
  */
 import { registerTap } from "../domain/actions.js"
 import {
@@ -15,6 +18,7 @@ import {
 	patchSettings,
 	STATE_COMMANDS,
 } from "../domain/commands.js"
+import { loadOnlineProfile, saveBoth, shareSettings } from "../domain/profile.js"
 import { initial, normalize } from "../domain/state.js"
 import type { CatalogItem, CollectionState } from "../domain/types.js"
 
@@ -22,9 +26,13 @@ import type { CatalogItem, CollectionState } from "../domain/types.js"
 globalThis.structuredClone ??= (<T>(value: T): T => JSON.parse(JSON.stringify(value))) as typeof structuredClone
 
 let items: CatalogItem[] = []
-let state: CollectionState
+let offline: CollectionState
+let online: CollectionState
 
-/** Every item is unlocked when a profile is opened. */
+/** The collection in use: the online profile while online mode is on. */
+const current = () => (offline.settings.onlineMode ? online : offline)
+
+/** Every item is unlocked when an offline profile is opened. */
 function unlockEverything(next: CollectionState) {
 	for (const item of items) if (!next.owned[item.id]) next.owned[item.id] = 1
 	return next
@@ -35,7 +43,9 @@ const reply = (value: object) => JSON.stringify(value)
 const backend = {
 	init(catalogJson: string) {
 		items = JSON.parse(catalogJson).items
-		state = unlockEverything(initial(items))
+		offline = unlockEverything(initial(items))
+		online = initial(items)
+		shareSettings(offline, online)
 	},
 
 	/** Loads a save's text; returns false (keeping the current state) if it is not a valid save. */
@@ -47,33 +57,46 @@ const backend = {
 			return false
 		}
 		if (!isKnownSave(raw)) return false
-		state = unlockEverything(normalize(raw, items))
+		offline = unlockEverything(normalize(raw, items))
+		online = loadOnlineProfile(raw, items)
+		shareSettings(offline, online)
 		return true
 	},
 
-	state: () => JSON.stringify(state, null, 2),
+	/** What the pages see: the collection in use. */
+	state: () => JSON.stringify(current(), null, 2),
 
-	settings: () => JSON.stringify(state.settings),
+	/** What is written to collection.json: both collections. */
+	save: () => saveBoth(offline, online),
+
+	settings: () => JSON.stringify(offline.settings),
 
 	command(name: string, argumentJson: string): string {
 		try {
 			const argument = argumentJson ? JSON.parse(argumentJson) : null
-			assertOffline(state, name)
+			assertOffline(offline, name)
 			if (Object.hasOwn(STATE_COMMANDS, name)) {
-				const result = STATE_COMMANDS[name](state, items, argument) ?? null
+				const result = STATE_COMMANDS[name](current(), items, argument) ?? null
 				return reply({ ok: true, result })
 			}
 			switch (name) {
-				case "settings":
-					return reply({ ok: true, result: null, previousSettings: patchSettings(state, argument) })
+				case "settings": {
+					const previousSettings = patchSettings(offline, argument)
+					shareSettings(offline, online)
+					if (offline.settings.counterLimit !== null && online.count > offline.settings.counterLimit)
+						online.count = offline.settings.counterLimit
+					return reply({ ok: true, result: null, previousSettings })
+				}
 				case "import-data": {
 					// The argument is the chosen file's text.
 					const raw: unknown = JSON.parse(String(argument).replace(/^﻿/, ""))
-					state = importedState(raw, items, state)
+					offline = importedState(raw, items, offline)
+					shareSettings(offline, online)
 					return reply({ ok: true, result: "imported" })
 				}
 				case "reset-data":
-					state = initial(items)
+					offline = initial(items)
+					shareSettings(offline, online)
 					return reply({ ok: true, result: null })
 				default:
 					return reply({ ok: false, error: "Unknown command" })
@@ -85,15 +108,16 @@ const backend = {
 
 	/** Counts one tap; the emote to play, if any, comes back with the new counters. */
 	tap(): string {
+		const state = current()
 		const emote = registerTap(state, items)
 		return reply({ emote, count: state.count, totalCount: state.totalCount, dailyCount: state.dailyCount })
 	},
 
-	canPlayEmote: (id: string) => canPlayEmote(state, items, id),
+	canPlayEmote: (id: string) => canPlayEmote(current(), items, id),
 
 	/** Where the user dragged the pet, in logical pixels. */
 	setPetPosition(x: number, y: number) {
-		state.settings.petPosition = { x: Math.round(x), y: Math.round(y) }
+		offline.settings.petPosition = { x: Math.round(x), y: Math.round(y) }
 	},
 }
 

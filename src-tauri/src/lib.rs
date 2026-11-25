@@ -167,7 +167,7 @@ pub(crate) fn broadcast_status(app: &AppHandle, shared: &Shared) {
 }
 
 pub(crate) fn save_now(app: &AppHandle, shared: &Shared) -> bool {
-	let content = shared.backend.lock().unwrap().state_json();
+	let content = shared.backend.lock().unwrap().save_json();
 	match shared.store.save(&content) {
 		Ok(()) => true,
 		Err(error) => {
@@ -247,6 +247,8 @@ pub fn run() {
 			online::online_room_leave,
 			online::online_room_changed,
 			online::online_room_show_member,
+			online::online_room_snapshot,
+			online::online_room_looks,
 			online::online_room_member,
 			online::online_login_cancel,
 			pet::move_pet,

@@ -1,5 +1,6 @@
 import type { CatalogItem, CollectionState, RawCollection, Settings } from "./types.js"
 import { draw, equip, replaceEmote, synthesize } from "./actions.js"
+import { applyBag, type BagEntry } from "./profile.js"
 import { MAX_PRESETS, newPresetId, normalize, presetName, settings } from "./state.js"
 
 /*
@@ -54,6 +55,12 @@ export const STATE_COMMANDS: Record<string, StateCommand> = {
 
 	"preset-delete"(state, _items, id: string) {
 		state.presets = state.presets.filter(preset => preset.id !== id)
+	},
+
+	/** Online mode: the account's bag becomes what the online profile owns (see profile.ts). */
+	"online-bag": (state, items, entries: BagEntry[]) => {
+		if (!Array.isArray(entries) || entries.length > 5000) throw new Error("The bag is not a list")
+		applyBag(state, items, entries)
 	},
 
 	"unlock-all"(state, items) {

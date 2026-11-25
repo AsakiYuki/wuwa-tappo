@@ -12,6 +12,8 @@ import type { RoomEmoteEvent, RoomSocketMember } from "../../domain/types"
 const BLINK_INTERVAL_MS = 4200
 const BLINK_DURATION_MS = 180
 const EMOTE_MS = 2600
+/** How long a tap keeps a hand down. */
+const TAP_MS = 220
 /** Pets that fit the overlay (see OVERLAY_SIZE in room.rs). */
 const MAX_PETS = 6
 
@@ -22,6 +24,11 @@ const selfId = ref(0)
 const face = ref<1 | 2>(1)
 const emotes = ref<Record<number, { key: number; image: string }>>({})
 const emoteTimers = new Map<number, number>()
+/** The hand a member's last tap moved (2 left, 3 right), for a moment. */
+const tapHand = ref<Record<number, 2 | 3>>({})
+const tapTimers = new Map<number, number>()
+const nextHand = new Map<number, 2 | 3>()
+const lastTaps = new Map<number, number>()
 
 const byAsset = computed(() => new Map(items.value.map(item => [`${item.type}:${item.assetId}`, item])))
 
@@ -41,7 +48,7 @@ const pets = computed<RemotePet[]>(() => {
 		const character = byAsset.value.get(`character:${member.characterAssetId}`)
 		if (!character) continue
 		const layers = character.layers ?? {}
-		const hand = member.state === "left" ? 2 : member.state === "right" ? 3 : 1
+		const hand = tapHand.value[member.id] ?? (member.state === "left" ? 2 : member.state === "right" ? 3 : 1)
 		const part = member.partAssetId > 0 ? byAsset.value.get(`accessory:${member.partAssetId}`) : undefined
 		shown.push({
 			id: member.id,
@@ -55,6 +62,32 @@ const pets = computed<RemotePet[]>(() => {
 	}
 	return shown
 })
+
+/** A member whose tap count went up moved a hand: left, then right, then left again, each for a moment. */
+function noteTaps(list: RoomSocketMember[]) {
+	for (const member of list) {
+		const before = lastTaps.get(member.id)
+		lastTaps.set(member.id, member.tap)
+		if (before === undefined || member.tap === before) continue
+		const side = nextHand.get(member.id) ?? 2
+		nextHand.set(member.id, side === 2 ? 3 : 2)
+		window.clearTimeout(tapTimers.get(member.id))
+		tapHand.value = { ...tapHand.value, [member.id]: side }
+		tapTimers.set(
+			member.id,
+			window.setTimeout(() => {
+				const { [member.id]: _gone, ...rest } = tapHand.value
+				tapHand.value = rest
+			}, TAP_MS),
+		)
+	}
+}
+
+function setMembers(list: RoomSocketMember[], self: number) {
+	noteTaps(list)
+	members.value = list
+	selfId.value = self
+}
 
 function playEmote(event: RoomEmoteEvent) {
 	const emote =
@@ -76,10 +109,14 @@ function playEmote(event: RoomEmoteEvent) {
 let blinkTimer: number | undefined
 onMounted(() => {
 	api.online.onRoomMembers(event => {
-		members.value = event.members
-		selfId.value = event.selfId
+		setMembers(event.members, event.selfId)
 	})
 	api.online.onRoomEmote(playEmote)
+	// This window is created when the first member to show appears, after the event that told so.
+	void api.online.roomSnapshot().then(reply => {
+		if (!reply.ok || !reply.members) return
+		setMembers(reply.members, reply.selfId ?? 0)
+	})
 	void api.init().then(payload => (items.value = payload.items))
 	blinkTimer = window.setInterval(() => {
 		face.value = 2
@@ -89,6 +126,7 @@ onMounted(() => {
 onBeforeUnmount(() => {
 	window.clearInterval(blinkTimer)
 	emoteTimers.forEach(timer => window.clearTimeout(timer))
+	tapTimers.forEach(timer => window.clearTimeout(timer))
 })
 </script>
 
