@@ -5,9 +5,10 @@
 //! (`online.json`, next to the save but not inside it, so exporting a save cannot leak it) and added
 //! to requests by this side.
 //!
-//! Provenance: the host, the routes and the envelope (`{ code, msg | message, data }`, success when
-//! `code` is 0 or 200) come from the decompiled frontend (wuwa-tappo-frontend, build 1.0.5,
-//! `api/kuro.ts`). None of it has been confirmed against live traffic.
+//! Provenance: the host, the routes, the envelope (`{ code, message, data }`, success when `code` is
+//! 0 or 200), the `Authorization: Bearer` header, `X-BLM-FRID` and the logout on codes 10002/10003
+//! are from the real client's bundle (extracted-frontend `index-*.js`, build 1.0.5). Reply bodies of
+//! most routes are still unchecked against live traffic.
 //!
 //! To record real replies for checking the shapes the renderer expects, start the app with
 //! `WUWA_TAPPO_ONLINE_SAMPLES=1`: each reply's raw JSON is then written to `online-samples/` in the
@@ -171,20 +172,36 @@ fn take_token(mut data: Value) -> (Option<String>, Value) {
 	(token, data)
 }
 
+/// A fresh 32-hex-digit id for the `X-BLM-FRID` header, which the official client sets to a random
+/// UUID-like value on every request. Not a secret, so std's randomly seeded hasher is enough.
+fn request_id() -> String {
+	use std::hash::{BuildHasher, Hasher};
+	let hex = |salt: u64| {
+		let mut hasher = std::collections::hash_map::RandomState::new().build_hasher();
+		hasher.write_u64(salt);
+		format!("{:016x}", hasher.finish())
+	};
+	format!("{}{}", hex(1), hex(2))
+}
+
+/// Replies that mean the login token is no longer valid (the official client logs out on them).
+const AUTH_LOST_CODES: [i64; 2] = [10002, 10003];
+
 fn send(route: &Route, token: Option<&str>, body: &str) -> Result<(u16, String), String> {
 	let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(TIMEOUT)).http_status_as_error(false).build().into();
 	let url = format!("{API_HOST}/{}", route.path);
 	let bearer = token.map(|token| format!("Bearer {token}"));
+	let frid = request_id();
 	let mut response = if route.method == "GET" {
-		let mut request = agent.get(&url).header("Content-Type", "application/json");
-		if let (Some(token), Some(bearer)) = (token, &bearer) {
-			request = request.header("token", token).header("Authorization", bearer.as_str());
+		let mut request = agent.get(&url).header("Content-Type", "application/json").header("X-BLM-FRID", frid.as_str());
+		if let Some(bearer) = &bearer {
+			request = request.header("Authorization", bearer.as_str());
 		}
 		request.call()
 	} else {
-		let mut request = agent.post(&url).header("Content-Type", "application/json");
-		if let (Some(token), Some(bearer)) = (token, &bearer) {
-			request = request.header("token", token).header("Authorization", bearer.as_str());
+		let mut request = agent.post(&url).header("Content-Type", "application/json").header("X-BLM-FRID", frid.as_str());
+		if let Some(bearer) = &bearer {
+			request = request.header("Authorization", bearer.as_str());
 		}
 		request.send(body)
 	}
@@ -252,7 +269,13 @@ fn request(shared: &Shared, method: &str, path: &str, body: Value) -> Value {
 	save_sample(shared.store.directory(), route, &reply);
 	let envelope = match read_envelope(status, &reply) {
 		Ok(envelope) => envelope,
-		Err(error) => return fail(error),
+		Err(error) => {
+			let code = serde_json::from_str::<Value>(&reply).ok().and_then(|reply| reply["code"].as_i64());
+			if route.authenticated && code.is_some_and(|code| AUTH_LOST_CODES.contains(&code)) {
+				online.set_session(None, total_taps(shared));
+			}
+			return fail(error);
+		}
 	};
 
 	let (token, data) = take_token(payload(&envelope));
@@ -335,6 +358,14 @@ mod tests {
 		assert!(read_envelope(200, &long).unwrap_err().len() < 240, "a hostile message is bounded");
 		let envelope = json!({ "code": 0, "token": "t" });
 		assert_eq!(payload(&envelope), envelope, "no data: the whole reply, as the original client did");
+	}
+
+	#[test]
+	fn request_ids_are_32_hex_digits_and_differ() {
+		let (first, second) = (request_id(), request_id());
+		assert_eq!(first.len(), 32);
+		assert!(first.bytes().all(|byte| byte.is_ascii_hexdigit()));
+		assert_ne!(first, second);
 	}
 
 	#[test]
