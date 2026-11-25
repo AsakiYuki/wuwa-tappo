@@ -354,6 +354,11 @@ export async function memberAction(action: "kick" | "transfer", userId: number) 
 	if (!reply.ok) throw new Error(reply.error || "Could not send the request")
 }
 
+// A chest opened on the desktop put an item in the account's bag.
+window.petAPI.onChestOpened(() => {
+	if (user.value) void syncBag()
+})
+
 online.onRoomError(event => {
 	roomNotice.value = event.message
 })

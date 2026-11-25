@@ -241,6 +241,26 @@ export interface RoomEmoteEvent {
 	emote: number | string
 }
 
+export type ChestSide = "left" | "right"
+
+/** Online mode's two desktop chests as the app reports them (src-tauri/src/online/chest.rs). */
+export interface ChestClock {
+	loggedIn: boolean
+	/** The account has the clicks an open needs. */
+	eligible: boolean
+	/** Milliseconds until each chest is ready as of this message; null when the server's clock is unknown. */
+	left: number | null
+	right: number | null
+}
+
+export interface ChestReward {
+	assetId: number
+	name: string
+	type: string
+	rarity: unknown
+	side: ChestSide
+}
+
 export interface OnlineAPI {
 	/** Connects the room socket for a room the server just created or let this user into. */
 	roomConnect(roomNo: string, selfId: number): Promise<{ ok: boolean; error?: string }>
@@ -285,6 +305,9 @@ export interface PetAPI {
 	onStatus(callback: (status: AppStatus) => void): void
 	onPage(callback: (page: string) => void): void
 	onCursor(callback: (cursor: CursorMessage | null) => void): void
+	onChestClock(callback: (clock: ChestClock) => void): void
+	/** A chest was opened (from any window): the account's bag has a new item. */
+	onChestOpened(callback: (reward: ChestReward) => void): void
 	move(dx: number, dy: number): void
 	setHoverArea(area: HoverArea): void
 	resizeWindow(edge: ResizeEdge, dx: number, dy: number): void

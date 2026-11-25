@@ -18,6 +18,7 @@
 //! save folder (never the login replies, which carry the token). The samples hold account data;
 //! look before sharing one.
 
+mod chest;
 mod login;
 mod room;
 
@@ -436,6 +437,7 @@ pub(crate) async fn online_request(
 		.unwrap_or_else(|_| fail("The request failed")))
 }
 
+pub(crate) use chest::{open as chest_open, snapshot as chest_clock, start as start_chests};
 pub(crate) use login::{handle_url as handle_login_url, SCHEME as LOGIN_SCHEME};
 pub(crate) use room::{apply_settings as apply_room_settings, emote as room_emote, follow_pet as follow_room_pet, tap as room_tap};
 

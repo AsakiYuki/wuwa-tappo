@@ -8,8 +8,8 @@ use serde_json::{json, Value};
 use tauri::{AppHandle, Emitter};
 use tauri_plugin_dialog::DialogExt;
 
-/// The pet window may only open the studio, play emotes and report clicks.
-const PET_COMMANDS: [&str; 3] = ["tap", "emote", "open"];
+/// The pet window may only open the studio, play emotes, report clicks and use its two chests.
+const PET_COMMANDS: [&str; 5] = ["tap", "emote", "open", "chest", "chest-clock"];
 /// Saves are ~30 KB; anything far larger is not one, and is not read into memory.
 const MAX_IMPORT_BYTES: u64 = 8 * 1024 * 1024;
 
@@ -49,6 +49,20 @@ pub(crate) async fn command(
 	let shared = shared.inner().clone();
 	if window.label() == PET_LABEL && !PET_COMMANDS.contains(&name.as_str()) {
 		return Ok(json!({ "ok": false, "error": "Command not allowed from this window" }));
+	}
+	if name == "chest-clock" {
+		return Ok(json!({ "ok": true, "result": crate::online::chest_clock(&shared) }));
+	}
+	if name == "chest" {
+		let side = argument.as_str().unwrap_or("").to_string();
+		let (app, shared) = (app.clone(), shared.clone());
+		let result = tauri::async_runtime::spawn_blocking(move || crate::online::chest_open(&app, &shared, &side))
+			.await
+			.unwrap_or_else(|_| Err("The request failed".to_string()));
+		return Ok(match result {
+			Ok(result) => json!({ "ok": true, "result": result }),
+			Err(error) => json!({ "ok": false, "error": error }),
+		});
 	}
 	if let Some(result) = action_command(&app, &shared, &name, &argument) {
 		return Ok(match result {

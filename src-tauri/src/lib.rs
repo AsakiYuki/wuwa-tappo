@@ -296,6 +296,7 @@ pub fn run() {
 			overlay::start(&handle, &shared);
 			tray::create(&handle, &shared)?;
 			input::start(&handle, &shared);
+			online::start_chests(&handle, &shared);
 			// A fresh profile opens the studio.
 			let state = shared.backend.lock().unwrap().state();
 			let first_run =

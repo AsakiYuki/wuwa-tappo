@@ -18,6 +18,8 @@
 		onEmote: listen("emote"),
 		onStatus: listen("status"),
 		onCursor: listen("cursor"),
+		onChestClock: listen("chest-clock"),
+		onChestOpened: listen("chest-opened"),
 		resizeWindow: (edge, dx, dy) => void invoke("resize_studio_edge", { edge, dx, dy }),
 		move: (dx, dy) => void invoke("move_pet", { dx, dy }),
 		setHoverArea: area => void invoke("set_hover_area", { area }),

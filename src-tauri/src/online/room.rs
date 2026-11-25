@@ -7,8 +7,9 @@
 //! `{ a: userId, n: nickname, b: characterAssetId, c: accessoryAssetId (0 or "" for none), d: "idle" |
 //! "left" | "right" }`, a snapshot member `{ u, n, o, l }`.
 //!
-//! Socket.IO v5 over Engine.IO v4, WebSocket only, spoken by hand (`0{...}` open, `40` connect, `42`
-//! event, `43` ack, `2`/`3` ping/pong) on top of `tungstenite`, so the login token stays on this side.
+//! Socket.IO over Engine.IO 3 (what the original's socket.io-client 2.5.0 speaks; 4 is the fallback),
+//! WebSocket only, spoken by hand (`0{...}` open, `40` connect, `42` event, `43` ack, `2`/`3` ping/pong)
+//! on top of `tungstenite`, so the login token stays on this side.
 //! The reconnect delays are the original's. Remote pets are drawn by the `room` window (`web/room.html`),
 //! which follows the pet window; it exists only while there is someone to show.
 
