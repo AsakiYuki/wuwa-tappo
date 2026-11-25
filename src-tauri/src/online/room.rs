@@ -19,6 +19,7 @@ use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 use std::net::{TcpStream, ToSocketAddrs};
 use std::sync::mpsc::{channel, Receiver, Sender, TryRecvError};
+use std::sync::atomic::{AtomicU8, Ordering};
 use std::sync::{Mutex, OnceLock};
 use std::time::{Duration, Instant};
 use tauri::{AppHandle, Emitter, LogicalSize, PhysicalPosition, WebviewUrl, WebviewWindow, WebviewWindowBuilder};
@@ -318,10 +319,15 @@ fn set_read_timeout(socket: &mut Socket, timeout: Duration) {
 	}
 }
 
-fn socket_url(token: &str, room_no: &str) -> Result<url::Url, String> {
+/// The Engine.IO version the next connection speaks. The original bundles socket.io-client 2.5.0, which is
+/// Engine.IO 3 (the client pings, the server connects the namespace itself); 4 is the fallback should the
+/// server turn out to speak only that. A connection that dies before the room answered switches it.
+static EIO: AtomicU8 = AtomicU8::new(3);
+
+fn socket_url(token: &str, room_no: &str, eio: u8) -> Result<url::Url, String> {
 	let host = API_HOST.replacen("https://", "wss://", 1);
 	let mut url = url::Url::parse(&format!("{host}/socket.io/")).map_err(|error| error.to_string())?;
-	url.query_pairs_mut().append_pair("EIO", "4").append_pair("transport", "websocket").append_pair("token", token).append_pair("rm", room_no);
+	url.query_pairs_mut().append_pair("EIO", &eio.to_string()).append_pair("transport", "websocket").append_pair("token", token).append_pair("rm", room_no);
 	Ok(url)
 }
 
@@ -411,10 +417,21 @@ struct Connection<'a> {
 }
 
 fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome {
+	let eio = EIO.load(Ordering::Relaxed);
+	let outcome = session_with(connection, commands, eio);
+	if let Outcome::Dropped { was_ready: false, message } = &outcome {
+		let other = if eio == 3 { 4 } else { 3 };
+		EIO.store(other, Ordering::Relaxed);
+		eprintln!("room: Engine.IO {eio} failed before the room answered ({message}); next try uses {other}");
+	}
+	outcome
+}
+
+fn session_with(connection: &mut Connection, commands: &Receiver<Command>, eio: u8) -> Outcome {
 	let Some(token) = connection.shared.online.token() else {
 		return Outcome::Ended { reason: "failed", message: "Not logged in".into() };
 	};
-	let url = match socket_url(&token, connection.room_no) {
+	let url = match socket_url(&token, connection.room_no, eio) {
 		Ok(url) => url,
 		Err(message) => return Outcome::Ended { reason: "failed", message },
 	};
@@ -427,6 +444,9 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 	let mut was_ready = false;
 	let mut leaving_since: Option<Instant> = None;
 	let mut quiet_limit = Duration::from_secs(45);
+	let mut opened = false;
+	let mut ping_every = Duration::from_secs(25);
+	let mut next_ping = Instant::now() + ping_every;
 	let mut last_heard = Instant::now();
 	let mut next_report = Instant::now();
 	let (app, shared) = (connection.app, connection.shared);
@@ -486,6 +506,13 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 				emit_event!(Pending::Clicks(taps), "cr", json!({ "num": taps }));
 			}
 		}
+		// Engine.IO 3: the client pings and the server answers `3`.
+		if eio < 4 && opened && Instant::now() >= next_ping {
+			next_ping = Instant::now() + ping_every;
+			if let Err(message) = send(&mut socket, "2".into()) {
+				return Outcome::Dropped { message, was_ready };
+			}
+		}
 		if last_heard.elapsed() > quiet_limit {
 			return Outcome::Dropped { message: "The room connection went quiet".into(), was_ready };
 		}
@@ -501,8 +528,14 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 		match parse_packet(text.as_str()) {
 			Packet::Open { ping_interval, ping_timeout } => {
 				quiet_limit = Duration::from_millis(ping_interval.saturating_add(ping_timeout).saturating_add(5_000));
-				if let Err(message) = send(&mut socket, "40".into()) {
-					return Outcome::Dropped { message, was_ready };
+				ping_every = Duration::from_millis(ping_interval.clamp(1_000, 120_000));
+				next_ping = Instant::now() + ping_every;
+				opened = true;
+				// Engine.IO 4 clients connect the namespace; with 3 the server does it on its own.
+				if eio >= 4 {
+					if let Err(message) = send(&mut socket, "40".into()) {
+						return Outcome::Dropped { message, was_ready };
+					}
 				}
 			}
 			Packet::Ping => {
@@ -1041,10 +1074,10 @@ mod tests {
 
 	#[test]
 	fn the_socket_url_carries_the_token_and_the_room() {
-		let url = socket_url("t&k", "R1").unwrap();
+		let url = socket_url("t&k", "R1", 3).unwrap();
 		assert_eq!(url.scheme(), "wss");
 		assert_eq!(url.path(), "/socket.io/");
 		let pairs: Vec<_> = url.query_pairs().map(|(key, value)| (key.to_string(), value.to_string())).collect();
-		assert_eq!(pairs, [("EIO".into(), "4".into()), ("transport".into(), "websocket".into()), ("token".into(), "t&k".into()), ("rm".into(), "R1".into())]);
+		assert_eq!(pairs, [("EIO".into(), "3".into()), ("transport".into(), "websocket".into()), ("token".into(), "t&k".into()), ("rm".into(), "R1".into())]);
 	}
 }
