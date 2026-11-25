@@ -1,0 +1,7 @@
+{
+	"$schema": "../gen/schemas/desktop-schema.json",
+	"identifier": "room",
+	"description": "The room overlay only draws the other room members' pets from backend events. It calls the app's own `init` for the catalog and nothing else: no emitting events, no window, tray, menu, image or path APIs.",
+	"windows": ["room"],
+	"permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
+}

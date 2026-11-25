@@ -19,6 +19,7 @@
 //! look before sharing one.
 
 mod login;
+mod room;
 
 use crate::{setting_bool, settings, Shared, STUDIO_LABEL};
 use serde::{Deserialize, Serialize};
@@ -407,6 +408,7 @@ fn request(shared: &Shared, method: &str, path: &str, body: Value) -> Value {
 #[tauri::command]
 pub(crate) async fn online_request(
 	window: tauri::Window,
+	app: tauri::AppHandle,
 	shared: tauri::State<'_, Shared>,
 	method: String,
 	endpoint: String,
@@ -420,6 +422,7 @@ pub(crate) async fn online_request(
 	// A logout the page asks for also forgets the passport (the original's `logoutAccount`).
 	if endpoint == LOGOUT_PATH {
 		login::forget_passport(&shared);
+		room::disconnect(&app, &shared);
 	}
 	Ok(tauri::async_runtime::spawn_blocking(move || request(&shared, &method, &endpoint, body))
 		.await
@@ -427,6 +430,36 @@ pub(crate) async fn online_request(
 }
 
 pub(crate) use login::{handle_url as handle_login_url, SCHEME as LOGIN_SCHEME};
+pub(crate) use room::{apply_settings as apply_room_settings, follow_pet as follow_room_pet};
+
+/// Connects the room socket for the room the server just created or let this user into.
+#[tauri::command]
+pub(crate) fn online_room_connect(window: tauri::Window, app: tauri::AppHandle, shared: tauri::State<Shared>, room_no: String, self_id: i64) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	login::reply(room::connect(&app, &shared, &room_no, self_id))
+}
+
+/// Leaves the room on the socket and closes it.
+#[tauri::command]
+pub(crate) fn online_room_leave(window: tauri::Window) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	room::leave();
+	json!({ "ok": true })
+}
+
+/// Tells the room this user's outfit changed (the server reads it from the account).
+#[tauri::command]
+pub(crate) fn online_room_changed(window: tauri::Window) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	room::looks_changed();
+	json!({ "ok": true })
+}
 
 fn open_in_browser(url: &str) -> Result<(), String> {
 	// Only the https login page built by `login::login_url` is ever passed here.

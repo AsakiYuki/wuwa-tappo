@@ -3,7 +3,7 @@ import { computed, onBeforeUnmount, ref, watch } from "vue"
 import type { ChestResult } from "../../../domain/online"
 import { itemForAsset } from "../../../domain/online"
 import { assetPath, itemName } from "../../shared/assets"
-import { items, state } from "../store"
+import { items, state, updateSettings } from "../store"
 import { toast } from "../toast"
 import { AGREEMENT_URL, CHEST_PLACES, PRIVACY_URL, SERVER_NAMES, STATUS_POLL_MS, type ChestPlace } from "./config"
 import * as session from "./session"
@@ -18,7 +18,7 @@ const roomNumber = ref("")
 const lastChest = ref<ChestResult | null>(null)
 
 const enabled = computed(() => state.value?.settings.onlineMode === true)
-const { busy, loggedIn, user, room, balance, pendingClicks, loginStage, loginRoles, loginError, loginSwitching } = session
+const { busy, loggedIn, user, room, balance, pendingClicks, loginStage, loginRoles, loginError, loginSwitching, roomMembers, roomLink, roomNotice } = session
 
 /* Role choice, as the original's dialog: first the server, then (when it has several) the character. */
 const serverId = ref("")
@@ -370,10 +370,44 @@ onBeforeUnmount(() => {
 							<button class="common-btn" @click="session.leaveRoom()">Leave</button>
 						</div>
 					</div>
-					<ul class="online-members">
-						<li v-for="(member, index) in room.members" :key="`${member.userId}-${index}`">
-							{{ member.nickname }}
-						</li>
+					<label class="online-check">
+						
+					<input
+							
+					type="checkbox"
+							
+					:checked="state?.settings.onlyShowMyPet === true"
+							
+					@change="updateSettings({ onlyShowMyPet: ($event.target as HTMLInputElement).checked })"
+						
+					/>
+						
+					Only Show My Desktop Pet
+					</label>
+					<p v-if="roomLink === 'connecting' || roomLink === 'reconnecting'" class="online-note">
+						
+					{{ roomLink === "connecting" ? "Connecting to the room…" : "Reconnecting to the room…" }}
+					</p>
+					<p v-if="roomNotice" class="online-note">{{ roomNotice }}</p>
+					<ul v-if="roomMembers.length > 0" class="online-members">
+						
+					<li v-for="member in roomMembers" :key="member.id" :style="{ opacity: member.online ? 1 : 0.55 }">
+							
+					{{ member.owner ? "👑 " : "" }}{{ member.nickname }}
+							
+					<span v-if="member.id === user?.id"> (you)</span>
+							
+					<span v-else-if="!member.online"> (offline)</span>
+						
+					</li>
+					</ul>
+					<ul v-else class="online-members">
+						
+					<li v-for="(member, index) in room.members" :key="`${member.userId}-${index}`">
+							
+					{{ member.nickname }}
+						
+					</li>
 					</ul>
 				</div>
 			</template>

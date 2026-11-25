@@ -29,6 +29,8 @@ url = "2"
 rquickjs = { version = "0.9", features = ["parallel"] }
 # Online mode's HTTP client (online.rs): blocking, rustls, no async runtime of its own.
 ureq = "3"
+# The room socket (online/room.rs): WebSocket client with TLS (rustls, the same provider as ureq).
+tungstenite = { version = "0.26", default-features = false, features = ["handshake", "rustls-tls-webpki-roots"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
 # StatusNotifierItem tray: unlike libappindicator (Tauri's tray), it reports clicks on the icon.

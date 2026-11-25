@@ -21,6 +21,8 @@ export function parseCount(value: unknown): number {
 
 export interface OnlineUser {
 	userId: string
+	/** The account's numeric `id`, which the room socket identifies members by (original: `userInfo.id`). */
+	id: number | null
 	nickname: string
 	/** `player_type` as sent; the original client only special-cases 2 and its meaning is unknown. */
 	playerType: number | null
@@ -43,6 +45,7 @@ export function parseUser(raw: unknown): OnlineUser | null {
 	const nickname = typeof record.nickname === "string" ? record.nickname.trim().slice(0, 64) : ""
 	return {
 		userId: String(id).slice(0, 32),
+		id: typeof record.id === "number" && Number.isSafeInteger(record.id) && record.id > 0 ? record.id : null,
 		nickname: nickname || "Rover",
 		playerType: Number.isInteger(record.player_type) ? (record.player_type as number) : null,
 		totalClicks: parseCount(record.total_click_count),

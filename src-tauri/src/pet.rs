@@ -142,6 +142,7 @@ pub(crate) fn place(app: &AppHandle, shared: &Shared, reset: bool) {
 	let _ = window.set_size(LogicalSize::new(size.0, size.1));
 	let position = position(app, &settings, size, reset);
 	let _ = window.set_position(position);
+	crate::online::follow_room_pet(app);
 	shared.backend.lock().unwrap().set_pet_position(position.x, position.y);
 	refresh_cache(shared);
 }
@@ -170,6 +171,7 @@ pub(crate) fn apply_settings(app: &AppHandle, shared: &Shared, previous: Option<
 		}
 	}
 	shared.state.lock().unwrap().pressed.clear();
+	crate::online::apply_room_settings(app, shared);
 	tray::refresh(app, shared);
 }
 
@@ -303,6 +305,7 @@ pub(crate) fn move_pet(app: AppHandle, sender: Window, shared: tauri::State<Shar
 		position.y.saturating_add(pointer_delta(dy, scale)),
 	);
 	let _ = window.set_position(next);
+	crate::online::follow_room_pet(&app);
 	let logical = next.to_logical::<f64>(scale);
 	shared.backend.lock().unwrap().set_pet_position(logical.x, logical.y);
 	save_later(&app, &shared);

@@ -48,6 +48,8 @@ export interface Settings {
 	autoStart: boolean
 	/** Talk to the Kuro Games server (see src/domain/online.ts). Off keeps the app fully offline. */
 	onlineMode: boolean
+	/** In a room, do not show the other members' pets on the desktop (the original's "Only Show My Desktop Pet"). */
+	onlyShowMyPet: boolean
 	monitor: number
 	lockDrag: boolean
 	hoverFade: boolean
@@ -201,7 +203,47 @@ export type OnlineLoginEvent =
 	| { stage: "done" }
 	| { stage: "failed"; message: string; restart: boolean }
 
+/** A member of the room the app is connected to, as the room socket reports them (src-tauri/src/online/room.rs). */
+export interface RoomSocketMember {
+	/** The server's numeric user id. */
+	id: number
+	nickname: string
+	owner: boolean
+	online: boolean
+	/** Catalog `assetId` of the character skin; 0 until the server has told. */
+	characterAssetId: number
+	/** Catalog `assetId` of the accessory; 0 for none. */
+	partAssetId: number
+	/** Which hand is pressed: "idle", "left" or "right". */
+	state: "idle" | "left" | "right"
+}
+
+export interface RoomMembersEvent {
+	members: RoomSocketMember[]
+	/** The logged-in user's own id (their pet is not drawn again as a remote one). */
+	selfId: number
+}
+
+export type RoomStatusEvent =
+	| { state: "connecting" | "connected" | "reconnecting" }
+	| { state: "ended"; reason: "left" | "dismissed" | "kicked" | "forced" | "failed"; message: string }
+
+/** An emote another member played: an asset id (number) or an asset name. */
+export interface RoomEmoteEvent {
+	memberId: number
+	emote: number | string
+}
+
 export interface OnlineAPI {
+	/** Connects the room socket for a room the server just created or let this user into. */
+	roomConnect(roomNo: string, selfId: number): Promise<{ ok: boolean; error?: string }>
+	/** Leaves the room on the socket and closes it. */
+	roomLeave(): Promise<{ ok: boolean }>
+	/** Tells the room the outfit changed, after it was saved to the account. */
+	roomChanged(): Promise<{ ok: boolean }>
+	onRoomMembers(callback: (event: RoomMembersEvent) => void): void
+	onRoomStatus(callback: (event: RoomStatusEvent) => void): void
+	onRoomEmote(callback: (event: RoomEmoteEvent) => void): void
 	/** Opens the Kuro login page in the browser; the outcome arrives through `onLogin`. */
 	loginStart(lang?: string): Promise<{ ok: boolean; error?: string }>
 	loginChoose(index: number): Promise<{ ok: boolean; error?: string }>

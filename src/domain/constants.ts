@@ -10,6 +10,7 @@ const DEFAULTS: Settings = {
 	touchpadInput: false,
 	autoStart: false,
 	onlineMode: false,
+	onlyShowMyPet: false,
 	monitor: 0,
 	lockDrag: false,
 	hoverFade: false,

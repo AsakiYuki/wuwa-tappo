@@ -11,8 +11,10 @@ const securityPolicy = [
 	"connect-src ipc: http://ipc.localhost",
 ].join("; ")
 
-for (const page of ["pet", "studio"]) {
-	const title = page === "pet" ? "Desktop Pet" : "Studio & Collection"
+const TITLES = { pet: "Desktop Pet", studio: "Studio & Collection", room: "Room Pets" }
+
+for (const page of Object.keys(TITLES)) {
+	const title = TITLES[page]
 	const document = `<!doctype html>
 <html lang="en">
   <head>

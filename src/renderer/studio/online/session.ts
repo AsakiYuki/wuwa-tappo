@@ -15,8 +15,9 @@ import {
 	type OnlineRoom,
 	type OnlineUser,
 } from "../../../domain/online"
-import type { OnlineLoginRole } from "../../../domain/types"
+import type { OnlineLoginRole, RoomSocketMember } from "../../../domain/types"
 import type { OnlineReply } from "../../shared/types"
+import { items, state } from "../store"
 import {
 	CHEST_PLACES,
 	CODE_COOLDOWN_SECONDS,
@@ -42,6 +43,11 @@ export const pendingClicks = ref(0)
 export const spentClicks = ref(0)
 export const busy = ref(false)
 export const room = shallowRef<OnlineRoom | null>(null)
+/** The room's members as the room socket reports them (empty until it is connected). */
+export const roomMembers = shallowRef<RoomSocketMember[]>([])
+export const roomLink = ref<"idle" | "connecting" | "connected" | "reconnecting">("idle")
+/** Why the room socket could not be used or ended, for the page to show. */
+export const roomNotice = ref("")
 
 /** Where a browser login stands: nothing running, waiting for the callback/server, or choosing a role. */
 export const loginStage = ref<"idle" | "browser" | "waiting" | "choose">("idle")
@@ -114,6 +120,8 @@ export async function refreshStatus(): Promise<boolean> {
 		if (!status.loggedIn) {
 			user.value = null
 			room.value = null
+			roomMembers.value = []
+			roomLink.value = "idle"
 		}
 		return true
 	} catch {
@@ -186,6 +194,8 @@ export function logout() {
 			await refreshStatus()
 			user.value = null
 			room.value = null
+			roomMembers.value = []
+			roomLink.value = "idle"
 			spentClicks.value = 0
 		}
 	})
@@ -218,10 +228,45 @@ export function redeem(code: string) {
 	return exclusive(() => call("POST", "api/frontend/redeems/use", { code: clean }))
 }
 
+/** The equipped outfit as the server knows it: catalog asset ids. Null while the catalog is not loaded. */
+function currentLooks() {
+	const current = state.value
+	if (!current) return null
+	const asset = (id: string) => items.value.find(item => item.id === id)?.assetId
+	const character = asset(current.character)
+	if (!character) return null
+	return {
+		character,
+		accessory: current.accessory ? (asset(current.accessory) ?? null) : null,
+		emotes: current.emotes.map(asset).filter((id): id is number => typeof id === "number" && id > 0),
+	}
+}
+
+/**
+ * Opens the room socket for a room the server just let this user into. The outfit is saved to the account
+ * first, so the others see it (the server reads it from there); every failure here is only a notice, the
+ * room itself already exists.
+ */
+async function connectRoom(roomNo: string) {
+	roomNotice.value = ""
+	const looks = currentLooks()
+	const body = looks && appearanceBody(looks.character, looks.accessory, looks.emotes)
+	if (body) await call("PUT", "api/frontend/user/me/appearance", body).catch(() => undefined)
+	const id = user.value?.id
+	if (!id) {
+		roomNotice.value = "The account reply has no numeric id, so the other members' pets cannot be shown"
+		return
+	}
+	const reply = await online.roomConnect(roomNo, id)
+	if (!reply.ok) roomNotice.value = reply.error || "Could not connect to the room"
+	else roomLink.value = "connecting"
+}
+
 async function enter(endpoint: string, body: unknown) {
 	const parsed = parseRoom(await call("POST", endpoint, body))
 	if (!parsed) throw unexpected("room")
 	room.value = parsed
+	await connectRoom(parsed.roomNo)
 }
 
 export const createRoom = () => exclusive(() => enter("api/frontend/rooms", {}))
@@ -242,10 +287,31 @@ export function setRoomPublic(isPublic: boolean) {
 	})
 }
 
-/** Leaving is local only: the original client had no leave request. */
+/** Leaves the room: the socket says goodbye (`rl`) and closes; the pets disappear. */
 export function leaveRoom() {
+	void online.roomLeave()
 	room.value = null
+	roomMembers.value = []
+	roomLink.value = "idle"
 }
+
+online.onRoomMembers(event => {
+	roomMembers.value = event.members
+})
+
+online.onRoomStatus(event => {
+	if (event.state !== "ended") {
+		roomLink.value = event.state
+		return
+	}
+	roomLink.value = "idle"
+	roomMembers.value = []
+	// Leaving oneself is not news; being removed or the room ending is.
+	if (event.message) {
+		roomNotice.value = event.message
+		if (event.reason === "dismissed" || event.reason === "kicked" || event.reason === "forced") room.value = null
+	}
+})
 
 const positiveIds = (ids: number[]) => ids.every(id => Number.isSafeInteger(id) && id > 0)
 
