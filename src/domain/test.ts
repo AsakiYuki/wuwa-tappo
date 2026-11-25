@@ -534,8 +534,10 @@ test("Offline-only commands are refused in online mode and work offline", () => 
 
 test("Server users are validated and click balances never go negative or overflow", () => {
 	assert.equal(parseUser(null), null)
-	assert.equal(parseUser({ nickname: "x" }), null, "no user_id")
+	assert.equal(parseUser({ nickname: "x" }), null, "no id at all")
 	assert.equal(parseUser({ user_id: "  " }), null)
+	assert.equal(parseUser({ cuid: "C1", puid: "P1", player_id: 700000001, nickname: "N" })?.userId, "700000001", "a passport account has no user_id")
+	assert.equal(parseUser({ cuid: "C1", nickname: "N" })?.userId, "C1")
 	const user = parseUser({
 		user_id: 123456789,
 		nickname: "  ",

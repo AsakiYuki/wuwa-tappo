@@ -30,12 +30,16 @@ export interface OnlineUser {
 	consumedClicks: number
 }
 
-/** `api/frontend/user/me` (and the `user` of a login reply). Null if there is no usable `user_id`. */
+/** `api/frontend/user/me` (and the `user` of a login reply). Null if there is no usable id (`user_id`, else `player_id`, `cuid`, `puid`). */
 export function parseUser(raw: unknown): OnlineUser | null {
 	if (!raw || typeof raw !== "object") return null
 	const record = raw as Record<string, unknown>
-	const id = record.user_id
-	if ((typeof id !== "string" && typeof id !== "number") || String(id).trim() === "") return null
+	// A UID login's account has `user_id`; a Kuro passport account's `user/me` (original build 1.0.5, store
+	// `userInfo`) carries `cuid`, `puid`, `player_id` and `nickname` instead.
+	const id = [record.user_id, record.player_id, record.cuid, record.puid].find(
+		value => (typeof value === "string" || typeof value === "number") && String(value).trim() !== "",
+	)
+	if (id === undefined) return null
 	const nickname = typeof record.nickname === "string" ? record.nickname.trim().slice(0, 64) : ""
 	return {
 		userId: String(id).slice(0, 32),
