@@ -25,7 +25,7 @@ const isActive = (tab: StudioPage) => page.value === tab || PARENT_TAB[page.valu
 </script>
 
 <template>
-	<nav class="tab-bar">
+	<nav class="tab-bar" :class="{ 'tab-bar--compact': tabs.length > OFFLINE_TABS.length + 1 }">
 		<div class="tab-logo"></div>
 		<button
 			v-for="tab in tabs"
