@@ -187,8 +187,27 @@ export interface OnlineStatus {
 	pendingClicks: number
 }
 
+/** A role of the passport account, as the browser login lists it (no token, no passport data). */
+export interface OnlineLoginRole {
+	playerId: number
+	serverId: string
+	name: string
+}
+
+/** What the app reports while a browser login runs. */
+export type OnlineLoginEvent =
+	| { stage: "waiting" }
+	| { stage: "choose"; roles: OnlineLoginRole[] }
+	| { stage: "done" }
+	| { stage: "failed"; message: string }
+
 export interface OnlineAPI {
-	request<T = unknown>(method: "GET" | "POST", endpoint: string, body?: unknown): Promise<OnlineReply<T>>
+	/** Opens the Kuro login page in the browser; the outcome arrives through `onLogin`. */
+	loginStart(lang?: string): Promise<{ ok: boolean; error?: string }>
+	loginChoose(index: number): Promise<{ ok: boolean; error?: string }>
+	loginCancel(): Promise<{ ok: boolean }>
+	onLogin(callback: (event: OnlineLoginEvent) => void): void
+	request<T = unknown>(method: "GET" | "POST" | "PUT" | "DELETE", endpoint: string, body?: unknown): Promise<OnlineReply<T>>
 	status(): Promise<OnlineStatus>
 }
 

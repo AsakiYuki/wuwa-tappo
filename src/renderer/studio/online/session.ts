@@ -1,17 +1,21 @@
 import { computed, ref, shallowRef } from "vue"
 import {
+	appearanceBody,
 	cleanRedeemCode,
 	cleanRoomNumber,
 	clickBalance,
 	isValidCode,
 	isValidUid,
 	parseChestResult,
+	parsePresetList,
 	parseRoom,
 	parseUser,
 	type ChestResult,
+	type OnlinePreset,
 	type OnlineRoom,
 	type OnlineUser,
 } from "../../../domain/online"
+import type { OnlineLoginRole } from "../../../domain/types"
 import type { OnlineReply } from "../../shared/types"
 import { CHEST_PLACES, type ChestPlace } from "./config"
 
@@ -32,12 +36,17 @@ export const spentClicks = ref(0)
 export const busy = ref(false)
 export const room = shallowRef<OnlineRoom | null>(null)
 
+/** Where a browser login stands: nothing running, waiting for the callback/server, or choosing a role. */
+export const loginStage = ref<"idle" | "browser" | "waiting" | "choose">("idle")
+export const loginRoles = shallowRef<OnlineLoginRole[]>([])
+export const loginError = ref("")
+
 export const balance = computed(() => clickBalance(user.value, spentClicks.value, pendingClicks.value))
 
 const unexpected = (what: string) =>
 	new Error(`The server's ${what} reply was not in the expected format (see "Online" in the README)`)
 
-async function call<T>(method: "GET" | "POST", endpoint: string, body?: unknown): Promise<T> {
+async function call<T>(method: "GET" | "POST" | "PUT" | "DELETE", endpoint: string, body?: unknown): Promise<T> {
 	const reply: OnlineReply<T> = await online.request<T>(method, endpoint, body)
 	if (!reply.ok) throw new Error(reply.error || "The request failed")
 	return reply.data as T
@@ -179,4 +188,92 @@ export function setRoomPublic(isPublic: boolean) {
 /** Leaving is local only: the original client had no leave request. */
 export function leaveRoom() {
 	room.value = null
+}
+
+const positiveIds = (ids: number[]) => ids.every(id => Number.isSafeInteger(id) && id > 0)
+
+/** The account's presets on the server (not merged into the studio's own presets). */
+export function listPresets(): Promise<OnlinePreset[]> {
+	return exclusive(async () => {
+		const presets = parsePresetList(await call("GET", "api/frontend/presets"))
+		if (!presets) throw unexpected("presets")
+		return presets
+	})
+}
+
+export function createPreset(character: number, accessory: number | null, emotes: number[]) {
+	const body = appearanceBody(character, accessory, emotes)
+	if (!body) throw new Error("Pick a character first")
+	return exclusive(() => call("POST", "api/frontend/presets", body))
+}
+
+export function deletePreset(presetId: number) {
+	if (!Number.isSafeInteger(presetId) || presetId < 0) throw new Error("Unknown preset")
+	return exclusive(() => call("DELETE", "api/frontend/presets", { preset_id: presetId }))
+}
+
+/** Tells the server which outfit and emotes the account wears (what other room members see). */
+export function saveAppearance(character: number, accessory: number | null, emotes: number[]) {
+	const body = appearanceBody(character, accessory, emotes)
+	if (!body) throw new Error("Pick a character first")
+	return exclusive(() => call("PUT", "api/frontend/user/me/appearance", body))
+}
+
+export function setFavorite(assetId: number, favorite: boolean) {
+	if (!positiveIds([assetId])) throw new Error("Unknown item")
+	return exclusive(() =>
+		call("POST", favorite ? "api/frontend/assets/favorites" : "api/frontend/assets/favorites/cancel", {
+			asset_id: assetId,
+		}),
+	)
+}
+
+/** Trades duplicates for a new item. `sameLevel` picks the original's same-rarity route over the next-rarity one. */
+export function synthesize(assetIds: number[], sameLevel: boolean) {
+	if (assetIds.length === 0 || assetIds.length > 20 || !positiveIds(assetIds)) throw new Error("Pick the items to trade")
+	return exclusive(() =>
+		call("POST", sameLevel ? "api/frontend/assets/synthesis/same-level" : "api/frontend/assets/synthesis", {
+			asset_ids: assetIds,
+		}),
+	)
+}
+
+/* ---- Browser (passport) login: the app holds the passport token; this only follows its progress. ---- */
+
+online.onLogin(event => {
+	loginError.value = ""
+	if (event.stage === "waiting") loginStage.value = "waiting"
+	else if (event.stage === "choose") {
+		loginRoles.value = event.roles
+		loginStage.value = "choose"
+	} else if (event.stage === "failed") {
+		loginStage.value = "idle"
+		loginRoles.value = []
+		loginError.value = event.message
+	} else {
+		loginStage.value = "idle"
+		loginRoles.value = []
+		void refreshAccount().catch(error => {
+			loginError.value = error instanceof Error ? error.message : String(error)
+		})
+	}
+})
+
+export async function startBrowserLogin() {
+	loginError.value = ""
+	const reply = await online.loginStart(navigator.language.split("-")[0] || "en")
+	if (!reply.ok) throw new Error(reply.error || "Could not start the login")
+	loginStage.value = "browser"
+}
+
+export async function chooseRole(index: number) {
+	const reply = await online.loginChoose(index)
+	if (!reply.ok) throw new Error(reply.error || "Could not choose the role")
+	loginStage.value = "waiting"
+}
+
+export async function cancelBrowserLogin() {
+	await online.loginCancel()
+	loginStage.value = "idle"
+	loginRoles.value = []
 }

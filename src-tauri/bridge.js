@@ -25,6 +25,10 @@
 		online: {
 			request: (method, endpoint, body) => invoke("online_request", { method, endpoint, body: body ?? null }),
 			status: () => invoke("online_status"),
+			loginStart: lang => invoke("online_login_start", { lang: lang ?? null }),
+			loginChoose: index => invoke("online_login_choose", { index }),
+			loginCancel: () => invoke("online_login_cancel"),
+			onLogin: listen("online-login"),
 		},
 	}
 

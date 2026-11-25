@@ -192,25 +192,57 @@ pub(crate) fn save_later(app: &AppHandle, shared: &Shared) {
 	});
 }
 
+/// Receives `wuwa-buddy://` links: the one that launched this copy, and later ones (macOS delivers
+/// them as events; Windows and Linux start a second copy, which the single-instance plugin forwards).
+fn login_links(app: &AppHandle, shared: &Shared) {
+	use tauri_plugin_deep_link::DeepLinkExt;
+	let links = app.deep_link();
+	// Windows and Linux installs register the scheme themselves; this also covers a build run from source.
+	#[cfg(any(windows, target_os = "linux"))]
+	if let Err(error) = links.register(online::LOGIN_SCHEME) {
+		eprintln!("online: could not register the {} link: {error}", online::LOGIN_SCHEME);
+	}
+	let (handle, state) = (app.clone(), shared.clone());
+	links.on_open_url(move |event| {
+		for url in event.urls() {
+			online::handle_login_url(&handle, &state, url.as_str());
+		}
+	});
+	if let Ok(Some(urls)) = links.get_current() {
+		for url in urls {
+			online::handle_login_url(app, shared, url.as_str());
+		}
+	}
+}
+
 /* ---------------------------------- run ---------------------------------- */
 
 pub fn run() {
 	let app = tauri::Builder::default()
 		// Must be the first plugin. A second launch brings this one's pet and studio forward
 		// instead of running a second copy that would overwrite the same save.
-		.plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+		.plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
 			if let Some(shared) = app.try_state::<Shared>() {
 				let shared = shared.inner().clone();
+				// A login callback also arrives as an argument of the second launch (Windows, Linux).
+				if let Some(url) = args.iter().find(|argument| argument.starts_with(online::LOGIN_SCHEME)) {
+					online::handle_login_url(app, &shared, url);
+					return;
+				}
 				pet::show(app);
 				studio::show(app, &shared, None);
 			}
 		}))
+		.plugin(tauri_plugin_deep_link::init())
 		.plugin(tauri_plugin_dialog::init())
 		.invoke_handler(tauri::generate_handler![
 			commands::init,
 			commands::command,
 			online::online_request,
 			online::online_status,
+			online::online_login_start,
+			online::online_login_choose,
+			online::online_login_cancel,
 			pet::move_pet,
 			pet::end_pet_drag,
 			pet::set_hover_area,
@@ -264,6 +296,7 @@ pub fn run() {
 				studio::show(&handle, &shared, None);
 			}
 			pet::start_cursor_feed(&handle, &shared);
+			login_links(&handle, &shared);
 			Ok(())
 		})
 		.build(tauri::generate_context!())

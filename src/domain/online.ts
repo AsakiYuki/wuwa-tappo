@@ -159,3 +159,79 @@ export function cleanRedeemCode(text: string): string | null {
 	const code = text.trim()
 	return /^[\x21-\x7e]{1,64}$/.test(code) ? code : null
 }
+
+export interface OnlinePresetEmote {
+	assetId: number
+	name: string
+	x: number | null
+	y: number | null
+}
+
+export interface OnlinePreset {
+	presetId: number
+	characterAssetId: number
+	accessoryAssetId: number | null
+	emotes: OnlinePresetEmote[] | null
+}
+
+const MAX_PRESETS = 200
+const MAX_PRESET_EMOTES = 16
+
+const finite = (value: unknown): number | null => {
+	const number = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN
+	return Number.isFinite(number) ? number : null
+}
+
+/**
+ * `api/frontend/presets` (GET). Port of `normalizePresetList` in the original bundle (build 1.0.5): an
+ * entry needs a positive `character_asset_id`; `preset_id` falls back to `id`, then the index.
+ * Offsets (`*_offset_x`, `*_my_offset_x`) are not read: the studio draws from its own catalog.
+ * Returns null when the reply is not a list or is implausibly long.
+ */
+export function parsePresetList(raw: unknown): OnlinePreset[] | null {
+	if (!Array.isArray(raw) || raw.length > MAX_PRESETS) return null
+	const presets: OnlinePreset[] = []
+	raw.forEach((entry, index) => {
+		if (!entry || typeof entry !== "object") return
+		const record = entry as Record<string, unknown>
+		const character = finite(record.character_asset_id)
+		if (character === null || character <= 0 || !Number.isSafeInteger(character)) return
+		const accessory = finite(record.accessory_asset_id)
+		const id = finite(record.preset_id ?? record.id)
+		let emotes: OnlinePresetEmote[] | null = null
+		if (Array.isArray(record.emotes)) {
+			emotes = []
+			for (const emote of record.emotes.slice(0, MAX_PRESET_EMOTES)) {
+				if (!emote || typeof emote !== "object") continue
+				const item = emote as Record<string, unknown>
+				const assetId = finite(item.asset_id)
+				if (assetId === null || assetId <= 0 || !Number.isSafeInteger(assetId)) continue
+				emotes.push({
+					assetId,
+					name: typeof item.asset_name === "string" ? item.asset_name.slice(0, 64) : "",
+					x: finite(item.x),
+					y: finite(item.y),
+				})
+			}
+		}
+		presets.push({
+			presetId: id !== null && Number.isSafeInteger(id) ? id : index,
+			characterAssetId: character,
+			accessoryAssetId: accessory !== null && accessory > 0 && Number.isSafeInteger(accessory) ? accessory : null,
+			emotes,
+		})
+	})
+	return presets
+}
+
+/** The body the server takes for appearance and preset saves: positive, unique, bounded asset ids. */
+export function appearanceBody(character: number, accessory: number | null, emotes: number[]) {
+	const valid = (id: unknown): id is number => typeof id === "number" && Number.isSafeInteger(id) && id > 0
+	if (!valid(character)) return null
+	const unique = [...new Set(emotes.filter(valid))].slice(0, MAX_PRESET_EMOTES)
+	return {
+		character_asset_id: character,
+		accessory_asset_id: accessory !== null && valid(accessory) ? accessory : 0,
+		emote_asset_ids: unique,
+	}
+}

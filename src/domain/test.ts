@@ -22,6 +22,8 @@ import {
 	isValidUid,
 	cleanRoomNumber,
 	parseChestResult,
+	appearanceBody,
+	parsePresetList,
 	parseRoom,
 	parseCount,
 	parseUser,
@@ -605,4 +607,25 @@ test("Rooms are parsed strictly and room numbers are checked before joining", ()
 	assert.equal(cleanRoomNumber(" ab12 "), "ab12")
 	assert.equal(cleanRoomNumber("../x"), null)
 	assert.equal(cleanRoomNumber(""), null)
+})
+
+test("Server presets are parsed like the original client and appearance bodies are bounded", () => {
+	assert.equal(parsePresetList({}), null)
+	assert.equal(parsePresetList(new Array(201).fill({})), null)
+	assert.deepEqual(
+		parsePresetList([
+			{ preset_id: 9, character_asset_id: "12", accessory_asset_id: 0, emotes: [{ asset_id: 5, asset_name: "Wave", x: 1 }, { asset_id: -1 }] },
+			{ character_asset_id: 0 },
+			null,
+			{ id: 3, character_asset_id: 4, accessory_asset_id: 8, emotes: null },
+			{ character_asset_id: 6 },
+		]),
+		[
+			{ presetId: 9, characterAssetId: 12, accessoryAssetId: null, emotes: [{ assetId: 5, name: "Wave", x: 1, y: null }] },
+			{ presetId: 3, characterAssetId: 4, accessoryAssetId: 8, emotes: null },
+			{ presetId: 4, characterAssetId: 6, accessoryAssetId: null, emotes: null },
+		],
+	)
+	assert.equal(appearanceBody(0, null, []), null)
+	assert.deepEqual(appearanceBody(2, null, [3, 3, -1, 4]), { character_asset_id: 2, accessory_asset_id: 0, emote_asset_ids: [3, 4] })
 })

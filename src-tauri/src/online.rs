@@ -6,14 +6,19 @@
 //! to requests by this side.
 //!
 //! Provenance: the host, the routes, the envelope (`{ code, message, data }`, success when `code` is
-//! 0 or 200), the `Authorization: Bearer` header, `X-BLM-FRID` and the logout on codes 10002/10003
-//! are from the real client's bundle (extracted-frontend `index-*.js`, build 1.0.5). Reply bodies of
+//! 0 or 200), the `Authorization: Bearer` header, `X-BLM-FRID`, `X-BLM-CID` (the `x-request-id` of the
+//! first successful reply, sent on every later request, empty before that; the client's first request
+//! is `api/common/activity-config`) and the logout on codes 10002/10003 are from the real client's
+//! bundle (extracted-frontend `index-*.js`, build 1.0.5). The browser-style headers (`Origin`,
+//! `Referer`, `User-Agent`, `Accept*`) are assumed; see `BROWSER_ORIGIN`. Reply bodies of
 //! most routes are still unchecked against live traffic.
 //!
 //! To record real replies for checking the shapes the renderer expects, start the app with
 //! `WUWA_TAPPO_ONLINE_SAMPLES=1`: each reply's raw JSON is then written to `online-samples/` in the
 //! save folder (never the login replies, which carry the token). The samples hold account data;
 //! look before sharing one.
+
+mod login;
 
 use crate::{setting_bool, settings, Shared, STUDIO_LABEL};
 use serde::{Deserialize, Serialize};
@@ -22,7 +27,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Duration;
 
-/// Where the decompiled frontend sends every request. Unconfirmed; this is the only place to change it.
+/// Where the original client sends every request (`ApiHost` in its bundle, build 1.0.5). This is the only place to change it.
 pub(crate) const API_HOST: &str = "https://api-wutheringwaves-wuwatappo.kurogames-global.com";
 const TIMEOUT: Duration = Duration::from_secs(15);
 const MAX_RESPONSE_BYTES: u64 = 2 * 1024 * 1024;
@@ -50,14 +55,16 @@ const fn route(method: &'static str, path: &'static str, token: TokenEffect, aut
 	Route { method, path, token, authenticated }
 }
 
-/// Every route the pages may call, and nothing else. The passport/SDK login (`api/auth/login`,
-/// `api/auth/player/query`) is not here: it needs tokens only the original app's login page produces.
+/// Every route the pages may call, and nothing else. The passport login (`api/auth/login`,
+/// `api/auth/player/query`) is not here: it needs the passport token, which only `login` (fed by the
+/// browser callback) holds, so the pages cannot call it.
 const ROUTES: &[Route] = &[
 	route("POST", "api/auth/uid-send-code", TokenEffect::None, false),
 	route("POST", "api/auth/uid-login", TokenEffect::Store, false),
 	route("GET", "api/frontend/user/me", TokenEffect::None, true),
 	route("GET", "api/frontend/user/renew-token", TokenEffect::Store, true),
 	route("POST", "api/frontend/user/logout", TokenEffect::Clear, true),
+	route("GET", CLIENT_ID_PATH, TokenEffect::None, false),
 	route("GET", "api/common/atlas", TokenEffect::None, true),
 	route("POST", "api/frontend/bags/list", TokenEffect::None, true),
 	route("POST", "api/frontend/chests/open", TokenEffect::None, true),
@@ -66,8 +73,21 @@ const ROUTES: &[Route] = &[
 	route("POST", "api/frontend/rooms/join", TokenEffect::None, true),
 	route("POST", "api/frontend/rooms/random-join", TokenEffect::None, true),
 	route("POST", "api/frontend/rooms/public", TokenEffect::None, true),
+	// Appearance, presets, favorites and synthesis: wrappers `updateUserAppearance`, `getPresetList`,
+	// `createPreset`, `deletePreset`, `favoriteAsset`, `unfavoriteAsset`, `synthesisAtlas`,
+	// `synthesisAtlasSame` in the original bundle (build 1.0.5). Reply shapes are unchecked.
+	route("PUT", "api/frontend/user/me/appearance", TokenEffect::None, true),
+	route("GET", "api/frontend/presets", TokenEffect::None, true),
+	route("POST", "api/frontend/presets", TokenEffect::None, true),
+	route("DELETE", "api/frontend/presets", TokenEffect::None, true),
+	route("POST", "api/frontend/assets/favorites", TokenEffect::None, true),
+	route("POST", "api/frontend/assets/favorites/cancel", TokenEffect::None, true),
+	route("POST", "api/frontend/assets/synthesis", TokenEffect::None, true),
+	route("POST", "api/frontend/assets/synthesis/same-level", TokenEffect::None, true),
 ];
 
+/// The route the original client calls at startup; its reply is what first gives it an `X-BLM-CID`.
+const CLIENT_ID_PATH: &str = "api/common/activity-config";
 const LOGIN_PATH: &str = "api/auth/uid-login";
 const LOGOUT_PATH: &str = "api/frontend/user/logout";
 
@@ -81,18 +101,23 @@ struct Saved {
 	/// The tap total when this session started or its clicks were last reported. Taps since then are
 	/// the clicks the server has not seen.
 	baseline: u64,
+	/// `X-BLM-CID`: the `x-request-id` of the first successful reply, kept for every later request.
+	#[serde(default)]
+	client_id: Option<String>,
 }
 
 pub(crate) struct Online {
 	file: PathBuf,
 	saved: Mutex<Saved>,
+	/// The browser login in progress (see `login`). Memory only.
+	flow: login::FlowState,
 }
 
 impl Online {
 	pub(crate) fn new(directory: &Path) -> Self {
 		let file = directory.join("online.json");
 		let saved = std::fs::read_to_string(&file).ok().and_then(|text| serde_json::from_str(&text).ok()).unwrap_or_default();
-		Online { file, saved: Mutex::new(saved) }
+		Online { file, saved: Mutex::new(saved), flow: Default::default() }
 	}
 
 	fn persist(&self, saved: &Saved) {
@@ -113,6 +138,19 @@ impl Online {
 
 	fn token(&self) -> Option<String> {
 		self.saved.lock().unwrap().token.clone()
+	}
+
+	fn client_id(&self) -> String {
+		self.saved.lock().unwrap().client_id.clone().unwrap_or_default()
+	}
+
+	/// Keeps the first usable id only, as the original client does.
+	fn remember_client_id(&self, id: &str) {
+		let mut saved = self.saved.lock().unwrap();
+		if saved.client_id.is_none() && valid_client_id(id) {
+			saved.client_id = Some(id.to_string());
+			self.persist(&saved);
+		}
 	}
 
 	fn set_session(&self, token: Option<String>, total_taps: u64) {
@@ -184,36 +222,93 @@ fn request_id() -> String {
 	format!("{}{}", hex(1), hex(2))
 }
 
+/// A server-issued request id that is safe to store and send back as a header value.
+fn valid_client_id(id: &str) -> bool {
+	!id.is_empty() && id.len() <= 128 && id.bytes().all(|byte| byte.is_ascii_graphic())
+}
+
+struct Reply {
+	status: u16,
+	text: String,
+	/// The reply's `x-request-id` header.
+	request_id: Option<String>,
+}
+
+/// What the original client's requests look like to the server. Its requests are axios/XHR calls made
+/// inside the Tauri WebView (no native HTTP plugin), so the server sees a browser's headers.
+/// Provenance: the header set is how XHR behaves; the values are ASSUMED, not captured: Tauri 2's
+/// Windows origin (`http://tauri.localhost`, `tauri.localhost` is in the app binary, the scheme is
+/// not confirmed) and a WebView2 (Edge) user agent whose version is a guess. Replace them with a
+/// captured request from the original client if the server turns out to check them.
+const BROWSER_ORIGIN: &str = "http://tauri.localhost";
+const BROWSER_USER_AGENT: &str =
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0";
+const BROWSER_ACCEPT: &str = "application/json, text/plain, */*";
+const BROWSER_ACCEPT_LANGUAGE: &str = "en-US,en;q=0.9";
+
 /// Replies that mean the login token is no longer valid (the official client logs out on them).
 const AUTH_LOST_CODES: [i64; 2] = [10002, 10003];
 
-fn send(route: &Route, token: Option<&str>, body: &str) -> Result<(u16, String), String> {
+fn send(route: &Route, token: Option<&str>, client_id: &str, body: &str) -> Result<Reply, String> {
 	let agent: ureq::Agent = ureq::Agent::config_builder().timeout_global(Some(TIMEOUT)).http_status_as_error(false).build().into();
 	let url = format!("{API_HOST}/{}", route.path);
 	let bearer = token.map(|token| format!("Bearer {token}"));
 	let frid = request_id();
-	let mut response = if route.method == "GET" {
-		let mut request = agent.get(&url).header("Content-Type", "application/json").header("X-BLM-FRID", frid.as_str());
-		if let Some(bearer) = &bearer {
-			request = request.header("Authorization", bearer.as_str());
+	let referer = format!("{BROWSER_ORIGIN}/");
+	let mut headers: Vec<(&str, &str)> = vec![
+		("Content-Type", "application/json"),
+		("Accept", BROWSER_ACCEPT),
+		("Accept-Language", BROWSER_ACCEPT_LANGUAGE),
+		("User-Agent", BROWSER_USER_AGENT),
+		("Origin", BROWSER_ORIGIN),
+		("Referer", referer.as_str()),
+		("X-BLM-CID", client_id),
+		("X-BLM-FRID", frid.as_str()),
+	];
+	if let Some(bearer) = &bearer {
+		headers.push(("Authorization", bearer.as_str()));
+	}
+	let mut response = match route.method {
+		"GET" => {
+			let mut request = agent.get(&url);
+			for (name, value) in &headers {
+				request = request.header(*name, *value);
+			}
+			request.call()
 		}
-		request.call()
-	} else {
-		let mut request = agent.post(&url).header("Content-Type", "application/json").header("X-BLM-FRID", frid.as_str());
-		if let Some(bearer) = &bearer {
-			request = request.header("Authorization", bearer.as_str());
+		// The original client's axios `delete` sends its payload as the request body.
+		"DELETE" => {
+			let mut request = agent.delete(&url).force_send_body();
+			for (name, value) in &headers {
+				request = request.header(*name, *value);
+			}
+			request.send(body)
 		}
-		request.send(body)
+		"PUT" => {
+			let mut request = agent.put(&url);
+			for (name, value) in &headers {
+				request = request.header(*name, *value);
+			}
+			request.send(body)
+		}
+		_ => {
+			let mut request = agent.post(&url);
+			for (name, value) in &headers {
+				request = request.header(*name, *value);
+			}
+			request.send(body)
+		}
 	}
 	.map_err(|error| format!("Could not reach the server: {error}"))?;
 	let status = response.status().as_u16();
+	let request_id = response.headers().get("x-request-id").and_then(|value| value.to_str().ok()).map(String::from);
 	let text = response
 		.body_mut()
 		.with_config()
 		.limit(MAX_RESPONSE_BYTES)
 		.read_to_string()
 		.map_err(|error| format!("Could not read the server's reply: {error}"))?;
-	Ok((status, text))
+	Ok(Reply { status, text, request_id })
 }
 
 fn save_sample(directory: &Path, route: &Route, body: &str) {
@@ -257,15 +352,33 @@ fn request(shared: &Shared, method: &str, path: &str, body: Value) -> Value {
 		return fail("The request is too large");
 	}
 
-	let result = send(route, token.as_deref(), &text);
+	if online.client_id().is_empty() && path != CLIENT_ID_PATH {
+		// Like the original client, whose first call gives it its X-BLM-CID. Best effort: a failure here
+		// must not block the call the page asked for.
+		if let Some(first) = find_route("GET", CLIENT_ID_PATH) {
+			if let Ok(reply) = send(first, None, "", "{}") {
+				if (200..300).contains(&reply.status) {
+					if let Some(id) = &reply.request_id {
+						online.remember_client_id(id);
+					}
+				}
+			}
+		}
+	}
+	let result = send(route, token.as_deref(), &online.client_id(), &text);
 	if route.token == TokenEffect::Clear {
 		// The session ends here even if the server could not be told.
 		online.set_session(None, total_taps(shared));
 	}
-	let (status, reply) = match result {
+	let Reply { status, text: reply, request_id } = match result {
 		Ok(reply) => reply,
 		Err(error) => return fail(error),
 	};
+	if (200..300).contains(&status) {
+		if let Some(id) = &request_id {
+			online.remember_client_id(id);
+		}
+	}
 	save_sample(shared.store.directory(), route, &reply);
 	let envelope = match read_envelope(status, &reply) {
 		Ok(envelope) => envelope,
@@ -309,6 +422,52 @@ pub(crate) async fn online_request(
 		.unwrap_or_else(|_| fail("The request failed")))
 }
 
+pub(crate) use login::{handle_url as handle_login_url, SCHEME as LOGIN_SCHEME};
+
+fn open_in_browser(url: &str) -> Result<(), String> {
+	// Only the https login page built by `login::login_url` is ever passed here.
+	if !url.starts_with("https://") {
+		return Err("Refusing to open a non-https address".into());
+	}
+	let mut command = if cfg!(windows) {
+		let mut command = std::process::Command::new("rundll32");
+		command.arg("url.dll,FileProtocolHandler");
+		command
+	} else if cfg!(target_os = "macos") {
+		std::process::Command::new("open")
+	} else {
+		std::process::Command::new("xdg-open")
+	};
+	command.arg(url).spawn().map(|_| ()).map_err(|error| format!("Could not open the browser: {error}"))
+}
+
+/// Starts the browser login: opens the Kuro login page. The result arrives as `online-login` events.
+#[tauri::command]
+pub(crate) fn online_login_start(window: tauri::Window, shared: tauri::State<Shared>, lang: Option<String>) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	login::reply(login::start(&shared, lang.as_deref().unwrap_or("en")).and_then(|url| open_in_browser(&url)))
+}
+
+/// Picks one of the roles an `online-login` `choose` event listed.
+#[tauri::command]
+pub(crate) fn online_login_choose(window: tauri::Window, app: tauri::AppHandle, shared: tauri::State<Shared>, index: usize) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	login::reply(login::choose(&app, &shared, index))
+}
+
+#[tauri::command]
+pub(crate) fn online_login_cancel(window: tauri::Window, shared: tauri::State<Shared>) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	login::cancel(&shared);
+	json!({ "ok": true })
+}
+
 /// `petAPI.online.status()`: whether a session exists and how many clicks the server has not seen.
 #[tauri::command]
 pub(crate) fn online_status(window: tauri::Window, shared: tauri::State<Shared>) -> Value {
@@ -339,7 +498,10 @@ mod tests {
 	fn only_listed_routes_with_their_method_are_allowed() {
 		assert!(find_route("POST", "api/frontend/chests/open").is_some());
 		assert!(find_route("GET", "api/frontend/chests/open").is_none(), "wrong method");
-		assert!(find_route("POST", "api/auth/login").is_none(), "the SDK login is not merged");
+		assert!(find_route("PUT", "api/frontend/user/me/appearance").is_some());
+		assert!(find_route("DELETE", "api/frontend/presets").is_some());
+		assert!(find_route("POST", "api/frontend/user/me/appearance").is_none(), "wrong method");
+		assert!(find_route("POST", "api/auth/login").is_none(), "the passport login is only reachable through login.rs");
 		assert!(find_route("POST", "api/frontend/chests/open/../../admin").is_none());
 		assert!(find_route("POST", "https://example.com/api/frontend/chests/open").is_none());
 		let mut seen = std::collections::HashSet::new();
@@ -366,6 +528,23 @@ mod tests {
 		assert_eq!(first.len(), 32);
 		assert!(first.bytes().all(|byte| byte.is_ascii_hexdigit()));
 		assert_ne!(first, second);
+	}
+
+	#[test]
+	fn the_client_id_is_the_first_usable_request_id_and_survives_a_restart() {
+		assert!(valid_client_id("00100016fd2f8856599fd8caa74d932a"));
+		assert!(!valid_client_id("") && !valid_client_id("has space") && !valid_client_id("line\nbreak") && !valid_client_id(&"x".repeat(129)));
+		let (online, directory) = online("client-id");
+		assert_eq!(online.client_id(), "", "empty before the first reply, as the original client sends it");
+		online.remember_client_id("bad id");
+		assert_eq!(online.client_id(), "");
+		online.remember_client_id("first");
+		online.remember_client_id("second");
+		assert_eq!(online.client_id(), "first");
+		online.set_session(Some("t".into()), 0);
+		online.set_session(None, 0);
+		assert_eq!(Online::new(&directory).client_id(), "first", "kept across login, logout and restart");
+		std::fs::remove_dir_all(directory).unwrap();
 	}
 
 	#[test]

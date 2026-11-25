@@ -134,7 +134,7 @@ For Home Manager or a plain profile, add `wuwa-tappo.overlays.default` and insta
 
 Everything above works offline, and offline stays the default. **Settings → General → Online Mode**
 adds an *Online* tab that talks to the Kuro Games Wuwa Tappo server: UID login (a confirmation code
-arrives in the game), chests paid with clicks, redeem codes and rooms. Turning it off removes the
+arrives in the game) or Kuro account login in the browser (the page returns through a `wuwa-buddy://` link), chests paid with clicks, redeem codes and rooms. Turning it off removes the
 tab and stops all network access; your `collection.json` is never changed by online mode, and an
 imported save cannot switch it on.
 
@@ -147,7 +147,8 @@ imported save cannot switch it on.
   each server reply is then saved to `online-samples/` in the save folder (login replies are
   skipped). Samples contain account data, so look before sharing one.
 - Not merged yet, because the decompiled client does not show the reply formats: syncing the server's
-  bag, appearance, presets, favorites and synthesis into the studio, and the passport (SDK) login.
+  bag, appearance, presets, favorites and synthesis into the studio (their routes and parsers exist, the
+  pages do not use them yet), and the realtime room socket ([docs/room-protocol.md](docs/room-protocol.md)).
 
 ## 🛠️ Development
 

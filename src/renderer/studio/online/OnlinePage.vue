@@ -18,7 +18,7 @@ const cooldown = ref(0)
 const lastChest = ref<ChestResult | null>(null)
 
 const enabled = computed(() => state.value?.settings.onlineMode === true)
-const { busy, loggedIn, user, room, balance, pendingClicks } = session
+const { busy, loggedIn, user, room, balance, pendingClicks, loginStage, loginRoles, loginError } = session
 
 /** Runs a user action and shows its error as a toast; returns whether it succeeded. */
 async function attempt(action: () => unknown, success?: string): Promise<boolean> {
@@ -102,6 +102,48 @@ onBeforeUnmount(() => {
 			<div class="section-title">
 				<h3>Online Account</h3>
 				<span v-if="loggedIn && user">UID {{ user.userId }}</span>
+			</div>
+
+			<div v-if="!loggedIn" class="online-card">
+				<p class="online-note">
+					Log in with your Kuro Games account: the login page opens in your browser and brings you back here.
+				</p>
+				<div v-if="loginStage === 'choose'" class="online-row">
+					<button
+						v-for="(role, index) in loginRoles"
+						:key="`${role.serverId}-${role.playerId}`"
+						class="common-btn"
+						type="button"
+						@click="attempt(() => session.chooseRole(index))"
+					>
+						{{ role.name || role.playerId }} ({{ role.serverId }})
+					</button>
+				</div>
+				<div class="online-row">
+					<button
+						class="common-btn"
+						type="button"
+						:disabled="loginStage === 'waiting'"
+						@click="attempt(() => session.startBrowserLogin())"
+					>
+						{{
+							loginStage === "browser"
+								? "Open the login page again"
+								: loginStage === "waiting"
+									? "Logging in…"
+									: "Log In with Kuro Account"
+						}}
+					</button>
+					<button
+						v-if="loginStage !== 'idle'"
+						class="common-btn"
+						type="button"
+						@click="attempt(() => session.cancelBrowserLogin())"
+					>
+						Cancel
+					</button>
+				</div>
+				<p v-if="loginError" class="online-note">{{ loginError }}</p>
 			</div>
 
 			<form v-if="!loggedIn" class="online-card" @submit.prevent="logIn">
