@@ -23,7 +23,7 @@ export interface OnlineUser {
 	userId: string
 	/** The account's numeric `id`, which the room socket identifies members by (original: `userInfo.id`). */
 	id: number | null
-	/** oom_no: the room the server still has this account in (empty for none). */
+	/** The room the server still has this account in (room_no); empty for none. */
 	roomNo: string
 	nickname: string
 	/** `player_type` as sent; the original client only special-cases 2 and its meaning is unknown. */

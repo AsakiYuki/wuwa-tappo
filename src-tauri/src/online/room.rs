@@ -110,7 +110,7 @@ fn desktop_entries<'a>(value: &'a Value, out: &mut Vec<&'a Value>, depth: u8) {
 #[derive(Default)]
 pub(super) struct Roster {
 	pub members: Vec<Member>,
-	/// The room's public flag (m answer's p), once known.
+	/// The room's public flag (the rm answer's p), once known.
 	pub public: Option<bool>,
 }
 
