@@ -1,14 +1,19 @@
 <script setup lang="ts">
 import type { StudioPage } from "../lib/collection"
-import { command, navigate, page } from "../store"
+import { computed } from "vue"
+import { command, navigate, page, state } from "../store"
 
-const tabs: Array<{ page: StudioPage; icon: string; label: string }> = [
+const OFFLINE_TABS: Array<{ page: StudioPage; icon: string; label: string }> = [
 	{ page: "collection", icon: "bag", label: "Bag" },
 	{ page: "atlas", icon: "atlas", label: "Atlas" },
 	{ page: "synthesis", icon: "exchange", label: "Synthesis" },
 	{ page: "draw", icon: "room", label: "Chests" },
-	{ page: "settings", icon: "setting", label: "Settings" },
 ]
+const ONLINE_TAB = { page: "online" as StudioPage, icon: "toggle", label: "Online" }
+const SETTINGS_TAB = { page: "settings" as StudioPage, icon: "setting", label: "Settings" }
+
+/** The Online tab exists only while online mode is on. */
+const tabs = computed(() => [...OFFLINE_TABS, ...(state.value?.settings.onlineMode ? [ONLINE_TAB] : []), SETTINGS_TAB])
 
 /** Sub-pages keep their parent tab highlighted. */
 const PARENT_TAB: Partial<Record<StudioPage, StudioPage>> = {

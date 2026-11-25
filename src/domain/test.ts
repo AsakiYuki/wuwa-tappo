@@ -6,6 +6,18 @@ import * as actions from "./actions.js"
 import { STATE_COMMANDS, canPlayEmote, importedState, isKnownSave, patchSettings } from "./commands.js"
 import { RARITIES } from "./constants.js"
 import { initial, normalize, settings } from "./state.js"
+import {
+	cleanRedeemCode,
+	clickBalance,
+	itemForAsset,
+	isValidCode,
+	isValidUid,
+	cleanRoomNumber,
+	parseChestResult,
+	parseRoom,
+	parseCount,
+	parseUser,
+} from "./online.js"
 
 const core = { ...actions, RARITIES, initial, normalize, settings }
 const PROJECT_ROOT = path.resolve(__dirname, "..")
@@ -481,4 +493,94 @@ test("The pet's screen index and saved position are bounded", () => {
 	)
 	assert.equal(state.settings.monitor, 32)
 	assert.deepEqual(state.settings.petPosition, { x: 100_000, y: -100_000 })
+})
+
+test("Online mode is off by default and an imported save never turns it on", () => {
+	const current = core.initial(items)
+	assert.equal(current.settings.onlineMode, false)
+	assert.equal(core.settings({ onlineMode: "yes" as any }).onlineMode, false, "only a boolean counts")
+	const imported = importedState({ version: 2, owned: {}, settings: { onlineMode: true } }, items, current)
+	assert.equal(imported.settings.onlineMode, false)
+	current.settings.onlineMode = true
+	const kept = importedState({ version: 2, owned: {}, settings: { onlineMode: false } }, items, current)
+	assert.equal(kept.settings.onlineMode, true, "the current choice is kept either way")
+	assert.equal(patchSettings(current, { onlineMode: false }).onlineMode, true)
+	assert.equal(current.settings.onlineMode, false)
+})
+
+test("Server users are validated and click balances never go negative or overflow", () => {
+	assert.equal(parseUser(null), null)
+	assert.equal(parseUser({ nickname: "x" }), null, "no user_id")
+	assert.equal(parseUser({ user_id: "  " }), null)
+	const user = parseUser({
+		user_id: 123456789,
+		nickname: "  ",
+		total_click_count: "1500",
+		total_click_consume: -4,
+		player_type: 2,
+	})!
+	assert.deepEqual(user, {
+		userId: "123456789",
+		nickname: "Rover",
+		playerType: 2,
+		totalClicks: 1500,
+		consumedClicks: 0,
+	})
+	assert.equal(parseCount("abc"), 0)
+	assert.equal(parseCount(1e300), Number.MAX_SAFE_INTEGER)
+	assert.equal(clickBalance(user, 500, 30), 1030)
+	assert.equal(clickBalance({ ...user, consumedClicks: 2000 }, 0, 0), 0, "overspent is zero, not negative")
+	assert.equal(
+		clickBalance({ ...user, totalClicks: Number.MAX_SAFE_INTEGER }, 0, Number.MAX_SAFE_INTEGER),
+		Number.MAX_SAFE_INTEGER,
+	)
+	assert.equal(clickBalance(null, 0, 99), 0, "no balance without an account")
+})
+
+test("Chest results are parsed strictly and matched to the catalog by asset id", () => {
+	assert.equal(parseChestResult({ rewards: "nope" }), null)
+	assert.equal(parseChestResult({ rewards: [{ id: "1" }] }), null, "ids must be integers")
+	const known = items[5]
+	const result = parseChestResult({
+		rewards: [
+			{ id: known.assetId, name: "N", type: "emote", rarity: "rare" },
+			{ id: -1, name: "?" },
+		],
+		remaining_clicks: 12,
+	})!
+	assert.equal(result.remainingClicks, 12)
+	assert.equal(itemForAsset(items, result.rewards[0].assetId), known)
+	assert.equal(itemForAsset(items, result.rewards[1].assetId), undefined)
+	assert.equal(parseChestResult({ rewards: [] })!.remainingClicks, null)
+	assert.equal(parseChestResult({ rewards: new Array(101).fill({ id: 1 }) }), null)
+})
+
+test("UID, confirmation code and redeem code input is checked before it is sent", () => {
+	assert.equal(isValidUid(" 101234567 "), true)
+	assert.equal(isValidUid("12345678"), false)
+	assert.equal(isValidUid("1234567890123456"), false, "too long to stay exact as a number")
+	assert.equal(isValidUid("12345678a"), false)
+	assert.equal(isValidCode("012345"), true)
+	assert.equal(isValidCode("12345"), false)
+	assert.equal(cleanRedeemCode("  ABC-123 "), "ABC-123")
+	assert.equal(cleanRedeemCode("two words"), null)
+	assert.equal(cleanRedeemCode(""), null)
+	assert.equal(cleanRedeemCode("x".repeat(65)), null)
+})
+
+test("Rooms are parsed strictly and room numbers are checked before joining", () => {
+	assert.equal(parseRoom({ members: [] }), null, "no room_no")
+	assert.equal(parseRoom({ room_no: "A1", members: "x" }), null)
+	assert.equal(parseRoom({ room_no: "A1", members: new Array(65).fill({}) }), null)
+	assert.deepEqual(parseRoom({ room_no: 4821, is_public: false, members: [{ user_id: 7, nickname: " " }, null] }), {
+		roomNo: "4821",
+		isPublic: false,
+		members: [
+			{ userId: "7", nickname: "Rover" },
+			{ userId: "", nickname: "Rover" },
+		],
+	})
+	assert.equal(cleanRoomNumber(" ab12 "), "ab12")
+	assert.equal(cleanRoomNumber("../x"), null)
+	assert.equal(cleanRoomNumber(""), null)
 })

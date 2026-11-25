@@ -39,6 +39,7 @@ const BOOLEAN_SETTINGS = [
 	"inputEnabled",
 	"touchpadInput",
 	"autoStart",
+	"onlineMode",
 	"lockDrag",
 	"hoverFade",
 	"showChest",

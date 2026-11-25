@@ -6,6 +6,7 @@ import DrawPage from "./components/draw/DrawPage.vue"
 import ResultsDialog from "./components/draw/ResultsDialog.vue"
 import PresetsPage from "./components/presets/PresetsPage.vue"
 import ResizeHandles from "./components/ResizeHandles.vue"
+import OnlinePage from "./online/OnlinePage.vue"
 import KeyboardLabelsPage from "./components/settings/KeyboardLabelsPage.vue"
 import SettingsPage from "./components/settings/SettingsPage.vue"
 import StudioTabBar from "./components/StudioTabBar.vue"
@@ -48,6 +49,7 @@ onBeforeUnmount(() => window.removeEventListener("resize", onResize))
 			<SynthesisPage :visible="isPage('synthesis')" />
 			<PresetsPage :visible="isPage('presets')" />
 			<template v-if="state">
+				<OnlinePage :visible="isPage('online')" />
 				<SettingsPage :visible="isPage('settings')" />
 				<KeyboardLabelsPage :visible="isPage('keyboard-labels')" />
 			</template>

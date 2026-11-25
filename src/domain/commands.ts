@@ -60,13 +60,14 @@ export function isKnownSave(raw: unknown): raw is RawCollection {
 }
 
 /**
- * The state an imported save becomes. A save file must never register a login item on its own, so
- * the current auto-start choice is kept.
+ * The state an imported save becomes. A save file must never register a login item or switch on
+ * network access on its own, so the current auto-start and online-mode choices are kept.
  */
 export function importedState(raw: unknown, items: CatalogItem[], current: CollectionState): CollectionState {
 	if (!isKnownSave(raw)) throw new Error("This file is not a valid Wuwa Tappo save")
 	const state = normalize(raw, items)
 	state.settings.autoStart = current.settings.autoStart
+	state.settings.onlineMode = current.settings.onlineMode
 	return state
 }
 

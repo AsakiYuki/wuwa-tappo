@@ -30,6 +30,7 @@ mod linux_input_access;
 mod linux_tray;
 #[cfg(target_os = "macos")]
 mod macos_input;
+mod online;
 mod overlay;
 mod pet;
 mod storage;
@@ -86,6 +87,7 @@ pub struct Core {
 	pub(crate) state: Mutex<AppState>,
 	pub(crate) backend: Mutex<Backend>,
 	pub(crate) store: Store,
+	pub(crate) online: online::Online,
 	save_scheduled: AtomicBool,
 	pub(crate) devices: Arc<InputDevices>,
 }
@@ -207,6 +209,8 @@ pub fn run() {
 		.invoke_handler(tauri::generate_handler![
 			commands::init,
 			commands::command,
+			online::online_request,
+			online::online_status,
 			pet::move_pet,
 			pet::end_pet_drag,
 			pet::set_hover_area,
@@ -236,6 +240,7 @@ pub fn run() {
 					studio: studio::StudioState::default(),
 				}),
 				backend: Mutex::new(backend),
+				online: online::Online::new(store.directory()),
 				store,
 				save_scheduled: AtomicBool::new(false),
 				devices: Arc::new(InputDevices::default()),

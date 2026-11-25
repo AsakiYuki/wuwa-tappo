@@ -46,6 +46,8 @@ export interface Settings {
 	inputEnabled: boolean
 	touchpadInput: boolean
 	autoStart: boolean
+	/** Talk to the Kuro Games server (see src/domain/online.ts). Off keeps the app fully offline. */
+	onlineMode: boolean
 	monitor: number
 	lockDrag: boolean
 	hoverFade: boolean
@@ -171,6 +173,25 @@ export interface HoverArea {
 	bottom: number
 }
 
+/** A reply of `petAPI.online.request`: the server's data, or the reason there is none. */
+export interface OnlineReply<T = unknown> {
+	ok: boolean
+	data?: T
+	error?: string
+}
+
+export interface OnlineStatus {
+	ok: boolean
+	loggedIn: boolean
+	/** Taps since login that the server has not been told about. */
+	pendingClicks: number
+}
+
+export interface OnlineAPI {
+	request<T = unknown>(method: "GET" | "POST", endpoint: string, body?: unknown): Promise<OnlineReply<T>>
+	status(): Promise<OnlineStatus>
+}
+
 export interface PetAPI {
 	platform: string
 	init(): Promise<InitPayload>
@@ -184,4 +205,5 @@ export interface PetAPI {
 	move(dx: number, dy: number): void
 	setHoverArea(area: HoverArea): void
 	resizeWindow(edge: ResizeEdge, dx: number, dy: number): void
+	online: OnlineAPI
 }

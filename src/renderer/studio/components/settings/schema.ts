@@ -41,6 +41,13 @@ export interface SwitchSpec {
 
 const SWITCHES: SwitchSpec[] = [
 	{ key: "autoStart", title: "Launch at Startup", tab: "general" },
+	{
+		key: "onlineMode",
+		title: "Online Mode",
+		tab: "general",
+		description:
+			"Connect to the Kuro Games server: log in with your UID, spend clicks on chests, redeem codes. Off keeps the app fully offline; your collection save is never touched either way.",
+	},
 	{ key: "lockDrag", title: "Lock Pet Position", tab: "pet", description: "Prevents moving the pet by dragging." },
 	{
 		key: "hoverFade",

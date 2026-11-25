@@ -21,6 +21,11 @@
 		resizeWindow: (edge, dx, dy) => void invoke("resize_studio_edge", { edge, dx, dy }),
 		move: (dx, dy) => void invoke("move_pet", { dx, dy }),
 		setHoverArea: area => void invoke("set_hover_area", { area }),
+		// Online mode (src-tauri/src/online.rs). Only the studio may call these.
+		online: {
+			request: (method, endpoint, body) => invoke("online_request", { method, endpoint, body: body ?? null }),
+			status: () => invoke("online_status"),
+		},
 	}
 
 	// Pressing the studio's title bar and moving the pointer a few pixels starts a native window drag.

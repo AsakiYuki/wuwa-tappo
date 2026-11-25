@@ -173,7 +173,10 @@ export async function draw(count: 1 | 10) {
 /* -------------------------------- wiring ------------------------------- */
 
 export function connectStudio() {
-	api.onState(next => (state.value = next))
+	api.onState(next => {
+		state.value = next
+		if (page.value === "online" && !next.settings.onlineMode) navigate("settings")
+	})
 	api.onStatus(status => {
 		hookStatus.value = status.hook
 		if (status.warning) toast(status.warning)
