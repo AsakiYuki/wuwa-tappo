@@ -27,6 +27,7 @@
 			status: () => invoke("online_status"),
 			loginStart: lang => invoke("online_login_start", { lang: lang ?? null }),
 			loginChoose: index => invoke("online_login_choose", { index }),
+			loginSwitch: () => invoke("online_login_switch"),
 			loginCancel: () => invoke("online_login_cancel"),
 			onLogin: listen("online-login"),
 		},

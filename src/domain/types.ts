@@ -197,14 +197,16 @@ export interface OnlineLoginRole {
 /** What the app reports while a browser login runs. */
 export type OnlineLoginEvent =
 	| { stage: "waiting" }
-	| { stage: "choose"; roles: OnlineLoginRole[] }
+	| { stage: "choose"; roles: OnlineLoginRole[]; switch: boolean }
 	| { stage: "done" }
-	| { stage: "failed"; message: string }
+	| { stage: "failed"; message: string; restart: boolean }
 
 export interface OnlineAPI {
 	/** Opens the Kuro login page in the browser; the outcome arrives through `onLogin`. */
 	loginStart(lang?: string): Promise<{ ok: boolean; error?: string }>
 	loginChoose(index: number): Promise<{ ok: boolean; error?: string }>
+	/** Lists the roles again with the last login's passport, to change character while logged in. */
+	loginSwitch(): Promise<{ ok: boolean; error?: string }>
 	loginCancel(): Promise<{ ok: boolean }>
 	onLogin(callback: (event: OnlineLoginEvent) => void): void
 	request<T = unknown>(method: "GET" | "POST" | "PUT" | "DELETE", endpoint: string, body?: unknown): Promise<OnlineReply<T>>

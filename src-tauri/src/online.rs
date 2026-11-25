@@ -417,6 +417,10 @@ pub(crate) async fn online_request(
 	}
 	let shared = shared.inner().clone();
 	let body = body.unwrap_or(Value::Null);
+	// A logout the page asks for also forgets the passport (the original's `logoutAccount`).
+	if endpoint == LOGOUT_PATH {
+		login::forget_passport(&shared);
+	}
 	Ok(tauri::async_runtime::spawn_blocking(move || request(&shared, &method, &endpoint, body))
 		.await
 		.unwrap_or_else(|_| fail("The request failed")))
@@ -443,11 +447,21 @@ fn open_in_browser(url: &str) -> Result<(), String> {
 
 /// Starts the browser login: opens the Kuro login page. The result arrives as `online-login` events.
 #[tauri::command]
-pub(crate) fn online_login_start(window: tauri::Window, shared: tauri::State<Shared>, lang: Option<String>) -> Value {
+pub(crate) fn online_login_start(window: tauri::Window, app: tauri::AppHandle, shared: tauri::State<Shared>, lang: Option<String>) -> Value {
 	if window.label() != STUDIO_LABEL {
 		return fail("Command not allowed from this window");
 	}
-	login::reply(login::start(&shared, lang.as_deref().unwrap_or("en")).and_then(|url| open_in_browser(&url)))
+	// `None`: a role choice was still waiting and has been shown again; no browser is opened.
+	login::reply(login::start(&app, &shared, lang.as_deref().unwrap_or("en")).and_then(|url| url.map_or(Ok(()), |url| open_in_browser(&url))))
+}
+
+/// Changes character without the browser: lists the roles again with the passport of the last login.
+#[tauri::command]
+pub(crate) fn online_login_switch(window: tauri::Window, app: tauri::AppHandle, shared: tauri::State<Shared>) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	login::reply(login::switch(&app, &shared))
 }
 
 /// Picks one of the roles an `online-login` `choose` event listed.

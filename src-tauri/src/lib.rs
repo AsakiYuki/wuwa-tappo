@@ -242,6 +242,7 @@ pub fn run() {
 			online::online_status,
 			online::online_login_start,
 			online::online_login_choose,
+			online::online_login_switch,
 			online::online_login_cancel,
 			pet::move_pet,
 			pet::end_pet_drag,

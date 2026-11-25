@@ -62,6 +62,10 @@ struct Ready {
 pub(super) struct Flow {
 	pending: Option<(String, Instant)>,
 	ready: Option<Ready>,
+	/// The passport identity of the last successful login, for switching character without the browser
+	/// (`switchForeignCharacter`). The original kept it in localStorage; here it stays in memory, so an app
+	/// restart asks for the browser login again. Forgotten on logout (`forget_passport`).
+	passport: Option<(Callback, i64)>,
 }
 
 impl Flow {
@@ -69,6 +73,20 @@ impl Flow {
 		self.pending = None;
 		self.ready = None;
 	}
+}
+
+/// `restartOverseasLoginOnAuthError`: the passport or login token is refused, so the login starts over.
+const RESTART_CODES: [i64; 3] = [10002, 10003, 10024];
+
+/// The server code in an error text built by `read_envelope` (`... (code N, HTTP M)` or `Error code: N (...)`).
+fn error_code(message: &str) -> Option<i64> {
+	let rest = message.rfind("(code ").map(|at| &message[at + 6..]).or_else(|| message.strip_prefix("Error code: "))?;
+	let digits: String = rest.chars().take_while(|ch| ch.is_ascii_digit() || *ch == '-').collect();
+	digits.parse().ok()
+}
+
+pub(super) fn forget_passport(shared: &Shared) {
+	shared.online.flow.lock().unwrap().passport = None;
 }
 
 pub(super) type FlowState = Mutex<Flow>;
@@ -163,13 +181,23 @@ fn login_body(callback: &Callback, channel_id: i64, role: Option<&Role>) -> Valu
 #[serde(tag = "stage", rename_all = "camelCase")]
 enum Event {
 	Waiting,
-	Choose { roles: Vec<Role> },
+	/// `switch`: the roles of an account that is already logged in (changing character).
+	Choose { roles: Vec<Role>, switch: bool },
 	Done,
-	Failed { message: String },
+	/// `restart`: the studio should open the browser login again (after a short pause).
+	Failed { message: String, restart: bool },
 }
 
 fn emit(app: &AppHandle, event: &Event) {
 	let _ = app.emit_to(STUDIO_LABEL, "online-login", event);
+}
+
+fn emit_failed(app: &AppHandle, shared: &Shared, message: String) {
+	let restart = error_code(&message).is_some_and(|code| RESTART_CODES.contains(&code));
+	if restart {
+		forget_passport(shared);
+	}
+	emit(app, &Event::Failed { message, restart });
 }
 
 fn call(route: &Route, shared: &Shared, body: &Value) -> Result<Value, String> {
@@ -186,6 +214,11 @@ fn call(route: &Route, shared: &Shared, body: &Value) -> Result<Value, String> {
 }
 
 fn finish(app: &AppHandle, shared: &Shared, callback: &Callback, channel_id: i64, role: Option<&Role>) {
+	// Changing character while logged in: the server is told the clicks it has not seen (the logout does
+	// that) before the new session replaces the old one.
+	if shared.online.token().is_some() {
+		let _ = super::request(shared, "POST", super::LOGOUT_PATH, Value::Null);
+	}
 	let result = call(&SDK_LOGIN, shared, &login_body(callback, channel_id, role)).and_then(|data| {
 		let (token, _) = take_token(data);
 		token.ok_or_else(|| "The server did not return a login token".to_string())
@@ -193,23 +226,67 @@ fn finish(app: &AppHandle, shared: &Shared, callback: &Callback, channel_id: i64
 	match result {
 		Ok(token) => {
 			shared.online.set_session(Some(token), total_taps(shared));
+			shared.online.flow.lock().unwrap().passport = Some((callback.clone(), channel_id));
 			emit(app, &Event::Done);
 		}
-		Err(message) => emit(app, &Event::Failed { message }),
+		Err(message) => emit_failed(app, shared, message),
 	}
 }
 
-/// Starts a login: the URL to open in the browser. Refused while online mode is off.
-pub(super) fn start(shared: &Shared, lang: &str) -> Result<String, String> {
+/// Asks for the account's roles and either logs in (no role) or lets the studio pick one.
+/// `switch`: the account is already logged in and an empty list is an error, not a login.
+fn present_roles(app: &AppHandle, shared: &Shared, callback: Callback, switch: bool) {
+	let query = json!({ "cuid": callback.cuid, "is_domestic": 0, "accessToken": callback.access_token, "cname": callback.user_name });
+	let players = call(&PLAYER_QUERY, shared, &query).and_then(|data| parse_players(&data).ok_or_else(|| "The server's role list was not in the expected format".to_string()));
+	match players {
+		Err(message) => emit_failed(app, shared, message),
+		// The original lists the roles whenever there is at least one, even a single one.
+		Ok((channel_id, roles)) if roles.is_empty() && !switch => finish(app, shared, &callback, channel_id, None),
+		Ok((_, roles)) if roles.is_empty() => emit_failed(app, shared, "This account has no character to switch to".into()),
+		Ok((channel_id, roles)) => {
+			let listed = roles.clone();
+			shared.online.flow.lock().unwrap().ready = Some(Ready { callback, channel_id, roles });
+			emit(app, &Event::Choose { roles: listed, switch });
+		}
+	}
+}
+
+/// Starts a login: the URL to open in the browser, or `None` when a role choice is still waiting (it is
+/// shown again, as `tryResumeOverseasRoleSelect` does). Refused while online mode is off.
+pub(super) fn start(app: &AppHandle, shared: &Shared, lang: &str) -> Result<Option<String>, String> {
 	if !setting_bool(&settings(shared), "onlineMode", false) {
 		return Err("Online mode is off".into());
+	}
+	{
+		let flow = shared.online.flow.lock().unwrap();
+		if let Some(ready) = &flow.ready {
+			emit(app, &Event::Choose { roles: ready.roles.clone(), switch: shared.online.token().is_some() });
+			return Ok(None);
+		}
 	}
 	let state = request_id();
 	let url = login_url(&state, lang)?;
 	let mut flow = shared.online.flow.lock().unwrap();
 	flow.clear();
 	flow.pending = Some((state, Instant::now()));
-	Ok(url)
+	Ok(Some(url))
+}
+
+/// `switchForeignCharacter`: lists the roles again with the passport token of the last login.
+pub(super) fn switch(app: &AppHandle, shared: &Shared) -> Result<(), String> {
+	if !setting_bool(&settings(shared), "onlineMode", false) {
+		return Err("Online mode is off".into());
+	}
+	if shared.online.token().is_none() {
+		return Err("Not logged in".into());
+	}
+	let Some((callback, _)) = shared.online.flow.lock().unwrap().passport.clone() else {
+		return Err("Log in with your Kuro account again to switch characters".into());
+	};
+	emit(app, &Event::Waiting);
+	let (app, shared) = (app.clone(), shared.clone());
+	std::thread::spawn(move || present_roles(&app, &shared, callback, true));
+	Ok(())
 }
 
 /// A URL the OS handed to the app. Anything that is not a callback for the pending login is ignored.
@@ -224,7 +301,7 @@ pub(crate) fn handle_url(app: &AppHandle, shared: &Shared, raw: &str) {
 			Some((state, started)) if state == callback.state && started.elapsed() <= PENDING_TTL => {}
 			_ => {
 				drop(flow);
-				emit(app, &Event::Failed { message: "The login link is invalid or has expired; start the login again".into() });
+				emit(app, &Event::Failed { message: "The login link is invalid or has expired; start the login again".into(), restart: false });
 				return;
 			}
 		}
@@ -232,19 +309,7 @@ pub(crate) fn handle_url(app: &AppHandle, shared: &Shared, raw: &str) {
 	studio::show(app, shared, Some("online".into()));
 	emit(app, &Event::Waiting);
 	let (app, shared) = (app.clone(), shared.clone());
-	std::thread::spawn(move || {
-		let query = json!({ "cuid": callback.cuid, "is_domestic": 0, "accessToken": callback.access_token, "cname": callback.user_name });
-		let players = call(&PLAYER_QUERY, &shared, &query).and_then(|data| parse_players(&data).ok_or_else(|| "The server's role list was not in the expected format".to_string()));
-		match players {
-			Err(message) => emit(&app, &Event::Failed { message }),
-			Ok((channel_id, roles)) if roles.len() <= 1 => finish(&app, &shared, &callback, channel_id, roles.first()),
-			Ok((channel_id, roles)) => {
-				let listed = roles.clone();
-				shared.online.flow.lock().unwrap().ready = Some(Ready { callback, channel_id, roles });
-				emit(&app, &Event::Choose { roles: listed });
-			}
-		}
-	});
+	std::thread::spawn(move || present_roles(&app, &shared, callback, false));
 }
 
 /// The studio's pick among the roles `Event::Choose` listed.
@@ -333,6 +398,16 @@ mod tests {
 		assert_eq!((body["source"].clone(), body["is_domestic"].clone(), body["userid"].clone(), body["cname"].clone()), (json!("sdk"), json!(0), json!("N"), json!("N")));
 		let none = login_body(&callback, 0, None);
 		assert_eq!((none["playerId"].clone(), none["serverId"].clone()), (json!(0), json!("0")));
+	}
+
+	#[test]
+	fn the_server_code_is_read_from_the_error_text_and_only_auth_codes_restart_the_login() {
+		assert_eq!(error_code("Login failed (code 10024, HTTP 200)"), Some(10024));
+		assert_eq!(error_code("Error code: 10003 (HTTP 200)"), Some(10003));
+		assert_eq!(error_code("Could not reach the server: timeout"), None);
+		assert_eq!(error_code("HTTP 500"), None);
+		assert!(RESTART_CODES.contains(&10002) && RESTART_CODES.contains(&10003) && RESTART_CODES.contains(&10024));
+		assert!(!RESTART_CODES.contains(&10031));
 	}
 
 	#[test]

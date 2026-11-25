@@ -17,7 +17,14 @@ import {
 } from "../../../domain/online"
 import type { OnlineLoginRole } from "../../../domain/types"
 import type { OnlineReply } from "../../shared/types"
-import { CHEST_PLACES, type ChestPlace } from "./config"
+import {
+	CHEST_PLACES,
+	CODE_COOLDOWN_SECONDS,
+	CODE_RATE_LIMIT_SECONDS,
+	LOGIN_ERROR_TEXT,
+	LOGIN_RESTART_DELAY_MS,
+	type ChestPlace,
+} from "./config"
 
 /*
  * The studio's online session. The login token never gets here: src-tauri/src/online.rs keeps it and
@@ -40,6 +47,40 @@ export const room = shallowRef<OnlineRoom | null>(null)
 export const loginStage = ref<"idle" | "browser" | "waiting" | "choose">("idle")
 export const loginRoles = shallowRef<OnlineLoginRole[]>([])
 export const loginError = ref("")
+/** The role choice is for changing character while logged in (no browser login behind it). */
+export const loginSwitching = ref(false)
+
+/* When the confirmation code may be asked for again (ms since the epoch; 0 = now). Kept across restarts of the page like the original's countdown. */
+const COOLDOWN_KEY = "wuwa-code-cooldown-end"
+function loadCooldownEnd(): number {
+	try {
+		const value = Number(localStorage.getItem(COOLDOWN_KEY))
+		return Number.isFinite(value) && value > Date.now() ? value : 0
+	} catch {
+		return 0
+	}
+}
+export const codeCooldownEnd = ref(loadCooldownEnd())
+function setCooldown(seconds: number) {
+	codeCooldownEnd.value = Date.now() + seconds * 1000
+	try {
+		localStorage.setItem(COOLDOWN_KEY, String(codeCooldownEnd.value))
+	} catch {
+		/* the countdown just does not survive a restart */
+	}
+}
+
+/** The server code inside an error text the app built (`... (code N, HTTP M)` or `Error code: N ...`). */
+export function errorCode(message: string): number | null {
+	const match = /\(code (-?\d+)[,)]/.exec(message) ?? /^Error code: (-?\d+)/.exec(message)
+	return match ? Number(match[1]) : null
+}
+
+/** The original's wording for the login-related codes; any other message stays as the server sent it. */
+function loginMessage(message: string): string {
+	const code = errorCode(message)
+	return (code !== null && LOGIN_ERROR_TEXT[code]) || message
+}
 
 export const balance = computed(() => clickBalance(user.value, spentClicks.value, pendingClicks.value))
 
@@ -95,9 +136,23 @@ export function refreshAccount() {
 	})
 }
 
+/** Asks for a confirmation code; starts the 60 s wait, or the 15 min wait when the server says "too many requests" (10031). */
 export function sendCode(uid: string) {
 	if (!isValidUid(uid)) throw new Error("Enter a valid UID (9 to 15 digits)")
-	return exclusive(() => call("POST", "api/auth/uid-send-code", { playerId: Number(uid.trim()) }))
+	if (codeCooldownEnd.value > Date.now()) throw new Error("Wait before asking for another code")
+	return exclusive(async () => {
+		try {
+			await call("POST", "api/auth/uid-send-code", { playerId: Number(uid.trim()) })
+		} catch (error) {
+			const message = error instanceof Error ? error.message : String(error)
+			if (errorCode(message) === 10031) {
+				setCooldown(CODE_RATE_LIMIT_SECONDS)
+				throw new Error("Too many requests; wait 15 minutes before asking for another code")
+			}
+			throw new Error(loginMessage(message))
+		}
+		setCooldown(CODE_COOLDOWN_SECONDS)
+	})
 }
 
 export function login(uid: string, code: string) {
@@ -107,6 +162,8 @@ export function login(uid: string, code: string) {
 		const data = await call<{ user?: unknown }>("POST", "api/auth/uid-login", {
 			playerId: Number(uid.trim()),
 			code: Number(code.trim()),
+		}).catch(error => {
+			throw new Error(loginMessage(error instanceof Error ? error.message : String(error)))
 		})
 		if (!(await refreshStatus()) || !loggedIn.value) throw unexpected("login")
 		// The login reply normally carries the account; if not, ask for it.
@@ -240,19 +297,33 @@ export function synthesize(assetIds: number[], sameLevel: boolean) {
 
 /* ---- Browser (passport) login: the app holds the passport token; this only follows its progress. ---- */
 
+let restartTimer: ReturnType<typeof setTimeout> | undefined
+
 online.onLogin(event => {
 	loginError.value = ""
 	if (event.stage === "waiting") loginStage.value = "waiting"
 	else if (event.stage === "choose") {
 		loginRoles.value = event.roles
+		loginSwitching.value = event.switch
 		loginStage.value = "choose"
 	} else if (event.stage === "failed") {
 		loginStage.value = "idle"
 		loginRoles.value = []
-		loginError.value = event.message
+		loginSwitching.value = false
+		loginError.value = loginMessage(event.message)
+		// The login was refused as expired or invalid: the original shows the message and starts over.
+		if (event.restart) {
+			clearTimeout(restartTimer)
+			restartTimer = setTimeout(() => {
+				void refreshStatus().then(() => {
+					if (!loggedIn.value) void startBrowserLogin().catch(() => undefined)
+				})
+			}, LOGIN_RESTART_DELAY_MS)
+		}
 	} else {
 		loginStage.value = "idle"
 		loginRoles.value = []
+		loginSwitching.value = false
 		void refreshAccount().catch(error => {
 			loginError.value = error instanceof Error ? error.message : String(error)
 		})
@@ -272,8 +343,18 @@ export async function chooseRole(index: number) {
 	loginStage.value = "waiting"
 }
 
+/** Changes character with the last login's passport (the app asks the server for the roles again). */
+export async function switchCharacter() {
+	loginError.value = ""
+	const reply = await online.loginSwitch()
+	if (!reply.ok) throw new Error(reply.error || "Could not switch character")
+	loginStage.value = "waiting"
+}
+
 export async function cancelBrowserLogin() {
+	clearTimeout(restartTimer)
 	await online.loginCancel()
 	loginStage.value = "idle"
 	loginRoles.value = []
+	loginSwitching.value = false
 }

@@ -5,20 +5,48 @@ import { itemForAsset } from "../../../domain/online"
 import { assetPath, itemName } from "../../shared/assets"
 import { items, state } from "../store"
 import { toast } from "../toast"
-import { CHEST_PLACES, CODE_COOLDOWN_SECONDS, STATUS_POLL_MS, type ChestPlace } from "./config"
+import { AGREEMENT_URL, CHEST_PLACES, PRIVACY_URL, SERVER_NAMES, STATUS_POLL_MS, type ChestPlace } from "./config"
 import * as session from "./session"
 
 const props = defineProps<{ visible: boolean }>()
 
 const uid = ref("")
 const code = ref("")
+const agreed = ref(false)
 const redeemCode = ref("")
 const roomNumber = ref("")
-const cooldown = ref(0)
 const lastChest = ref<ChestResult | null>(null)
 
 const enabled = computed(() => state.value?.settings.onlineMode === true)
-const { busy, loggedIn, user, room, balance, pendingClicks, loginStage, loginRoles, loginError } = session
+const { busy, loggedIn, user, room, balance, pendingClicks, loginStage, loginRoles, loginError, loginSwitching } = session
+
+/* Role choice, as the original's dialog: first the server, then (when it has several) the character. */
+const serverId = ref("")
+const roleIndex = ref(-1)
+const serverName = (id: string) => SERVER_NAMES[id] ?? id
+const servers = computed(() => [...new Set(loginRoles.value.map(role => role.serverId))])
+const serverRoles = computed(() =>
+	loginRoles.value.map((role, index) => ({ role, index })).filter(entry => entry.role.serverId === serverId.value),
+)
+watch(loginRoles, () => {
+	serverId.value = ""
+	roleIndex.value = -1
+})
+watch(serverId, () => {
+	roleIndex.value = serverRoles.value.length === 1 ? serverRoles.value[0].index : -1
+})
+const chosenRole = computed(() => (roleIndex.value >= 0 ? loginRoles.value[roleIndex.value] : undefined))
+const choosing = computed(() => loginStage.value === "choose" && loginRoles.value.length > 0)
+
+async function confirmRole() {
+	if (!serverId.value) return toast("Select a server")
+	if (!chosenRole.value) return toast("Select a character")
+	await attempt(() => session.chooseRole(roleIndex.value))
+}
+
+watch(loginError, message => {
+	if (message && loggedIn.value) toast(message)
+})
 
 /** Runs a user action and shows its error as a toast; returns whether it succeeded. */
 async function attempt(action: () => unknown, success?: string): Promise<boolean> {
@@ -32,21 +60,23 @@ async function attempt(action: () => unknown, success?: string): Promise<boolean
 	}
 }
 
-let cooldownTimer: ReturnType<typeof setInterval> | undefined
-function startCooldown() {
-	cooldown.value = CODE_COOLDOWN_SECONDS
-	clearInterval(cooldownTimer)
-	cooldownTimer = setInterval(() => {
-		cooldown.value -= 1
-		if (cooldown.value <= 0) clearInterval(cooldownTimer)
-	}, 1000)
-}
+/* The wait for another code comes from the session (60 s, or 15 min after "too many requests"). */
+const now = ref(Date.now())
+const cooldownTimer = setInterval(() => (now.value = Date.now()), 1000)
+const cooldown = computed(() => Math.max(0, Math.ceil((session.codeCooldownEnd.value - now.value) / 1000)))
+const cooldownLabel = computed(() =>
+	cooldown.value > 60
+		? `Sent ${Math.floor(cooldown.value / 60)}m ${cooldown.value % 60}s`
+		: `Resend in ${cooldown.value}s`,
+)
 
-async function sendCode() {
-	if (await attempt(() => session.sendCode(uid.value), "Confirmation code sent")) startCooldown()
+function sendCode() {
+	now.value = Date.now()
+	return attempt(() => session.sendCode(uid.value), "Confirmation code sent")
 }
 
 async function logIn() {
+	if (!agreed.value) return toast("Agree to the User Agreement and Privacy Policy first")
 	if (await attempt(() => session.login(uid.value, code.value), "Logged in")) code.value = ""
 }
 
@@ -104,21 +134,43 @@ onBeforeUnmount(() => {
 				<span v-if="loggedIn && user">UID {{ user.userId }}</span>
 			</div>
 
-			<div v-if="!loggedIn" class="online-card">
+			<form v-if="choosing" class="online-card" @submit.prevent="confirmRole">
+				<p class="online-note">
+					{{ loginSwitching ? "Choose the character to switch to." : "Choose the server and character to log in with." }}
+				</p>
+				<div class="online-row">
+					<select v-model="serverId" class="online-input" aria-label="Server" :disabled="busy">
+						<option value="" disabled>Select a server</option>
+						<option v-for="id in servers" :key="id" :value="id">{{ serverName(id) }}</option>
+					</select>
+					<select
+						v-if="serverRoles.length > 1"
+						v-model.number="roleIndex"
+						class="online-input"
+						aria-label="Character"
+						:disabled="busy"
+					>
+						<option :value="-1" disabled>Select a character</option>
+						<option v-for="entry in serverRoles" :key="entry.role.playerId" :value="entry.index">
+							{{ entry.role.name || "Player" }} ({{ entry.role.playerId }})
+						</option>
+					</select>
+				</div>
+				<p v-if="chosenRole" class="online-note">
+					{{ chosenRole.playerId }}<template v-if="chosenRole.name"> · {{ chosenRole.name }}</template>
+				</p>
+				<div class="online-row">
+					<button class="common-btn" type="submit" :disabled="busy || !chosenRole">Confirm</button>
+					<button class="common-btn" type="button" @click="attempt(() => session.cancelBrowserLogin())">
+						Cancel
+					</button>
+				</div>
+			</form>
+
+			<div v-if="!loggedIn && !choosing" class="online-card">
 				<p class="online-note">
 					Log in with your Kuro Games account: the login page opens in your browser and brings you back here.
 				</p>
-				<div v-if="loginStage === 'choose'" class="online-row">
-					<button
-						v-for="(role, index) in loginRoles"
-						:key="`${role.serverId}-${role.playerId}`"
-						class="common-btn"
-						type="button"
-						@click="attempt(() => session.chooseRole(index))"
-					>
-						{{ role.name || role.playerId }} ({{ role.serverId }})
-					</button>
-				</div>
 				<div class="online-row">
 					<button
 						class="common-btn"
@@ -146,7 +198,7 @@ onBeforeUnmount(() => {
 				<p v-if="loginError" class="online-note">{{ loginError }}</p>
 			</div>
 
-			<form v-if="!loggedIn" class="online-card" @submit.prevent="logIn">
+			<form v-if="!loggedIn && !choosing" class="online-card" @submit.prevent="logIn">
 				<p class="online-note">Log in with your in-game UID. A confirmation code is sent to you in the game.</p>
 				<div class="online-row">
 					<input
@@ -159,7 +211,7 @@ onBeforeUnmount(() => {
 						autocomplete="off"
 					/>
 					<button class="common-btn" type="button" :disabled="busy || cooldown > 0" @click="sendCode">
-						{{ cooldown > 0 ? `Resend in ${cooldown}s` : "Send Code" }}
+						{{ cooldown > 0 ? cooldownLabel : "Send Code" }}
 					</button>
 				</div>
 				<div class="online-row">
@@ -172,8 +224,16 @@ onBeforeUnmount(() => {
 						maxlength="6"
 						autocomplete="off"
 					/>
-					<button class="common-btn" type="submit" :disabled="busy">Log In</button>
+					<button class="common-btn" type="submit" :disabled="busy || !agreed">Log In</button>
 				</div>
+				<label class="online-row online-note">
+					<input v-model="agreed" type="checkbox" />
+					<span>
+						I have read and agree to the
+						<a :href="AGREEMENT_URL" target="_blank" rel="noopener noreferrer">User Agreement</a> and
+						<a :href="PRIVACY_URL" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.
+					</span>
+				</label>
 			</form>
 
 			<template v-else>
@@ -195,6 +255,14 @@ onBeforeUnmount(() => {
 								@click="attempt(() => session.refreshAccount())"
 							>
 								Refresh
+							</button>
+							<button
+								class="common-btn"
+								:disabled="busy || loginStage !== 'idle'"
+								title="Pick another character of your Kuro account"
+								@click="attempt(() => session.switchCharacter())"
+							>
+								Switch Character
 							</button>
 							<button
 								class="common-btn"
