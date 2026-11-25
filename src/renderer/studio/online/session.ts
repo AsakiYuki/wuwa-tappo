@@ -317,6 +317,22 @@ export function setRoomPublic(isPublic: boolean) {
 	})
 }
 
+/** The eye in the member list: show or hide one member's pet on the desktop. */
+export async function showMember(userId: number, shown: boolean) {
+	const reply = await online.roomShowMember(userId, shown)
+	if (!reply.ok) throw new Error(reply.error || "Could not change the pet's visibility")
+}
+
+/** The owner's actions on another member (`kick`, `transfer` host). The server's answer arrives as a notice. */
+export async function memberAction(action: "kick" | "transfer", userId: number) {
+	const reply = await online.roomMember(action, userId)
+	if (!reply.ok) throw new Error(reply.error || "Could not send the request")
+}
+
+online.onRoomError(event => {
+	roomNotice.value = event.message
+})
+
 /** Leaves the room: the socket says goodbye (`rl`) and closes; the pets disappear. */
 export function leaveRoom() {
 	void online.roomLeave()
@@ -328,7 +344,8 @@ export function leaveRoom() {
 online.onRoomMembers(event => {
 	roomMembers.value = event.members
 	const current = room.value
-	if (current && event.isPublic !== null && current.isPublic !== event.isPublic) room.value = { ...current, isPublic: event.isPublic }
+	if (current && event.isPublic !== null && current.isPublic !== event.isPublic)
+		room.value = { ...current, isPublic: event.isPublic }
 })
 
 online.onRoomStatus(event => {
@@ -385,7 +402,8 @@ export function setFavorite(assetId: number, favorite: boolean) {
 
 /** Trades duplicates for a new item. `sameLevel` picks the original's same-rarity route over the next-rarity one. */
 export function synthesize(assetIds: number[], sameLevel: boolean) {
-	if (assetIds.length === 0 || assetIds.length > 20 || !positiveIds(assetIds)) throw new Error("Pick the items to trade")
+	if (assetIds.length === 0 || assetIds.length > 20 || !positiveIds(assetIds))
+		throw new Error("Pick the items to trade")
 	return exclusive(() =>
 		call("POST", sameLevel ? "api/frontend/assets/synthesis/same-level" : "api/frontend/assets/synthesis", {
 			asset_ids: assetIds,

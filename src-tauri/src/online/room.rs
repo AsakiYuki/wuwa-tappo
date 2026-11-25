@@ -53,11 +53,13 @@ pub(super) struct Member {
 	pub character_asset_id: i64,
 	pub part_asset_id: i64,
 	pub state: &'static str,
+	/// This user chose not to see this member's pet (the eye in the member list). Local only.
+	pub hidden: bool,
 }
 
 impl Member {
 	fn new(id: i64) -> Self {
-		Member { id, nickname: DEFAULT_NICKNAME.into(), owner: false, online: true, character_asset_id: 0, part_asset_id: 0, state: "idle" }
+		Member { id, nickname: DEFAULT_NICKNAME.into(), owner: false, online: true, character_asset_id: 0, part_asset_id: 0, state: "idle", hidden: false }
 	}
 }
 
@@ -266,6 +268,8 @@ fn ack_result(ack: &Value) -> Result<&Value, i64> {
 enum Command {
 	/// An event for the server, with or without a payload (`rc` takes none).
 	Emit { name: &'static str, payload: Option<Value> },
+	/// An owner's action on a member (`rk` kick, `rt` transfer host); the answer is checked.
+	Request { name: &'static str, payload: Value },
 	Leave,
 	Close,
 }
@@ -341,13 +345,22 @@ fn emit_status(app: &AppHandle, status: &Status) {
 	let _ = app.emit("room-status", status);
 }
 
-/// The members last reported and this user's id, to show or hide the overlay again when a setting changes.
-static LAST: Mutex<(Vec<Member>, i64)> = Mutex::new((Vec::new(), 0));
+/// The members last reported, this user's id and the room's public flag, to publish them again when a
+/// setting or a "hide this pet" choice changes.
+static LAST: Mutex<(Vec<Member>, i64, Option<bool>)> = Mutex::new((Vec::new(), 0, None));
+/// Members whose pets this user hid. Kept for the run of the app, across rooms.
+static HIDDEN: Mutex<Vec<i64>> = Mutex::new(Vec::new());
+
+fn publish(app: &AppHandle, shared: &Shared, members: &[Member], self_id: i64, public: Option<bool>) {
+	let hidden = HIDDEN.lock().unwrap().clone();
+	let marked: Vec<Member> = members.iter().cloned().map(|member| Member { hidden: hidden.contains(&member.id), ..member }).collect();
+	*LAST.lock().unwrap() = (marked.clone(), self_id, public);
+	let _ = app.emit("room-members", json!({ "members": marked, "selfId": self_id, "isPublic": public }));
+	sync_window(app, shared, &marked, self_id);
+}
 
 fn emit_roster(app: &AppHandle, shared: &Shared, roster: &Roster, self_id: i64) {
-	*LAST.lock().unwrap() = (roster.members.clone(), self_id);
-	let _ = app.emit("room-members", json!({ "members": roster.members, "selfId": self_id, "isPublic": roster.public }));
-	sync_window(app, shared, &roster.members, self_id);
+	publish(app, shared, &roster.members, self_id, roster.public);
 }
 
 /// What a connection ended with.
@@ -366,6 +379,7 @@ enum Pending {
 	Snapshot,
 	Desktop,
 	Leave,
+	Action,
 }
 
 struct Connection<'a> {
@@ -425,6 +439,8 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 					}
 				}
 				Ok(Command::Emit { .. }) => {}
+				Ok(Command::Request { name, payload }) if was_ready => emit_event!(Pending::Action, name, payload),
+				Ok(Command::Request { .. }) => {}
 				Ok(Command::Leave) if was_ready => {
 					leaving_since = Some(Instant::now());
 					emit_event!(Pending::Leave, "rl", json!({ "r": connection.room_no }));
@@ -501,6 +517,11 @@ fn session(connection: &mut Connection, commands: &Receiver<Command>) -> Outcome
 						Err(80007) => return Outcome::Ended { reason: "dismissed", message: "The room no longer exists".into() },
 						Err(code) => return Outcome::Dropped { message: format!("The room snapshot failed (code {code})"), was_ready },
 					},
+					Pending::Action => {
+						if let Err(code) = ack_result(&data) {
+							let _ = app.emit("room-error", json!({ "message": format!("The server refused the request (code {code})") }));
+						}
+					}
 					Pending::Desktop => {
 						if let Ok(desktop) = ack_result(&data) {
 							connection.roster.desktop(desktop);
@@ -704,8 +725,37 @@ pub(crate) fn apply_settings(app: &AppHandle, shared: &Shared) {
 		disconnect(app, shared);
 		return;
 	}
-	let (members, self_id) = LAST.lock().unwrap().clone();
+	let (members, self_id, _) = LAST.lock().unwrap().clone();
 	sync_window(app, shared, &members, self_id);
+}
+
+/// The eye in the member list: show or hide one member's pet on the desktop.
+pub(super) fn set_hidden(app: &AppHandle, shared: &Shared, member: i64, hidden: bool) {
+	{
+		let mut list = HIDDEN.lock().unwrap();
+		list.retain(|id| *id != member);
+		if hidden && list.len() < MAX_MEMBERS * 4 {
+			list.push(member);
+		}
+	}
+	let (members, self_id, public) = LAST.lock().unwrap().clone();
+	publish(app, shared, &members, self_id, public);
+}
+
+/// An owner's action on another member: `kick` or `transfer` (host).
+pub(super) fn member_action(action: &str, member: i64) -> Result<(), String> {
+	let name = match action {
+		"kick" => "rk",
+		"transfer" => "rt",
+		_ => return Err("Unknown room action".into()),
+	};
+	if member <= 0 {
+		return Err("Unknown member".into());
+	}
+	match ROOM.lock().unwrap().commands.as_ref() {
+		Some(commands) => commands.send(Command::Request { name, payload: json!({ "u": member }) }).map_err(|_| "The room connection is closed".to_string()),
+		None => Err("Not in a room".into()),
+	}
 }
 
 /* ---------------------------------- window ---------------------------------- */
@@ -717,7 +767,7 @@ fn should_show(shared: &Shared, members: &[Member], self_id: i64) -> bool {
 	let settings = settings(shared);
 	online_enabled(shared)
 		&& !setting_bool(&settings, "onlyShowMyPet", false)
-		&& members.iter().any(|member| member.id != self_id && member.online && member.character_asset_id > 0)
+		&& members.iter().any(|member| member.id != self_id && member.online && !member.hidden && member.character_asset_id > 0)
 }
 
 fn build_window(app: &AppHandle) -> tauri::Result<WebviewWindow> {

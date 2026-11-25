@@ -451,6 +451,25 @@ pub(crate) fn online_room_leave(window: tauri::Window) -> Value {
 	json!({ "ok": true })
 }
 
+/// The eye in the member list: show or hide one member's pet on the desktop.
+#[tauri::command]
+pub(crate) fn online_room_show_member(window: tauri::Window, app: tauri::AppHandle, shared: tauri::State<Shared>, user_id: i64, shown: bool) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	room::set_hidden(&app, &shared, user_id, !shown);
+	json!({ "ok": true })
+}
+
+/// An owner's action on another member: `kick` or `transfer` (host). The server decides if it is allowed.
+#[tauri::command]
+pub(crate) fn online_room_member(window: tauri::Window, action: String, user_id: i64) -> Value {
+	if window.label() != STUDIO_LABEL {
+		return fail("Command not allowed from this window");
+	}
+	login::reply(room::member_action(&action, user_id))
+}
+
 /// Tells the room this user's outfit changed (the server reads it from the account).
 #[tauri::command]
 pub(crate) fn online_room_changed(window: tauri::Window) -> Value {

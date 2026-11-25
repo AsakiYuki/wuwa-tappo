@@ -246,6 +246,8 @@ pub fn run() {
 			online::online_room_connect,
 			online::online_room_leave,
 			online::online_room_changed,
+			online::online_room_show_member,
+			online::online_room_member,
 			online::online_login_cancel,
 			pet::move_pet,
 			pet::end_pet_drag,

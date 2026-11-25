@@ -12,7 +12,7 @@ const OFFLINE_TABS: Array<{ page: StudioPage; icon: string; label: string }> = [
 	{ page: "synthesis", icon: "exchange", label: "Synthesis" },
 	{ page: "draw", icon: "room", label: "Chests" },
 ]
-const ONLINE_TAB = { page: "online" as StudioPage, icon: "toggle", label: "Online" }
+const ONLINE_TAB = { page: "online" as StudioPage, icon: "room", label: "Multiplayer" }
 const SETTINGS_TAB = { page: "settings" as StudioPage, icon: "setting", label: "Settings" }
 
 /** Online mode swaps the local Synthesis and Chests tabs for the Online tab. */

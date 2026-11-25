@@ -37,7 +37,7 @@ interface RemotePet {
 const pets = computed<RemotePet[]>(() => {
 	const shown: RemotePet[] = []
 	for (const member of members.value) {
-		if (member.id === selfId.value || !member.online) continue
+		if (member.id === selfId.value || !member.online || member.hidden) continue
 		const character = byAsset.value.get(`character:${member.characterAssetId}`)
 		if (!character) continue
 		const layers = character.layers ?? {}

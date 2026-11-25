@@ -216,6 +216,8 @@ export interface RoomSocketMember {
 	partAssetId: number
 	/** Which hand is pressed: "idle", "left" or "right". */
 	state: "idle" | "left" | "right"
+	/** This user hid this member's pet (the eye in the member list). */
+	hidden: boolean
 }
 
 export interface RoomMembersEvent {
@@ -241,6 +243,11 @@ export interface OnlineAPI {
 	roomConnect(roomNo: string, selfId: number): Promise<{ ok: boolean; error?: string }>
 	/** Leaves the room on the socket and closes it. */
 	roomLeave(): Promise<{ ok: boolean }>
+	/** Shows or hides one member's pet on the desktop (local only). */
+	roomShowMember(userId: number, shown: boolean): Promise<{ ok: boolean; error?: string }>
+	/** The owner's actions on another member: kick them or hand the room over. */
+	roomMember(action: "kick" | "transfer", userId: number): Promise<{ ok: boolean; error?: string }>
+	onRoomError(callback: (event: { message: string }) => void): void
 	/** Tells the room the outfit changed, after it was saved to the account. */
 	roomChanged(): Promise<{ ok: boolean }>
 	onRoomMembers(callback: (event: RoomMembersEvent) => void): void
@@ -253,7 +260,11 @@ export interface OnlineAPI {
 	loginSwitch(): Promise<{ ok: boolean; error?: string }>
 	loginCancel(): Promise<{ ok: boolean }>
 	onLogin(callback: (event: OnlineLoginEvent) => void): void
-	request<T = unknown>(method: "GET" | "POST" | "PUT" | "DELETE", endpoint: string, body?: unknown): Promise<OnlineReply<T>>
+	request<T = unknown>(
+		method: "GET" | "POST" | "PUT" | "DELETE",
+		endpoint: string,
+		body?: unknown,
+	): Promise<OnlineReply<T>>
 	status(): Promise<OnlineStatus>
 }
 

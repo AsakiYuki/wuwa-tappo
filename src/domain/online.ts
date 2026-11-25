@@ -48,7 +48,10 @@ export function parseUser(raw: unknown): OnlineUser | null {
 	return {
 		userId: String(id).slice(0, 32),
 		id: typeof record.id === "number" && Number.isSafeInteger(record.id) && record.id > 0 ? record.id : null,
-		roomNo: cleanRoomNumber(typeof record.room_no === "string" || typeof record.room_no === "number" ? String(record.room_no) : "") ?? "",
+		roomNo:
+			cleanRoomNumber(
+				typeof record.room_no === "string" || typeof record.room_no === "number" ? String(record.room_no) : "",
+			) ?? "",
 		nickname: nickname || "Rover",
 		playerType: Number.isInteger(record.player_type) ? (record.player_type as number) : null,
 		totalClicks: parseCount(record.total_click_count),
@@ -188,7 +191,8 @@ const MAX_PRESETS = 200
 const MAX_PRESET_EMOTES = 16
 
 const finite = (value: unknown): number | null => {
-	const number = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN
+	const number =
+		typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : NaN
 	return Number.isFinite(number) ? number : null
 }
 
