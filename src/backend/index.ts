@@ -7,7 +7,14 @@
  * JavaScript objects. Errors from commands are returned as `{ ok: false, error }`, never thrown.
  */
 import { registerTap } from "../domain/actions.js"
-import { canPlayEmote, importedState, isKnownSave, patchSettings, STATE_COMMANDS } from "../domain/commands.js"
+import {
+	assertOffline,
+	canPlayEmote,
+	importedState,
+	isKnownSave,
+	patchSettings,
+	STATE_COMMANDS,
+} from "../domain/commands.js"
 import { initial, normalize } from "../domain/state.js"
 import type { CatalogItem, CollectionState } from "../domain/types.js"
 
@@ -51,6 +58,7 @@ const backend = {
 	command(name: string, argumentJson: string): string {
 		try {
 			const argument = argumentJson ? JSON.parse(argumentJson) : null
+			assertOffline(state, name)
 			if (Object.hasOwn(STATE_COMMANDS, name)) {
 				const result = STATE_COMMANDS[name](state, items, argument) ?? null
 				return reply({ ok: true, result })

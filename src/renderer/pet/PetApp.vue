@@ -211,8 +211,8 @@ onBeforeUnmount(() => {
 					<button
 						v-if="settings.showChest"
 						id="openChest"
-						title="Unlimited Chests"
-						@click="api.command('open', 'draw')"
+						:title="settings.onlineMode ? 'Online Chests' : 'Unlimited Chests'"
+						@click="api.command('open', settings.onlineMode ? 'online' : 'draw')"
 					/>
 					<button id="openStudio" class="settings-btn" title="Open Studio" @click="api.command('open')" />
 				</div>

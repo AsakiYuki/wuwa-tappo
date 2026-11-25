@@ -58,10 +58,6 @@ h3 {
 .tab-btn {
 	flex-shrink: 0;
 }
-// With the Online tab there are seven buttons: at the default 20px gap they are 16px taller than the 756px window.
-.tab-bar--compact {
-	gap: 12px;
-}
 .module-content {
 	align-self: center;
 	flex-shrink: 0;

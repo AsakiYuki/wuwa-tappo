@@ -9,6 +9,14 @@ import { MAX_PRESETS, newPresetId, normalize, presetName, settings } from "./sta
 
 type StateCommand = (state: CollectionState, items: CatalogItem[], argument: any) => unknown
 
+/** Offline-only commands: the online account has its own chests, and nothing is unlocked or reset locally. */
+export const OFFLINE_ONLY_COMMANDS = ["draw", "synthesize", "unlock-all", "import-data", "reset-data"] as const
+
+export function assertOffline(state: CollectionState, name: string) {
+	if (state.settings.onlineMode && (OFFLINE_ONLY_COMMANDS as readonly string[]).includes(name))
+		throw new Error("Not available in online mode")
+}
+
 export const STATE_COMMANDS: Record<string, StateCommand> = {
 	draw: (state, items, count: number) => draw(state, items, count),
 
@@ -49,7 +57,6 @@ export const STATE_COMMANDS: Record<string, StateCommand> = {
 	},
 
 	"unlock-all"(state, items) {
-		if (state.settings.onlineMode) throw new Error("Unlock All is not available in online mode")
 		for (const item of items) state.owned[item.id] = Math.max(1, state.owned[item.id] || 0)
 	},
 }

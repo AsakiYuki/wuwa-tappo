@@ -3,7 +3,15 @@ import assert from "node:assert/strict"
 import fs from "node:fs"
 import path from "node:path"
 import * as actions from "./actions.js"
-import { STATE_COMMANDS, canPlayEmote, importedState, isKnownSave, patchSettings } from "./commands.js"
+import {
+	OFFLINE_ONLY_COMMANDS,
+	STATE_COMMANDS,
+	assertOffline,
+	canPlayEmote,
+	importedState,
+	isKnownSave,
+	patchSettings,
+} from "./commands.js"
 import { RARITIES } from "./constants.js"
 import { initial, normalize, settings } from "./state.js"
 import {
@@ -508,16 +516,13 @@ test("Online mode is off by default and an imported save never turns it on", () 
 	assert.equal(current.settings.onlineMode, false)
 })
 
-test("Unlock All is refused in online mode and works offline", () => {
+test("Offline-only commands are refused in online mode and work offline", () => {
 	const state = core.initial(items)
 	state.settings.onlineMode = true
-	assert.throws(() => STATE_COMMANDS["unlock-all"](state, items, null), /online mode/)
-	assert.equal(
-		items.every(item => state.owned[item.id]),
-		false,
-		"nothing was unlocked",
-	)
+	for (const name of OFFLINE_ONLY_COMMANDS) assert.throws(() => assertOffline(state, name), /online mode/, name)
+	for (const name of ["equip", "favorite", "settings", "preset-save", "emote-replace"]) assertOffline(state, name)
 	state.settings.onlineMode = false
+	for (const name of OFFLINE_ONLY_COMMANDS) assertOffline(state, name)
 	STATE_COMMANDS["unlock-all"](state, items, null)
 	assert.equal(
 		items.every(item => state.owned[item.id] > 0),
